@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
  
+## Version 2026.05.20
+
+### Features
+- **txt-to-epub**: 新增「TXT 轉 EPUB 小說產生器」工具，支援自動章節正則偵測、直書/橫書樣式、自訂封面以及字型子集化精簡與完整嵌入（滿血版）。
+- **epub-editor**: 新增「EPUB 編輯器 / 轉換器」工具，支援本機解壓與打包，並全面重構為 HelloRuru 版的電子書排版優化與轉換功能：
+  - 支援「繁體・詞彙（twp）」及「繁體・純字（tw）」雙 OpenCC 轉換模式。
+  - 支援標點符號轉換（“...” 轉 「...」）。
+  - 支援直書橫書翻頁樣式（縱書時自動寫入 spine progression rtl，CSS 注入 writing-mode 覆寫）。
+  - 支援思源黑體、思源宋體、原俠正楷、jf 粉圓四款內置字型與自訂字型上傳，並提供「子集化精簡版」及「完整滿血版」嵌入模式。
+  - 支援字體大小、行距、首行縮排微調。
+  - 支援自訂封面圖片（預覽、替換與完全移除）。
+  - 提供 HTML5 模擬閱讀器即時排版預覽，直書時可橫向滾動。
+  - 保留內部原始碼編輯器與中繼資料編輯功能。
+- **services**: 簡繁體轉換引擎全面升級至 OpenCC JS，新增支援字元對照與詞彙轉換兩大分支，並將其整合至同文堂繁簡轉換器、TXT 轉 EPUB 及 EPUB 編輯器中。
+
 ## Version 2026.04.24
 
 ### Features

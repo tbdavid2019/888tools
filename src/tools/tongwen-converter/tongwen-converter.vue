@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { convertTongWen, type TongWenDirection } from './tongwen-converter.service';
+import { convertOpenCC, type OpenCCDirection } from '@/services/opencc.service';
 import { useCopy } from '@/composable/copy';
 import { translate } from '@/plugins/i18n.plugin';
 
-const direction = ref<TongWenDirection>('s2t');
+const direction = ref<OpenCCDirection>('s2t');
 const text = ref('');
 
 const directionOptions = computed(() => [
@@ -15,12 +15,12 @@ const result = ref('');
 
 watch(
   [text, direction],
-  async ([newText, newDirection]) => {
+  ([newText, newDirection]) => {
     if (!newText) {
       result.value = '';
       return;
     }
-    result.value = await convertTongWen(newText, newDirection);
+    result.value = convertOpenCC(newText, newDirection);
   },
   { immediate: true },
 );

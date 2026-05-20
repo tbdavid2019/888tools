@@ -31,6 +31,9 @@
 | 21  | 新增「圖片色彩校正」工具（Images and videos 分類），支援亮度、對比、飽和度調整（https://tool.david888.com/color-correction ）                                                                 |
 | 22  | 新增「麥克風與攝影機測試」（Images and videos 分類），提供裝置選擇與音量視覺化（https://tool.david888.com/mic-camera-tester ）                                                                |
 | 23  | 新增「CSV & Excel 檢視器」（Data 分類），支援預覽並匯出為 CSV 檔案（https://tool.david888.com/csv-excel-viewer ）                                                                             |
+| 24  | 新增「TXT 轉 EPUB 小說產生器」工具（書籍 分類），支援自動章節正則偵測、直排/橫排翻頁排版、自訂封面，以及內置思源等多款字型的子集化精簡與完整（滿血版）嵌入（https://tool.david888.com/txt-to-epub ） |
+| 25  | 新增「EPUB 編輯器 / 轉換器」工具（書籍 分類），支援上傳 EPUB 解析，提供「繁體・詞彙（twp）」與「繁體・純字（tw）」雙 OpenCC 模式、標點轉換、直橫排樣式切換（縱書翻頁與 CSS 注入）、內置/自訂字型嵌入（子集化與滿血版）、自訂封面預覽與管理、HTML5 閱讀器即時排版預覽及中繼資料與 XML 編輯（https://tool.david888.com/epub-editor ） |
+| 26  | 繁簡轉換器引擎全面升級為 OpenCC JS，支援高品質的字詞與詞彙對照轉換（如頭髮、理髮、訊息），並應用於同文堂繁簡轉換器、TXT 轉 EPUB 及 EPUB 編輯器（https://tool.david888.com/tongwen-converter ） |
 
 ## Changelog
 

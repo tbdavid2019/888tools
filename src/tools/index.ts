@@ -108,6 +108,8 @@ import { tool as micCameraTester } from './mic-camera-tester';
 import { tool as colorCorrection } from './color-correction';
 import { tool as svgTools } from './svg-tools';
 import { tool as csvExcelViewer } from './csv-excel-viewer';
+import { tool as txtToEpub } from './txt-to-epub';
+import { tool as epubEditor } from './epub-editor';
 
 
 
@@ -219,6 +221,10 @@ export const toolsByCategory: ToolCategory[] = [
   {
     name: 'PDF',
     components: [pdfTools],
+  },
+  {
+    name: 'Books',
+    components: [txtToEpub, epubEditor],
   },
 ];
 

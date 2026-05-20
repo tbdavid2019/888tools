@@ -66,6 +66,7 @@ tools:
     measurement: '測量'
     text: '文字'
     data: '資料'
+    books: '書籍'
 
   password-strength-analyser:
     title: 密碼強度分析儀
@@ -493,6 +494,14 @@ tools:
       copy: 複製結果
       clear: 清空
     note: 映射來源於同文堂油猴腳本，無需外部請求。
+
+  txt-to-epub:
+    title: TXT 轉 EPUB 小說產生器
+    description: 將文字檔 (TXT) 轉換為 EPUB 電子書，支援自動章節偵測與字型子集化嵌入。
+
+  epub-editor:
+    title: EPUB 編輯器
+    description: 直接在瀏覽器中編輯 EPUB 的中繼資料、章節、樣式與字型。
 
   ipv4-range-expander:
     title: IPv4範圍擴展器

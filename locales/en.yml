@@ -70,6 +70,7 @@ tools:
     measurement: Measurement
     text: Text
     data: Data
+    books: Books
 
   password-strength-analyser:
     title: Password strength analyser
@@ -497,6 +498,14 @@ tools:
       copy: Copy result
       clear: Clear
     note: Mapping derived from the TongWen userscript (no external requests).
+
+  txt-to-epub:
+    title: TXT to EPUB novel generator
+    description: Convert text files (TXT) to EPUB books with automatic chapter detection and font subsetting.
+
+  epub-editor:
+    title: EPUB Editor
+    description: Edit EPUB metadata, chapters, styles and fonts directly in your browser.
 
   ipv4-range-expander:
     title: IPv4 range expander
