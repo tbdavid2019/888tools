@@ -149,7 +149,8 @@ const formattedText = computed(() => {
     }
   }
 
-  return text;
+  // Replace empty lines with a Zero-Width Space (\u200B) to preserve them on IG/Threads/FB
+  return text.split('\n').map(line => line.trim() === '' ? '\u200B' : line).join('\n');
 });
 
 const stats = computed(() => {
@@ -379,6 +380,72 @@ const handleClear = () => {
         </div>
       </n-grid-item>
     </n-grid>
+
+    <!-- 說明區塊 -->
+    <n-card class="explanation-card" style="margin-top: 24px;" title="💡 為什麼社群貼文的換行會消失？">
+      <div class="explanation-content">
+        <p>
+          在經營粉絲專頁或社群平台時，你可能也踩過這個坑：在編輯器裡排版得整整齊齊、空行分明，但按下發布後，所有的換行段落卻全部黏在一起。
+        </p>
+
+        <n-grid :cols="1" :y-gap="20" :x-gap="20" responsive="screen" item-responsive style="margin-top: 20px;">
+          <n-grid-item>
+            <h3 class="explain-subtitle">三個平台處理換行的方式不一樣</h3>
+            <n-table :bordered="false" :single-line="false" size="small" class="explain-table">
+              <thead>
+                <tr>
+                  <th>社群平台</th>
+                  <th>空行處理方式</th>
+                  <th>嚴格程度</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Facebook</strong></td>
+                  <td>連續兩行以上的空行會被壓縮成單一空行</td>
+                  <td><n-tag type="warning" size="small">中</n-tag></td>
+                </tr>
+                <tr>
+                  <td><strong>Instagram</strong></td>
+                  <td>段落之間的空行會被直接移除</td>
+                  <td><n-tag type="error" size="small">高</n-tag></td>
+                </tr>
+                <tr>
+                  <td><strong>Threads</strong></td>
+                  <td>類似 IG，空行處理非常嚴格，會清除多餘空行</td>
+                  <td><n-tag type="error" size="small">最高</n-tag></td>
+                </tr>
+              </tbody>
+            </n-table>
+            <p style="margin-top: 12px; font-size: 0.9rem; opacity: 0.8; line-height: 1.6;">
+              ※ 同一篇文字在 Facebook 排版正常，直接複製貼到 Instagram 或 Threads 發文時，段落可能全部黏在一起。
+            </p>
+          </n-grid-item>
+
+          <n-grid-item>
+            <h3 class="explain-subtitle">零寬空格是什麼？社群貼文換行的救星</h3>
+            <p>
+              社群平台的系統邏輯通常會認為「<strong>連續空行 = 多餘的空白 = 幫使用者清除</strong>」。
+            </p>
+            <p>
+              為了解決這個問題，本工具在處理排版時，會自動在所有空行中插入一個<strong>「零寬空格」（Zero-Width Space，\u200B）</strong>。
+            </p>
+            <p>
+              零寬空格是一個肉眼看不見的特殊字元。塞進空行之後，平台的系統會判定「這行有東西」，就不會自動刪除空行。如此一來，你就能在視覺上看到乾淨的空行，為讀者留下呼吸的閱讀空間。
+            </p>
+          </n-grid-item>
+
+          <n-grid-item>
+            <h3 class="explain-subtitle">社群貼文排版的三個底層觀念</h3>
+            <ul style="padding-left: 20px; margin: 8px 0;">
+              <li style="margin-bottom: 6px;"><strong>一段不超過三行</strong>：手機螢幕很小，一段文字超過三行看起來就像一面牆，容易讓人直接滑走。</li>
+              <li style="margin-bottom: 6px;"><strong>重點句獨立成段</strong>：前後留空行可以加大視覺權重，讓金句或重點更容易被記住。</li>
+              <li style="margin-bottom: 6px;"><strong>長短交錯製造節奏</strong>：長短句交替出現能引導讀者眼睛移動，為貼文創造舒適的閱讀節奏。</li>
+            </ul>
+          </n-grid-item>
+        </n-grid>
+      </div>
+    </n-card>
   </div>
 </template>
 
@@ -530,6 +597,60 @@ const handleClear = () => {
   display: flex;
   gap: 20px;
   font-weight: 600;
+}
+
+.explanation-card {
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  background: linear-gradient(135deg, v-bind('themeVars?.cardColor || "#ffffff"') 0%, v-bind('themeVars?.bodyColor || "#f9f9f9"') 100%);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.explanation-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.08);
+}
+
+.explain-subtitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-top: 10px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.explain-subtitle::before {
+  content: "";
+  display: inline-block;
+  width: 4px;
+  height: 18px;
+  background: var(--n-color-target, #18a058);
+  border-radius: 2px;
+}
+
+.explain-table {
+  background: transparent;
+  margin-bottom: 8px;
+}
+
+.explain-table th {
+  font-weight: 600;
+  background-color: rgba(0, 0, 0, 0.02) !important;
+}
+
+.explanation-content p {
+  line-height: 1.7;
+  margin-bottom: 12px;
+  font-size: 0.95rem;
+  opacity: 0.9;
+}
+
+.explanation-content li {
+  line-height: 1.7;
+  font-size: 0.95rem;
 }
 </style>
 
