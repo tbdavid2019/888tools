@@ -66,6 +66,7 @@ tools:
     measurement: '测量'
     text: '文本'
     data: '数据'
+    editor: '编辑区'
 
   password-strength-analyser:
     title: 密码强度分析仪
@@ -509,3 +510,11 @@ tools:
   text-to-binary:
     title: 文本到 ASCII 二进制
     description: 将文本转换为其 ASCII 二进制表示形式，反之亦然。
+
+  find-color:
+    title: "2026 流行色：数码色票库"
+    description: 收录 Pantone 2026 与 Pinterest 2026 流行色，涵盖 8 大设计美学圈。提供 Light/Dark 双模式，一键复制 HEX 色码，并支持网页效果实时预览。
+
+  post-writer:
+    title: "社群贴文排版"
+    description: 全程本地处理，提供杂志感排版与 Broetry 文体排版，自动换行、全角标点符号转换、标题框线装饰，并提供 FB/IG/Threads 模拟预览与字数计算。

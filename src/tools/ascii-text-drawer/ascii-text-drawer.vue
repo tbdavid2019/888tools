@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import figlet from 'figlet';
 import TextareaCopyable from '@/components/TextareaCopyable.vue';
+import { config } from '@/config';
 
 const input = ref('Ascii ART');
 const font = useStorage('ascii-text-drawer:font', 'Standard');
@@ -9,14 +10,15 @@ const output = ref('');
 const errored = ref(false);
 const processing = ref(false);
 
-figlet.defaults({ fontPath: '//unpkg.com/figlet@1.6.0/fonts/' });
+const fontBase = `${window.location.origin}${config.app.baseUrl.replace(/\/$/, '')}/fonts/figlet`;
+figlet.defaults({ fontPath: fontBase });
 
 watchEffect(async () => {
   processing.value = true;
   try {
     const options: figlet.Options = {
       font: font.value as figlet.Fonts,
-      width: width.value,
+      width: Number(width.value) || 80,
       whitespaceBreak: true,
     };
     output.value = await (new Promise<string>((resolve, reject) =>

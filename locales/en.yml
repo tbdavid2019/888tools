@@ -71,6 +71,7 @@ tools:
     text: Text
     data: Data
     books: Books
+    editor: Editor
 
   password-strength-analyser:
     title: Password strength analyser
@@ -570,6 +571,14 @@ tools:
   csv-excel-viewer:
     title: CSV & Excel Viewer
     description: Open and view CSV, XLSX, XLS spreadsheets directly in the browser.
+
+  find-color:
+    title: "2026 Popular Colors: Digital Swatches"
+    description: Pantone and Pinterest 2026 popular colors across 8 design circles. Light/Dark modes, copy HEX codes, and preview landing page layouts.
+
+  post-writer:
+    title: "Social Post Formatter"
+    description: Format and beautify social media posts. Supports magazine style, broetry style, full-width punctuation conversion, and live FB/IG/Threads previews.
 
 
 

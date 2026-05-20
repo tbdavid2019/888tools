@@ -67,6 +67,7 @@ tools:
     text: '文字'
     data: '資料'
     books: '書籍'
+    editor: '編輯區'
 
   password-strength-analyser:
     title: 密碼強度分析儀
@@ -566,6 +567,14 @@ tools:
   csv-excel-viewer:
     title: CSV & Excel 檢視器
     description: 在瀏覽器中直接開啟並檢視 CSV、XLSX、XLS 電子表格檔案。
+
+  find-color:
+    title: "2026 流行色：數位色票庫"
+    description: 收錄 Pantone 2026 與 Pinterest 2026 流行色，涵蓋 8 大設計美學圈。提供 Light/Dark 雙模式，一鍵複製 HEX 色碼，並支援首頁效果即時預覽。
+
+  post-writer:
+    title: "社群貼文排版"
+    description: 全程本機處理，提供雜誌感排版與 Broetry 文體排版，自動換行、全形標點符號轉換、標題框線裝飾，并提供 FB/IG/Threads 模擬預覽與字數計算。
 
 
 
