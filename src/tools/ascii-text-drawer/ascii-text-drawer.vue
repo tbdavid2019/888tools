@@ -10,10 +10,18 @@ const output = ref('');
 const errored = ref(false);
 const processing = ref(false);
 
-const fontBase = `${window.location.origin}${config.app.baseUrl.replace(/\/$/, '')}/fonts/figlet`;
+// Use a relative path to support proxy, iframe, and mixed protocol scenarios safely
+const fontBase = `${config.app.baseUrl.replace(/\/$/, '')}/fonts/figlet`;
 figlet.defaults({ fontPath: fontBase });
 
 watchEffect(async () => {
+  if (!input.value) {
+    output.value = '';
+    errored.value = false;
+    processing.value = false;
+    return;
+  }
+
   processing.value = true;
   try {
     const options: figlet.Options = {

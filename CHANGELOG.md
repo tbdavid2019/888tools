@@ -5,6 +5,9 @@ All notable changes to this project will be documented in this file. See [standa
 ## Version 2026.05.20
 
 ### Features
+- **editor-category**: 新增「編輯區」工具分類，並將 `html-wysiwyg-editor`（富文本編輯器）移入該分類。
+- **find-color**: 新增「2026 流行色：數位色票庫」工具，提供 Pantone 2026 及 Pinterest 2026 流行色，支援 Light/Dark 模式切換、一鍵複製 HEX 色碼與首頁效果即時預覽。
+- **post-writer**: 新增「社群貼文排版」工具，支援 FB、IG、Threads 等社群平台的換行與排版轉換，提供 Magazine 雜誌風與 Broetry 體，支援字數限制計量與多平台行動端預覽模擬。
 - **txt-to-epub**: 新增「TXT 轉 EPUB 小說產生器」工具，支援自動章節正則偵測、直書/橫書樣式、自訂封面以及字型子集化精簡與完整嵌入（滿血版）。
 - **epub-editor**: 新增「EPUB 編輯器 / 轉換器」工具，支援本機解壓與打包，並全面重構為 HelloRuru 版的電子書排版優化與轉換功能：
   - 支援「繁體・詞彙（twp）」及「繁體・純字（tw）」雙 OpenCC 轉換模式。
@@ -16,6 +19,11 @@ All notable changes to this project will be documented in this file. See [standa
   - 提供 HTML5 模擬閱讀器即時排版預覽，直書時可橫向滾動。
   - 保留內部原始碼編輯器與中繼資料編輯功能。
 - **services**: 簡繁體轉換引擎全面升級至 OpenCC JS，新增支援字元對照與詞彙轉換兩大分支，並將其整合至同文堂繁簡轉換器、TXT 轉 EPUB 及 EPUB 編輯器中。
+
+### Bug Fixes
+- **ascii-text-drawer**: 修復當輸入框清空或在反向代理等跨域網域下，因 figlet 載入字型檔失敗而顯示「Current settings resulted in error」的錯誤。
+- **epub-editor**: 修正預設字型（思源黑體、思源宋體、原俠正楷、jf 粉圓）載入失效問題，改為頁面掛載時動態注入 `@font-face` 設定，並在重設與卸載時正確清理。
+- **ui**: 修正導覽列（.navbar-wrapper）的 `z-index` 層級，確保語系選單下拉選單、搜尋面板不會被下方的 Bento 區塊阻擋。
 
 ## Version 2026.04.24
 

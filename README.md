@@ -34,6 +34,8 @@
 | 24  | 新增「TXT 轉 EPUB 小說產生器」工具（書籍 分類），支援自動章節正則偵測、直排/橫排翻頁排版、自訂封面，以及內置思源等多款字型的子集化精簡與完整（滿血版）嵌入（https://tool.david888.com/txt-to-epub ） |
 | 25  | 新增「EPUB 編輯器 / 轉換器」工具（書籍 分類），支援上傳 EPUB 解析，提供「繁體・詞彙（twp）」與「繁體・純字（tw）」雙 OpenCC 模式、標點轉換、直橫排樣式切換（縱書翻頁與 CSS 注入）、內置/自訂字型嵌入（子集化與滿血版）、自訂封面預覽與管理、HTML5 閱讀器即時排版預覽及中繼資料與 XML 編輯（https://tool.david888.com/epub-editor ） |
 | 26  | 繁簡轉換器引擎全面升級為 OpenCC JS，支援高品質的字詞與詞彙對照轉換（如頭髮、理髮、訊息），並應用於同文堂繁簡轉換器、TXT 轉 EPUB 及 EPUB 編輯器（https://tool.david888.com/tongwen-converter ） |
+| 27  | 新增「2026 流行色：數位色票庫」工具（編輯區 分類），提供 Pantone 2026 與 Pinterest 2026 流行色票，支援 Light/Dark 雙模式、一鍵複製 HEX 色碼，並支援首頁效果即時預覽（https://tool.david888.com/find-color ） |
+| 28  | 新增「社群貼文排版」工具（編輯區 分類），提供針對 FB、IG、Threads 等社群平台的換行與排版轉換，支援 Magazine 雜誌風與 Broetry 體轉換，支援字數限制計量，並支援多平台行動端預覽模擬（https://tool.david888.com/post-writer ） |
 
 ## Changelog
 

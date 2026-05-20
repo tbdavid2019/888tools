@@ -532,3 +532,16 @@ const handleClear = () => {
   font-weight: 600;
 }
 </style>
+
+<style>
+/* 覆寫外層 it-tools 的 tool.layout.vue 限制 */
+.tool-content:has(.post-writer-container) {
+  max-width: 1200px !important;
+}
+.tool-content:has(.post-writer-container) > * {
+  flex: 1 1 100% !important;
+}
+.tool-layout:has(+ .tool-content .post-writer-container) {
+  max-width: 1200px !important;
+}
+</style>

@@ -534,3 +534,16 @@ const mockupStyle = computed(() => {
   margin: 0;
 }
 </style>
+
+<style>
+/* 覆寫外層 it-tools 的 tool.layout.vue 限制 */
+.tool-content:has(.find-color-container) {
+  max-width: 1200px !important;
+}
+.tool-content:has(.find-color-container) > * {
+  flex: 1 1 100% !important;
+}
+.tool-layout:has(+ .tool-content .find-color-container) {
+  max-width: 1200px !important;
+}
+</style>

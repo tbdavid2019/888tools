@@ -1,4 +1,4 @@
-## MODIFIED Requirements
+## ADDED Requirements
 
 ### Requirement: OpenCC-JS Converter Engine
 The system SHALL use the `opencc-js` library as the underlying translation engine for Chinese character conversion, replacing the legacy inline TongWen dictionaries.

@@ -146,6 +146,8 @@ const allToolsCount = computed(() => {
 }
 
 .navbar-wrapper {
+  position: relative;
+  z-index: 1000;
   padding: 8px 16px;
   border-radius: 24px;
   background-color: v-bind('layoutBackgroundColor');

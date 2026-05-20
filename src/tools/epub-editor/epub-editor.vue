@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, computed, watch, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useMessage } from 'naive-ui';
 import JSZip from 'jszip';
 import { translate } from '@/plugins/i18n.plugin';
+import { config } from '@/config';
 import { convertOpenCC } from '@/services/opencc.service';
 import { detectEncoding, decodeWithEncoding } from '../txt-to-epub/encodingDetector';
 
@@ -1296,7 +1297,6 @@ function handleCustomFontUpload(event: any) {
   customFontFile.value = f;
   message.success('字體載入成功，已套用至預覽');
 }
-
 function resetAll() {
   file.value = null;
   zipInstance.value = null;
@@ -1324,15 +1324,48 @@ function resetAll() {
   settings.value.fontEmbedMode = 'full';
   settings.value.writingMode = 'horizontal';
   
-  let styleEl = document.getElementById('hr-preview-custom-font-style');
-  if (styleEl) styleEl.remove();
+  let styleEl1 = document.getElementById('hr-preview-custom-font-style');
+  if (styleEl1) styleEl1.remove();
+  let styleEl2 = document.getElementById('hr-preview-standard-fonts-style');
+  if (styleEl2) styleEl2.remove();
 }
+
+onMounted(() => {
+  const base = config.app.baseUrl.replace(/\/$/, '');
+  const styleEl = document.createElement('style');
+  styleEl.id = 'hr-preview-standard-fonts-style';
+  styleEl.textContent = `
+    @font-face {
+      font-family: "NotoSansCJKtc";
+      src: url("${base}/fonts/NotoSansCJKtc-Regular.otf") format("opentype");
+      font-display: swap;
+    }
+    @font-face {
+      font-family: "NotoSerifCJKtc";
+      src: url("${base}/fonts/NotoSerifCJKtc-Regular.otf") format("opentype");
+      font-display: swap;
+    }
+    @font-face {
+      font-family: "GuanKiapTsingKhai";
+      src: url("${base}/fonts/GuanKiapTsingKhai-TW.ttf") format("truetype");
+      font-display: swap;
+    }
+    @font-face {
+      font-family: "jf-openhuninn";
+      src: url("${base}/fonts/jf-openhuninn.ttf") format("truetype");
+      font-display: swap;
+    }
+  `;
+  document.head.appendChild(styleEl);
+});
 
 onUnmounted(() => {
   if (newCoverPreviewUrl.value) URL.revokeObjectURL(newCoverPreviewUrl.value);
   if (customFontUrl.value) URL.revokeObjectURL(customFontUrl.value);
-  let styleEl = document.getElementById('hr-preview-custom-font-style');
-  if (styleEl) styleEl.remove();
+  let styleEl1 = document.getElementById('hr-preview-custom-font-style');
+  if (styleEl1) styleEl1.remove();
+  let styleEl2 = document.getElementById('hr-preview-standard-fonts-style');
+  if (styleEl2) styleEl2.remove();
 });
 </script>
 
