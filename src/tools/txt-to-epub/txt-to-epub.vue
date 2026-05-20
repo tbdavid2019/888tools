@@ -59,7 +59,7 @@ const coverFile = ref<File | null>(null);
 const coverPreview = ref<string | null>(null);
 const writingMode = ref<'horizontal' | 'vertical'>('vertical');
 const fontFamily = ref(DEFAULT_FONT);
-const embedFont = ref(true);
+const embedFontMode = ref<'none' | 'subset' | 'full'>('full');
 const fontSize = ref('medium');
 const lineHeight = ref('normal');
 const textIndent = ref('two');
@@ -223,6 +223,12 @@ const estimatedSize = computed(() => {
   return estimateSubsetSize(totalLength);
 });
 
+const embedFontModeOptions = computed(() => [
+  { label: '不嵌入', value: 'none', tooltip: '不打包字型檔，體積最小' },
+  { label: '子集化精簡版', value: 'subset', tooltip: `僅打包書中用到的字元，預估體積約為 ${estimatedSize.value}` },
+  { label: '完整滿血版 (預設)', value: 'full', tooltip: '嵌入完整字型檔，閱讀器顯示效果最完美且滿血' }
+]);
+
 // Run export compiling
 async function startExport() {
   if (!bookTitle.value.trim()) {
@@ -242,7 +248,8 @@ async function startExport() {
       cover: coverFile.value,
       writingMode: writingMode.value,
       fontFamily: fontFamily.value,
-      embedFont: embedFont.value,
+      embedFont: embedFontMode.value !== 'none',
+      embedFontMode: embedFontMode.value,
       fontSize: fontSize.value,
       lineHeight: lineHeight.value,
       textIndent: textIndent.value,
@@ -275,6 +282,7 @@ function resetAll() {
   coverPreview.value = null;
   bookTitle.value = '';
   bookAuthor.value = '';
+  embedFontMode.value = 'full';
   currentStep.value = 1;
 }
 </script>
@@ -523,16 +531,12 @@ function resetAll() {
               </div>
             </div>
 
-            <div class="p-3 bg-emerald-50 dark:bg-zinc-800 rounded-lg border border-emerald-100 dark:border-zinc-700">
-              <div class="flex items-center justify-between">
-                <div>
-                  <span class="font-medium text-sm text-emerald-900 dark:text-emerald-200">嵌入子集化字型</span>
-                  <p class="text-xs text-emerald-700 dark:text-emerald-300 mt-0.5">
-                    僅打包書中用到的字，字型檔從 20MB 縮小至約 <span class="font-semibold">{{ estimatedSize }}</span>
-                  </p>
-                </div>
-                <n-checkbox v-slot:trigger v-model:checked="embedFont" />
-              </div>
+            <div v-if="fontFamily !== 'default'" class="space-y-2">
+              <label class="text-xs font-semibold text-gray-500 block mb-1">字型嵌入模式</label>
+              <c-buttons-select
+                v-model:value="embedFontMode"
+                :options="embedFontModeOptions"
+              />
             </div>
 
             <div class="grid grid-cols-3 gap-3">

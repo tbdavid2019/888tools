@@ -34,7 +34,7 @@ const settings = ref({
   convertPunctuation: true,
   writingMode: 'horizontal' as 'horizontal' | 'vertical',
   fontFamily: 'noto-sans', // 'noto-sans' | 'noto-serif' | 'guankiap' | 'huninn' | 'default' | 'custom'
-  fontEmbedMode: 'none' as 'none' | 'subset' | 'full',
+  fontEmbedMode: 'full' as 'none' | 'subset' | 'full',
   fontSize: 'medium', // 'small' | 'medium' | 'large' | 'xlarge'
   lineHeight: 'normal', // 'compact' | 'normal' | 'relaxed' | 'loose'
   textIndent: 'two', // 'none' | 'one' | 'two'
@@ -1321,7 +1321,7 @@ function resetAll() {
   customFontFile.value = null;
   
   settings.value.fontFamily = 'noto-sans';
-  settings.value.fontEmbedMode = 'none';
+  settings.value.fontEmbedMode = 'full';
   settings.value.writingMode = 'horizontal';
   
   let styleEl = document.getElementById('hr-preview-custom-font-style');
