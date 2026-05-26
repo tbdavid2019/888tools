@@ -1,0 +1,17 @@
+export const warmPalette = {
+  background: '#FFF9F2',
+  surface: '#FFFCF7',
+  surfaceMuted: '#F6ECDD',
+  heading: '#8B6914',
+  text: '#3D3421',
+  textMuted: '#7C6A49',
+  button: '#2C5282',
+  buttonHover: '#356196',
+  buttonPressed: '#1F3C62',
+  accent: '#D4AF37',
+  accentSoft: '#F3E2A1',
+  border: 'rgba(139, 105, 20, 0.14)',
+  overlayBorder: 'rgba(139, 105, 20, 0.2)',
+  shadow: '0 14px 30px rgba(61, 52, 33, 0.08)',
+  glassBackgroundRgb: '255, 249, 242',
+} as const;

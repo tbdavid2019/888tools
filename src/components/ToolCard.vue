@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useThemeVars } from 'naive-ui';
 import FavoriteButton from './FavoriteButton.vue';
+import { warmPalette } from '@/theme/palette';
 import type { Tool } from '@/tools/tools.types';
 
 const props = defineProps<{ tool: Tool & { category: string } }>();
@@ -29,13 +30,24 @@ const theme = useThemeVars();
         </div>
       </div>
 
-      <div class="truncat my-5px text-lg text-black dark:text-white">
+      <div class="tool-title truncat my-5px text-lg">
         {{ tool.name }}
       </div>
 
-      <div class="line-clamp-2 text-neutral-500 dark:text-neutral-400">
+      <div class="tool-description line-clamp-2">
         {{ tool.description }}
       </div>
     </c-card>
   </router-link>
 </template>
+
+<style scoped lang="less">
+.tool-title {
+  color: v-bind('warmPalette.heading');
+  font-weight: 600;
+}
+
+.tool-description {
+  color: v-bind('warmPalette.textMuted');
+}
+</style>

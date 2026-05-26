@@ -1,20 +1,21 @@
 import { defineThemes } from '../theme/theme.models';
+import { warmPalette } from '@/theme/palette';
 
 export const { useTheme } = defineThemes({
   dark: {
-    backgroundColor: '#333333',
-    borderColor: '#333333',
+    backgroundColor: warmPalette.surface,
+    borderColor: warmPalette.border,
 
     focus: {
-      backgroundColor: '#1ea54c1a',
+      backgroundColor: warmPalette.surface,
     },
   },
   light: {
-    backgroundColor: '#ffffff',
-    borderColor: '#e0e0e69e',
+    backgroundColor: warmPalette.surface,
+    borderColor: warmPalette.border,
 
     focus: {
-      backgroundColor: '#ffffff',
+      backgroundColor: warmPalette.surface,
     },
   },
 });

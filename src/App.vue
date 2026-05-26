@@ -5,6 +5,7 @@ import { darkThemeOverrides, lightThemeOverrides } from './themes';
 import { layouts } from './layouts';
 import { useStyleStore } from './stores/style.store';
 import BingBackground from './components/BingBackground.vue';
+import { warmPalette } from './theme/palette';
 
 const route = useRoute();
 const layout = computed(() => route?.meta?.layout ?? layouts.base);
@@ -17,8 +18,7 @@ const { locale } = useI18n();
 
 const layoutBackgroundColor = computed(() => {
   const opacity = styleStore.cardOpacity; // Use raw opacity for better contrast
-  const baseColor = styleStore.isDarkTheme ? '35, 35, 35' : '255, 255, 255';
-  return `rgba(${baseColor}, ${opacity})`;
+  return `rgba(${warmPalette.glassBackgroundRgb}, ${opacity})`;
 });
 
 syncRef(

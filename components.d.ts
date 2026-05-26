@@ -12,6 +12,7 @@ declare module '@vue/runtime-core' {
     '404.page': typeof import('./src/pages/404.page.vue')['default']
     About: typeof import('./src/pages/About.vue')['default']
     App: typeof import('./src/App.vue')['default']
+    AppearanceSettings: typeof import('./src/components/AppearanceSettings.vue')['default']
     AsciiTextDrawer: typeof import('./src/tools/ascii-text-drawer/ascii-text-drawer.vue')['default']
     AudioEditor: typeof import('./src/tools/audio-editor/audio-editor.vue')['default']
     BarcodeGenerator: typeof import('./src/tools/barcode-generator/barcode-generator.vue')['default']

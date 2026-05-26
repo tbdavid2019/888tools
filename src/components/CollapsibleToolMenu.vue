@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { useStorage } from '@vueuse/core';
-import { useThemeVars } from 'naive-ui';
 import { RouterLink, useRoute } from 'vue-router';
 import MenuIconItem from './MenuIconItem.vue';
+import { warmPalette } from '@/theme/palette';
 import type { Tool, ToolCategory } from '@/tools/tools.types';
-import { useStyleStore } from '@/stores/style.store';
 
 const props = withDefaults(defineProps<{ toolsByCategory?: ToolCategory[] }>(), { toolsByCategory: () => [] });
 const { toolsByCategory } = toRefs(props);
@@ -41,27 +40,9 @@ const menuOptions = computed(() =>
     })),
   })),
 );
-
-const themeVars = useThemeVars();
-const styleStore = useStyleStore();
 </script>
 
 <template>
-  <div class="appearance-settings">
-    <div class="section-title">佈局設定</div>
-    <div class="setting-item">
-      <span class="label">Bing 桌布</span>
-      <n-switch v-model:value="styleStore.isBingWallpaperEnabled" size="small" />
-    </div>
-    <div class="setting-item flex-col">
-      <div class="label-row">
-        <span class="label">卡片透明度</span>
-        <span class="value">{{ Math.round(styleStore.cardOpacity * 100) }}%</span>
-      </div>
-      <n-slider v-model:value="styleStore.cardOpacity" :min="0.1" :max="1" :step="0.01" :tooltip="false" />
-    </div>
-  </div>
-
   <div v-for="{ name, tools, isCollapsed } of menuOptions" :key="name">
     <div ml-6px mt-12px flex cursor-pointer items-center op-60 @click="toggleCategoryCollapse({ name })">
       <span :class="{ 'rotate-0': isCollapsed, 'rotate-90': !isCollapsed }" text-16px lh-1 op-50 transition-transform>
@@ -92,50 +73,6 @@ const styleStore = useStyleStore();
 </template>
 
 <style scoped lang="less">
-.appearance-settings {
-  padding: 0 16px;
-  margin-bottom: 20px;
-  margin-top: 10px;
-
-  .section-title {
-    font-size: 14px;
-    font-weight: 600;
-    opacity: 0.5;
-    margin-bottom: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  .setting-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 16px;
-    gap: 12px;
-
-    &.flex-col {
-      flex-direction: column;
-      align-items: stretch;
-      gap: 8px;
-    }
-
-    .label-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .label {
-      font-size: 15px;
-    }
-
-    .value {
-      font-size: 14px;
-      opacity: 0.6;
-    }
-  }
-}
-
 .menu-wrapper {
   display: flex;
   flex-direction: row;
@@ -164,7 +101,7 @@ const styleStore = useStyleStore();
       width: 2px;
       height: 100%;
       content: ' ';
-      background-color: v-bind('themeVars.textColor3');
+      background-color: v-bind('warmPalette.textMuted');
       border-radius: 2px;
       position: absolute;
       top: 0;

@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { NIcon, useThemeVars } from 'naive-ui';
+import { NIcon } from 'naive-ui';
 
 import { RouterLink } from 'vue-router';
 import { Home2, Menu2 } from '@vicons/tabler';
@@ -8,22 +8,21 @@ import { storeToRefs } from 'pinia';
 import HeroGradient from '../assets/hero-gradient.svg?component';
 import MenuLayout from '../components/MenuLayout.vue';
 import NavbarButtons from '../components/NavbarButtons.vue';
+import AppearanceSettings from '../components/AppearanceSettings.vue';
 import { useStyleStore } from '@/stores/style.store';
 import { config } from '@/config';
+import { warmPalette } from '@/theme/palette';
 import type { ToolCategory } from '@/tools/tools.types';
 import { useToolStore } from '@/tools/tools.store';
 import CollapsibleToolMenu from '@/components/CollapsibleToolMenu.vue';
 
-const themeVars = useThemeVars();
 const styleStore = useStyleStore();
 
 const { t } = useI18n();
 
 const layoutBackgroundColor = computed(() => {
   if (!styleStore.isBingWallpaperEnabled) return 'transparent';
-  const opacity = styleStore.cardOpacity; // Use raw opacity for better contrast
-  const baseColor = styleStore.isDarkTheme ? '35, 35, 35' : '255, 255, 255';
-  return `rgba(${baseColor}, ${opacity})`;
+  return `rgba(${warmPalette.glassBackgroundRgb}, ${styleStore.cardOpacity})`;
 });
 
 const toolStore = useToolStore();
@@ -67,8 +66,10 @@ const allToolsCount = computed(() => {
         <CollapsibleToolMenu :tools-by-category="tools" />
         
         <div class="tool-count">
-          Currently {{ allToolsCount }} apps available
+          {{ $t('home.availableApps', { count: allToolsCount }) }}
         </div>
+
+        <AppearanceSettings />
       </div>
     </template>
 
@@ -155,7 +156,8 @@ const allToolsCount = computed(() => {
   -webkit-backdrop-filter: blur(16px);
   margin: 10px auto 20px;
   width: fit-content;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 1px solid v-bind('warmPalette.overlayBorder');
+  box-shadow: v-bind('warmPalette.shadow');
 }
 
 .hero-wrapper {
@@ -176,23 +178,26 @@ const allToolsCount = computed(() => {
     width: 100%;
     text-align: center;
     top: 16px;
-    color: #fff;
+    color: v-bind('warmPalette.text');
 
     .title {
       font-size: 25px;
-      font-weight: 600;
+      font-weight: 700;
+      color: v-bind('warmPalette.heading');
+      letter-spacing: 0.04em;
     }
 
     .divider {
       width: 50px;
       height: 2px;
       border-radius: 4px;
-      background-color: v-bind('themeVars.primaryColor');
+      background-color: v-bind('warmPalette.accent');
       margin: 0 auto 5px;
     }
 
     .subtitle {
       font-size: 16px;
+      color: v-bind('warmPalette.text');
     }
   }
 }
@@ -201,7 +206,7 @@ const allToolsCount = computed(() => {
   margin-top: 20px;
   text-align: center;
   font-size: 12px;
-  color: rgba(156, 163, 175);
+  color: v-bind('warmPalette.textMuted');
   padding-bottom: 20px;
 }
 </style>

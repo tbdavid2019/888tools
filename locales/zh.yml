@@ -5,6 +5,7 @@ home:
     allTools: '全部工具'
     favoritesDndToolTip: '拖放重新排列收藏夹'
   subtitle: '萬用的工具組合站'
+  availableApps: '目前共有 {count} 个工具'
   toggleMenu: '切换菜单'
   home: '主页'
   uiLib: 'UI 库'
@@ -25,6 +26,10 @@ home:
     darkMode: '深色模式'
     lightMode: '浅色模式'
     mode: '颜色模式'
+  settings:
+    title: 显示设置
+    wallpaper: 桌布
+    cardOpacity: 卡片透明度
 about:
   content: >
     # 关于 IT-Tools

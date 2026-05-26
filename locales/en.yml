@@ -5,6 +5,7 @@ home:
     allTools: 'All the tools'
     favoritesDndToolTip: 'Drag and drop to reorder favorites'
   subtitle: 'Handy tools for developers'
+  availableApps: 'Currently {count} apps available'
   toggleMenu: 'Toggle menu'
   home: Home
   uiLib: 'UI Lib'
@@ -27,6 +28,10 @@ home:
     darkMode: 'Dark mode'
     lightMode: 'Light mode'
     mode: 'Toggle dark/light mode'
+  settings:
+    title: Appearance
+    wallpaper: Wallpaper
+    cardOpacity: Card opacity
 about:
   content: >
     # About IT-Tools
@@ -587,7 +592,6 @@ tools:
   post-writer:
     title: "Social Post Formatter"
     description: Format and beautify social media posts. Supports magazine style, broetry style, full-width punctuation conversion, and live FB/IG/Threads previews.
-
 
 
 

@@ -8,6 +8,7 @@ import FavoriteButton from '@/components/FavoriteButton.vue';
 import type { Tool } from '@/tools/tools.types';
 import { useToolStore } from '@/tools/tools.store';
 import { useStyleStore } from '@/stores/style.store';
+import { warmPalette } from '@/theme/palette';
 
 const route = useRoute();
 const toolStore = useToolStore();
@@ -15,9 +16,7 @@ const styleStore = useStyleStore();
 
 const layoutBackgroundColor = computed(() => {
   if (!styleStore.isBingWallpaperEnabled) return 'transparent';
-  const opacity = styleStore.cardOpacity; // Use raw opacity for better contrast
-  const baseColor = styleStore.isDarkTheme ? '35, 35, 35' : '255, 255, 255';
-  return `rgba(${baseColor}, ${opacity})`;
+  return `rgba(${warmPalette.glassBackgroundRgb}, ${styleStore.cardOpacity})`;
 });
 
 const head = computed<HeadObject>(() => ({
@@ -108,6 +107,7 @@ const contentFlexBasis = computed(() => (isWideLayout.value ? '1180px' : '600px'
     border-radius: 24px;
     padding: 30px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border: 1px solid v-bind('warmPalette.overlayBorder');
   }
 
   ::v-deep(& > *) {
@@ -140,21 +140,22 @@ const contentFlexBasis = computed(() => (isWideLayout.value ? '1180px' : '600px'
       font-weight: 400;
       margin: 0;
       line-height: 1;
+      color: v-bind('warmPalette.heading');
     }
 
     .separator {
       width: 200px;
       height: 2px;
-      background: rgb(161, 161, 161);
-      opacity: 0.2;
+      background: v-bind('warmPalette.accent');
+      opacity: 0.45;
 
       margin: 10px 0;
     }
 
     .description {
       margin: 0;
-
-      opacity: 0.7;
+      opacity: 0.9;
+      color: v-bind('warmPalette.text');
     }
   }
 }
@@ -174,8 +175,9 @@ const contentFlexBasis = computed(() => (isWideLayout.value ? '1180px' : '600px'
     background-color: v-bind('layoutBackgroundColor');
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    box-shadow: v-bind('warmPalette.shadow');
     border-top: none;
+    border: 1px solid v-bind('warmPalette.overlayBorder');
   }
 
   .breadcrumb-link {
