@@ -552,6 +552,10 @@ tools:
     title: 音訊編輯器
     description: 編輯音訊檔案（剪輯、濾鏡、特效），支援視覺化波形，完全在客戶端執行。
 
+  lyric-player:
+    title: AI 歌詞播放器
+    description: 使用本機 Whisper 模型辨識或對齊歌詞，支援 LRC 上傳、編輯與匯出。
+
   mic-camera-tester:
     title: 麥克風與攝影機測試
     description: 測試與預覽您的攝影機與麥克風裝置，提供視覺化音量回饋。
@@ -575,7 +579,6 @@ tools:
   post-writer:
     title: "社群貼文排版"
     description: 全程本機處理，提供雜誌感排版與 Broetry 文體排版，自動換行、全形標點符號轉換、標題框線裝飾，并提供 FB/IG/Threads 模擬預覽與字數計算。
-
 
 
 

@@ -42,6 +42,9 @@ const toolDescription = computed<string>(() => t(`tools.${i18nKey.value}.descrip
 
 const currentTool = computed(() => toolStore.tools.find(tool => tool.path === route.path));
 const category = computed(() => currentTool.value?.category);
+const isWideLayout = computed(() => ['/lyric-player'].includes(route.path));
+const contentMaxWidth = computed(() => (isWideLayout.value ? '1180px' : '600px'));
+const contentFlexBasis = computed(() => (isWideLayout.value ? '1180px' : '600px'));
 </script>
 
 <template>
@@ -94,7 +97,7 @@ const category = computed(() => currentTool.value?.category);
   align-items: flex-start;
   flex-wrap: wrap;
   gap: 16px;
-  max-width: 600px;
+  max-width: v-bind('contentMaxWidth');
   margin: 0 auto;
   box-sizing: border-box;
 
@@ -108,12 +111,12 @@ const category = computed(() => currentTool.value?.category);
   }
 
   ::v-deep(& > *) {
-    flex: 0 1 600px;
+    flex: 0 1 v-bind('contentFlexBasis');
   }
 }
 
 .tool-layout {
-  max-width: 600px;
+  max-width: v-bind('contentMaxWidth');
   margin: 0 auto;
   box-sizing: border-box;
 

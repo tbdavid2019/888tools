@@ -106,6 +106,7 @@ import { tool as barcodeScanner } from './barcode-scanner';
 import { tool as imageConverter } from './image-converter';
 import { tool as videoConverter } from './video-converter';
 import { tool as audioEditor } from './audio-editor';
+import { tool as lyricPlayer } from './lyric-player';
 import { tool as micCameraTester } from './mic-camera-tester';
 import { tool as colorCorrection } from './color-correction';
 import { tool as svgTools } from './svg-tools';
@@ -166,9 +167,16 @@ export const toolsByCategory: ToolCategory[] = [
     ],
   },
   {
-    name: 'Images and videos',
-    components: [micCameraTester, colorCorrection, svgTools, removeBackground, imageCompression, videoConverter, audioEditor, barcodeScanner, imageConverter, qrCodeGenerator, qrChecker, wifiQrCodeGenerator, svgPlaceholderGenerator, cameraRecorder, barcodeGenerator],
-
+    name: '圖片',
+    components: [colorCorrection, svgTools, removeBackground, imageCompression, barcodeScanner, imageConverter, qrCodeGenerator, qrChecker, wifiQrCodeGenerator, svgPlaceholderGenerator, barcodeGenerator],
+  },
+  {
+    name: '影片',
+    components: [micCameraTester, videoConverter, cameraRecorder],
+  },
+  {
+    name: '音訊',
+    components: [audioEditor, lyricPlayer],
   },
   {
     name: 'Development',
@@ -198,6 +206,10 @@ export const toolsByCategory: ToolCategory[] = [
     components: [mathEvaluator, etaCalculator, percentageCalculator],
   },
   {
+    name: '編輯區',
+    components: [markdownToHtml, tongWenConverter],
+  },
+  {
     name: 'Text',
     components: [
       loremIpsumGenerator,
@@ -210,8 +222,6 @@ export const toolsByCategory: ToolCategory[] = [
       textToNatoAlphabet,
       textToBinary,
       textToUnicode,
-      tongWenConverter,
-      markdownToHtml,
       fancyTextGenerator,
     ],
   },

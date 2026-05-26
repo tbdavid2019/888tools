@@ -556,6 +556,10 @@ tools:
     title: Audio Editor
     description: Edit audio files (trim, filters, effects) with visual waveform, completely client-side.
 
+  lyric-player:
+    title: AI Lyric Player
+    description: Recognize or align lyrics with a browser-side Whisper model, with LRC upload, editing, and export.
+
   mic-camera-tester:
     title: Mic & Camera Tester
     description: Test and preview your camera and microphone devices with visual feedback.
@@ -579,7 +583,6 @@ tools:
   post-writer:
     title: "Social Post Formatter"
     description: Format and beautify social media posts. Supports magazine style, broetry style, full-width punctuation conversion, and live FB/IG/Threads previews.
-
 
 
 

@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
  
+## Version 2026.05.26
+
+### Features
+- **lyric-player**: 新增「AI 歌詞播放器」工具，支援本機 Whisper 模型下載與瀏覽器端推論，可上傳音訊後自動辨識歌詞、貼上既有歌詞做時間對齊，並支援 LRC 上傳、編輯、簡轉繁與匯出。
+- **layout**: 為 `lyric-player` 新增寬版工具頁配置，避免多欄內容被全站預設 600px 版寬壓縮。
+- **categories**: 將原本 `Images and videos` 拆分為「圖片」、「影片」、「音訊」，並新增「編輯區」分類，將 `Markdown to HTML` 與 `同文堂繁簡轉換器` 移入該分類。
+
 ## Version 2026.05.20
 
 ### Features

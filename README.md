@@ -36,8 +36,16 @@
 | 26  | 繁簡轉換器引擎全面升級為 OpenCC JS，支援高品質的字詞與詞彙對照轉換（如頭髮、理髮、訊息），並應用於同文堂繁簡轉換器、TXT 轉 EPUB 及 EPUB 編輯器（https://tool.david888.com/tongwen-converter ） |
 | 27  | 新增「2026 流行色：數位色票庫」工具（編輯區 分類），提供 Pantone 2026 與 Pinterest 2026 流行色票，支援 Light/Dark 雙模式、一鍵複製 HEX 色碼，並支援首頁效果即時預覽（https://tool.david888.com/find-color ） |
 | 28  | 新增「社群貼文排版」工具（編輯區 分類），提供針對 FB、IG、Threads 等社群平台的換行與排版轉換，支援 Magazine 雜誌風與 Broetry 體轉換，支援字數限制計量，並支援多平台行動端預覽模擬（https://tool.david888.com/post-writer ） |
+| 29  | 新增「AI 歌詞播放器」工具（音訊 分類），使用本機 Whisper 模型於瀏覽器端辨識或對齊歌詞，支援 LRC 上傳、編輯、簡轉繁與匯出（https://tool.david888.com/lyric-player ） |
+| 30  | 分類調整：原本 `Images and videos` 拆分為「圖片 / 影片 / 音訊」，並新增「編輯區」分類，將 Markdown to HTML 與同文堂繁簡轉換器移入該分類 |
 
 ## Changelog
+
+### 2026-05-26
+
+- 新增「AI 歌詞播放器」工具：支援音訊上傳後在瀏覽器端下載並執行 Whisper 模型，可直接辨識歌詞，或先貼歌詞再自動對齊時間，並支援 LRC 上傳、編輯、簡轉繁與匯出（https://tool.david888.com/lyric-player ）
+- 介面調整：`AI 歌詞播放器` 改用寬版雙欄工具頁，提升桌面版可讀性與歌詞區顯示空間
+- 分類重整：原本 `Images and videos` 拆分為「圖片 / 影片 / 音訊」，並新增「編輯區」分類，將 Markdown to HTML 與同文堂繁簡轉換器移入該分類
 
 ### 2026-01-29
 
