@@ -573,13 +573,12 @@ tools:
     description: Open and view CSV, XLSX, XLS spreadsheets directly in the browser.
 
   find-color:
-    title: "2026 Popular Colors: Digital Swatches"
-    description: Pantone and Pinterest 2026 popular colors across 8 design circles. Light/Dark modes, copy HEX codes, and preview landing page layouts.
+    title: "Pantone Palette Library"
+    description: Pantone Color of the Year picks from 2024 to 2026 plus curated trend palettes. Includes Light/Dark previews, visible HEX codes, and one-click palette copy.
 
   post-writer:
     title: "Social Post Formatter"
     description: Format and beautify social media posts. Supports magazine style, broetry style, full-width punctuation conversion, and live FB/IG/Threads previews.
-
 
 
 

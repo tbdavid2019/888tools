@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file. See [standa
 ### Features
 - **editor-category**: 新增「編輯區」工具分類，並將 `html-wysiwyg-editor`（富文本編輯器）移入該分類。
 - **find-color**: 新增「2026 流行色：數位色票庫」工具，提供 Pantone 2026 及 Pinterest 2026 流行色，支援 Light/Dark 模式切換、一鍵複製 HEX 色碼與首頁效果即時預覽。
+- **find-color**: 擴充 Pantone 年度色資料庫，新增 2025 `Mocha Mousse` 與 2024 `Peach Fuzz` Light/Dark 配色，並將工具名稱調整為「潘通色票庫 / Pantone Palette Library」。
 - **post-writer**: 新增「社群貼文排版」工具，支援 FB、IG、Threads 等社群平台的換行與排版轉換，提供 Magazine 雜誌風與 Broetry 體，支援字數限制計量與多平台行動端預覽模擬。
 - **txt-to-epub**: 新增「TXT 轉 EPUB 小說產生器」工具，支援自動章節正則偵測、直書/橫書樣式、自訂封面以及字型子集化精簡與完整嵌入（滿血版）。
 - **epub-editor**: 新增「EPUB 編輯器 / 轉換器」工具，支援本機解壓與打包，並全面重構為 HelloRuru 版的電子書排版優化與轉換功能：

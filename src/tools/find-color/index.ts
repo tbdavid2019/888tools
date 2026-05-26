@@ -6,7 +6,7 @@ export const tool = defineTool({
   name: translate('tools.find-color.title'),
   path: '/find-color',
   description: translate('tools.find-color.description'),
-  keywords: ['color', 'palette', 'pantone', 'pinterest', '2026', 'design', 'brand'],
+  keywords: ['color', 'palette', 'pantone', 'pinterest', '2026', '2025', '2024', 'design', 'brand'],
   component: () => import('./find-color.vue'),
   icon: ColorSwatch,
 });

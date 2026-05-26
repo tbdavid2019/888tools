@@ -512,8 +512,8 @@ tools:
     description: 将文本转换为其 ASCII 二进制表示形式，反之亦然。
 
   find-color:
-    title: "2026 流行色：数码色票库"
-    description: 收录 Pantone 2026 与 Pinterest 2026 流行色，涵盖 8 大设计美学圈。提供 Light/Dark 双模式，一键复制 HEX 色码，并支持网页效果实时预览。
+    title: "潘通色票库"
+    description: 收录 Pantone 2024 至 2026 年度色与精选趋势配色。提供 Light/Dark 双模式、色码常驻显示、一键复制单色或整组色票，并支持网页效果实时预览。
 
   post-writer:
     title: "社群贴文排版"
