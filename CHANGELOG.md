@@ -23,6 +23,7 @@ All notable changes to this project will be documented in this file. See [standa
 ### Bug Fixes
 - **ascii-text-drawer**: 修復當輸入框清空或在反向代理等跨域網域下，因 figlet 載入字型檔失敗而顯示「Current settings resulted in error」的錯誤。
 - **epub-editor**: 修正預設字型（思源黑體、思源宋體、原俠正楷、jf 粉圓）載入失效問題，改為頁面掛載時動態注入 `@font-face` 設定，並在重設與卸載時正確清理。
+- **find-color**: 改版配色展示卡，將各色角色的 HEX 色碼改為常駐顯示，新增單色快速複製與整組色票一鍵複製，並補上繁體中文與英文介面文案 fallback。
 - **ui**: 修正導覽列（.navbar-wrapper）的 `z-index` 層級，確保語系選單下拉選單、搜尋面板不會被下方的 Bento 區塊阻擋。
 
 ## Version 2026.04.24

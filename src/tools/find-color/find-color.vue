@@ -1,61 +1,175 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { useClipboard } from '@vueuse/core';
+import { computed, ref } from 'vue';
 import { useMessage, useThemeVars } from 'naive-ui';
-import { palettes, type Palette } from './palettes';
+import { type Palette, type PaletteColors, palettes } from './palettes';
+import { useCopy } from '@/composable/copy';
 
 const themeVars = useThemeVars();
-
-const { copy } = useClipboard();
+const { copy } = useCopy({ createToast: false });
 const message = useMessage();
+const { locale } = useI18n();
 
-const activeRegion = ref('All');
-const activeMode = ref('All');
+type Region = 'All' | 'Global' | 'Western' | 'Japanese' | 'Taiwan' | 'Korean' | 'Nordic' | 'Mediterranean' | 'Middle East';
+type Mode = 'All' | 'light' | 'dark';
+type ColorRole = keyof PaletteColors;
 
-// Default to the first palette (Cloud Dancer - Light)
+const activeRegion = ref<Region>('All');
+const activeMode = ref<Mode>('All');
 const selectedPalette = ref<Palette>(palettes[0]);
 
-const regions = ['All', 'Global', 'Western', 'Japanese', 'Taiwan', 'Korean', 'Nordic', 'Mediterranean', 'Middle East'];
-const modes = ['All', 'light', 'dark'];
+const regions: Region[] = ['All', 'Global', 'Western', 'Japanese', 'Taiwan', 'Korean', 'Nordic', 'Mediterranean', 'Middle East'];
+const modes: Mode[] = ['All', 'light', 'dark'];
 
-const filteredPalettes = computed(() => {
-  return palettes.filter(p => {
-    const regionMatch = activeRegion.value === 'All' || p.region === activeRegion.value;
-    const modeMatch = activeMode.value === 'All' || p.mode === activeMode.value;
-    return regionMatch && modeMatch;
-  });
-});
+const englishText = {
+  regionLabel: 'Region & design style',
+  modeLabel: 'Light / dark mode',
+  all: 'All',
+  light: 'Light',
+  dark: 'Dark',
+  source: 'Source',
+  applyPreview: 'Apply preview',
+  previewTitle: 'Live palette preview',
+  previewSubtitle: 'Website mockup',
+  copyPalette: 'Copy palette',
+  copiedPalette: 'Palette copied',
+  copiedColor: 'Copied',
+  quickCopy: 'Quick copy',
+  clickToCopy: 'Click to copy',
+  background: 'Background',
+  heading: 'Heading',
+  text: 'Body',
+  button: 'Button',
+  accent: 'Accent',
+  home: 'Home',
+  cases: 'Cases',
+  about: 'About',
+  badge: '2026 POPULAR DESIGN TREND',
+  heroTitle: 'Make Your Designs Feel Alive',
+  heroDesc: 'Explore curated 2026 color systems and preview how each palette behaves in a realistic interface before you commit it to a product or campaign.',
+  primaryAction: 'Try it now',
+  secondaryAction: 'Learn more',
+  featureOneTitle: '01 / Premium visual rhythm',
+  featureOneDesc: 'Keep headings, body text, CTAs, and accents working together instead of choosing colors in isolation.',
+  featureTwoTitle: '02 / Fast implementation',
+  featureTwoDesc: 'Copy a complete color group in one action and hand it directly to design, marketing, or frontend work.',
+  regionsMap: {
+    'All': 'All',
+    'Global': 'Global',
+    'Western': 'Western',
+    'Japanese': 'Japanese',
+    'Taiwan': 'Taiwan',
+    'Korean': 'Korean',
+    'Nordic': 'Nordic',
+    'Mediterranean': 'Mediterranean',
+    'Middle East': 'Middle East',
+  } as Record<Region, string>,
+};
 
-const copyColor = async (hex: string, label: string) => {
+const traditionalChineseText = {
+  regionLabel: '地理與文化風格',
+  modeLabel: '亮色 / 暗色模式',
+  all: '全部',
+  light: '亮色',
+  dark: '暗色',
+  source: '來源',
+  applyPreview: '套用配色預覽',
+  previewTitle: '即時配色套用效果',
+  previewSubtitle: '網頁模型展示',
+  copyPalette: '快速複製色組',
+  copiedPalette: '已複製整組色票',
+  copiedColor: '已複製',
+  quickCopy: '快速複製',
+  clickToCopy: '點擊即可複製',
+  background: '背景',
+  heading: '標題',
+  text: '內文',
+  button: '按鈕',
+  accent: '提示/強調',
+  home: '首頁',
+  cases: '案例',
+  about: '關於我們',
+  badge: '2026 流行設計色彩趨勢',
+  heroTitle: '讓你的設計更有生命感',
+  heroDesc: '探索精選的 2026 配色組合，先在接近真實的介面模型中預覽整體效果，再決定是否套用到品牌、網站或行銷素材。',
+  primaryAction: '立即體驗',
+  secondaryAction: '了解更多',
+  featureOneTitle: '01 / 高級感視覺節奏',
+  featureOneDesc: '不是只挑單一顏色，而是一次看清標題、內文、按鈕與強調色如何一起工作。',
+  featureTwoTitle: '02 / 實作交接更快',
+  featureTwoDesc: '一鍵複製完整色組，直接交給設計、行銷或前端使用，不用再逐顆滑鼠移過去抄色碼。',
+  regionsMap: {
+    'All': '全部',
+    'Global': '全球',
+    'Western': '西方',
+    'Japanese': '日系',
+    'Taiwan': '台灣',
+    'Korean': '韓系',
+    'Nordic': '北歐',
+    'Mediterranean': '地中海',
+    'Middle East': '中東',
+  } as Record<Region, string>,
+};
+
+const uiText = computed(() => (String(locale.value).toLowerCase() === 'zh-tw' ? traditionalChineseText : englishText));
+
+const filteredPalettes = computed(() => palettes.filter((palette) => {
+  const regionMatch = activeRegion.value === 'All' || palette.region === activeRegion.value;
+  const modeMatch = activeMode.value === 'All' || palette.mode === activeMode.value;
+  return regionMatch && modeMatch;
+}));
+
+function getColorEntries(palette: Palette) {
+  const text = uiText.value;
+
+  return [
+    { key: 'background' as ColorRole, label: text.background, value: palette.colors.background, themeClass: 'is-background' },
+    { key: 'heading' as ColorRole, label: text.heading, value: palette.colors.heading, themeClass: 'is-heading' },
+    { key: 'text' as ColorRole, label: text.text, value: palette.colors.text, themeClass: 'is-text' },
+    { key: 'button' as ColorRole, label: text.button, value: palette.colors.button, themeClass: 'is-button' },
+    { key: 'accent' as ColorRole, label: text.accent, value: palette.colors.accent, themeClass: 'is-accent' },
+  ];
+}
+
+async function copyColor(hex: string, label: string) {
   await copy(hex);
-  message.success(`已複製 ${label} 色碼: ${hex}`);
-};
+  message.success(`${uiText.value.copiedColor} ${label}: ${hex}`);
+}
 
-const applyPalette = (palette: Palette) => {
+function buildPaletteCopyText(palette: Palette) {
+  return getColorEntries(palette)
+    .map(({ label, value }) => `${label} ${value}`)
+    .join('\n');
+}
+
+async function copyPalette(palette: Palette) {
+  await copy(buildPaletteCopyText(palette));
+  message.success(`${uiText.value.copiedPalette}: ${palette.name}`);
+}
+
+function applyPalette(palette: Palette) {
   selectedPalette.value = palette;
-  message.success(`已套用配色方案: ${palette.name}`);
-};
+  message.success(`${uiText.value.applyPreview}: ${palette.name}`);
+}
 
 const mockupStyle = computed(() => {
-  const p = selectedPalette.value;
+  const palette = selectedPalette.value;
   return {
-    backgroundColor: p.colors.background,
-    color: p.colors.text,
-    '--heading-color': p.colors.heading,
-    '--button-bg-color': p.colors.button,
-    '--button-text-color': p.colors.background,
-    '--accent-color': p.colors.accent,
-    '--text-color': p.colors.text,
+    'backgroundColor': palette.colors.background,
+    'color': palette.colors.text,
+    '--heading-color': palette.colors.heading,
+    '--button-bg-color': palette.colors.button,
+    '--button-text-color': palette.mode === 'dark' ? '#FFFFFF' : palette.colors.background,
+    '--accent-color': palette.colors.accent,
+    '--text-color': palette.colors.text,
   };
 });
 </script>
 
 <template>
   <div class="find-color-container">
-    <!-- Filter Section -->
     <div class="filters-card">
       <div class="filter-group">
-        <span class="filter-label">地理與文化風格：</span>
+        <span class="filter-label">{{ uiText.regionLabel }}:</span>
         <n-space>
           <n-button
             v-for="region in regions"
@@ -65,13 +179,13 @@ const mockupStyle = computed(() => {
             secondary
             @click="activeRegion = region"
           >
-            {{ region === 'All' ? '全部' : region }}
+            {{ uiText.regionsMap[region] }}
           </n-button>
         </n-space>
       </div>
 
-      <div class="filter-group" style="margin-top: 12px;">
-        <span class="filter-label">亮色/暗色模式：</span>
+      <div class="filter-group filter-group-spaced">
+        <span class="filter-label">{{ uiText.modeLabel }}:</span>
         <n-space>
           <n-button
             v-for="mode in modes"
@@ -81,148 +195,135 @@ const mockupStyle = computed(() => {
             secondary
             @click="activeMode = mode"
           >
-            {{ mode === 'All' ? '全部' : mode === 'light' ? '亮色模式' : '暗色模式' }}
+            {{ mode === 'All' ? uiText.all : mode === 'light' ? uiText.light : uiText.dark }}
           </n-button>
         </n-space>
       </div>
     </div>
 
-    <!-- Main Workspace Layout -->
     <div class="workspace-grid">
-      <!-- Left side: Palette List -->
       <div class="palette-list-container">
         <n-grid :cols="1" :y-gap="16" :x-gap="16" responsive="screen" item-responsive>
-          <n-grid-item v-for="p in filteredPalettes" :key="p.id">
+          <n-grid-item v-for="palette in filteredPalettes" :key="palette.id">
             <n-card class="palette-card" :segmented="{ content: true }">
               <template #header>
                 <div class="card-header-title">
-                  <span class="palette-name">{{ p.name }}</span>
+                  <div class="header-copy">
+                    <span class="palette-name">{{ palette.name }}</span>
+                    <span class="palette-description">{{ palette.description }}</span>
+                  </div>
+
                   <div class="badge-row">
-                    <n-tag size="small" :type="p.mode === 'light' ? 'warning' : 'info'" round>
-                      {{ p.mode === 'light' ? 'Light' : 'Dark' }}
+                    <n-tag size="small" :type="palette.mode === 'light' ? 'warning' : 'info'" round>
+                      {{ palette.mode === 'light' ? uiText.light : uiText.dark }}
                     </n-tag>
                     <n-tag size="small" type="success" round>
-                      {{ p.region }}
+                      {{ uiText.regionsMap[palette.region as Region] ?? palette.region }}
                     </n-tag>
                   </div>
                 </div>
               </template>
 
-              <!-- Planets Swatches Display -->
-              <div class="planets-wrapper">
-                <div class="planets-canvas">
-                  <!-- Background Planet -->
-                  <n-tooltip trigger="hover">
-                    <template #trigger>
-                      <div
-                        class="planet planet-bg"
-                        :style="{ backgroundColor: p.colors.background, border: '1px solid rgba(0,0,0,0.1)' }"
-                        @click="copyColor(p.colors.background, '背景色')"
-                      ></div>
-                    </template>
-                    <span>背景色 (Background): {{ p.colors.background }} - 點擊複製</span>
-                  </n-tooltip>
+              <div class="swatches-showcase">
+                <div class="orbit-line orbit-line-large" />
+                <div class="orbit-line orbit-line-medium" />
+                <div class="orbit-line orbit-line-small" />
 
-                  <!-- Heading Planet -->
-                  <n-tooltip trigger="hover">
-                    <template #trigger>
-                      <div
-                        class="planet planet-heading"
-                        :style="{ backgroundColor: p.colors.heading }"
-                        @click="copyColor(p.colors.heading, '標題文字')"
-                      ></div>
-                    </template>
-                    <span>標題文字 (Heading): {{ p.colors.heading }} - 點擊複製</span>
-                  </n-tooltip>
-
-                  <!-- Text Planet -->
-                  <n-tooltip trigger="hover">
-                    <template #trigger>
-                      <div
-                        class="planet planet-text"
-                        :style="{ backgroundColor: p.colors.text }"
-                        @click="copyColor(p.colors.text, '內文文字')"
-                      ></div>
-                    </template>
-                    <span>內文文字 (Text): {{ p.colors.text }} - 點擊複製</span>
-                  </n-tooltip>
-
-                  <!-- Button Planet -->
-                  <n-tooltip trigger="hover">
-                    <template #trigger>
-                      <div
-                        class="planet planet-button"
-                        :style="{ backgroundColor: p.colors.button }"
-                        @click="copyColor(p.colors.button, '主要按鈕')"
-                      ></div>
-                    </template>
-                    <span>主要按鈕 (Button): {{ p.colors.button }} - 點擊複製</span>
-                  </n-tooltip>
-
-                  <!-- Accent Planet -->
-                  <n-tooltip trigger="hover">
-                    <template #trigger>
-                      <div
-                        class="planet planet-accent"
-                        :style="{ backgroundColor: p.colors.accent }"
-                        @click="copyColor(p.colors.accent, '強調/提示')"
-                      ></div>
-                    </template>
-                    <span>強調色 (Accent): {{ p.colors.accent }} - 點擊複製</span>
-                  </n-tooltip>
-                </div>
+                <button
+                  v-for="entry in getColorEntries(palette)"
+                  :key="entry.key"
+                  class="swatch-item"
+                  :class="entry.themeClass"
+                  type="button"
+                  @click="copyColor(entry.value, entry.label)"
+                >
+                  <span class="swatch-sphere" :style="{ backgroundColor: entry.value }" />
+                  <span class="swatch-label">{{ entry.label }}</span>
+                  <span class="swatch-hex">{{ entry.value }}</span>
+                </button>
               </div>
 
-              <div class="card-footer">
-                <span class="source-tag">來源：{{ p.source }}</span>
-                <n-button size="small" type="primary" @click="applyPalette(p)">
-                  套用配色預覽
-                </n-button>
+              <div class="copy-strip">
+                <div class="copy-strip-meta">
+                  <span class="copy-strip-title">{{ uiText.quickCopy }}</span>
+                  <span class="copy-strip-hint">{{ uiText.clickToCopy }}</span>
+                </div>
+
+                <div class="copy-chip-row">
+                  <button
+                    v-for="entry in getColorEntries(palette)"
+                    :key="`${palette.id}-${entry.key}-chip`"
+                    class="copy-chip"
+                    type="button"
+                    @click="copyColor(entry.value, entry.label)"
+                  >
+                    <span class="copy-chip-label">{{ entry.label }}</span>
+                    <span class="copy-chip-value">{{ entry.value }}</span>
+                  </button>
+                </div>
+
+                <div class="card-footer">
+                  <span class="source-tag">{{ uiText.source }}: {{ palette.source }}</span>
+                  <div class="footer-actions">
+                    <n-button size="small" quaternary @click="copyPalette(palette)">
+                      {{ uiText.copyPalette }}
+                    </n-button>
+                    <n-button size="small" type="primary" @click="applyPalette(palette)">
+                      {{ uiText.applyPreview }}
+                    </n-button>
+                  </div>
+                </div>
               </div>
             </n-card>
           </n-grid-item>
         </n-grid>
       </div>
 
-      <!-- Right side: Sticky Mockup Preview -->
       <div class="preview-container">
         <div class="sticky-wrapper">
           <div class="preview-header-bar">
-            <span>✨ 即時配色套用效果 (網頁模型展示)</span>
-            <n-tag type="warning" size="small">{{ selectedPalette.name }}</n-tag>
+            <span>{{ uiText.previewTitle }} ({{ uiText.previewSubtitle }})</span>
+            <n-tag type="warning" size="small">
+              {{ selectedPalette.name }}
+            </n-tag>
           </div>
 
           <div class="mockup-frame" :style="mockupStyle">
-            <!-- Simulated Landing Page -->
             <div class="mockup-nav">
               <span class="logo">✦ Aurora Studio</span>
               <div class="links">
-                <span>首頁</span>
-                <span>案例</span>
-                <span>關於我們</span>
+                <span>{{ uiText.home }}</span>
+                <span>{{ uiText.cases }}</span>
+                <span>{{ uiText.about }}</span>
               </div>
             </div>
 
             <div class="mockup-hero">
-              <span class="hero-badge">2026 POPULAR DESIGN TREND</span>
-              <h1 class="hero-title">Make Your Designs Feel Alive</h1>
+              <span class="hero-badge">{{ uiText.badge }}</span>
+              <h1 class="hero-title">
+                {{ uiText.heroTitle }}
+              </h1>
               <p class="hero-desc">
-                探索 2026 年度最受歡迎的色彩組合。點擊左側的「套用配色預覽」可即時變更此網頁設計模型的配色樣式，協助您評估在真實 UI 中的視覺表現。
+                {{ uiText.heroDesc }}
               </p>
               <div class="hero-actions">
-                <button class="btn btn-primary">立即體驗</button>
-                <button class="btn btn-outline">了解更多</button>
+                <button class="btn btn-primary">
+                  {{ uiText.primaryAction }}
+                </button>
+                <button class="btn btn-outline">
+                  {{ uiText.secondaryAction }}
+                </button>
               </div>
             </div>
 
             <div class="mockup-features">
               <div class="feature-card">
-                <h3>01 / 簡約視覺美學</h3>
-                <p>將色彩的心理感受融入精準的排版比例中，呈現極致高級感。</p>
+                <h3>{{ uiText.featureOneTitle }}</h3>
+                <p>{{ uiText.featureOneDesc }}</p>
               </div>
               <div class="feature-card">
-                <h3>02 / 無障礙對比度</h3>
-                <p>我們精選的色標方案均考量了標題與內文之間的可讀性與對比。</p>
+                <h3>{{ uiText.featureTwoTitle }}</h3>
+                <p>{{ uiText.featureTwoDesc }}</p>
               </div>
             </div>
           </div>
@@ -243,7 +344,7 @@ const mockupStyle = computed(() => {
 .filters-card {
   background: v-bind('themeVars?.cardColor || "#ffffff"');
   padding: 16px;
-  border-radius: 8px;
+  border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   border: 1px solid rgba(0, 0, 0, 0.05);
 }
@@ -255,19 +356,23 @@ const mockupStyle = computed(() => {
   gap: 8px;
 }
 
+.filter-group-spaced {
+  margin-top: 12px;
+}
+
 .filter-label {
-  font-weight: 500;
-  min-width: 130px;
+  font-weight: 600;
+  min-width: 150px;
 }
 
 .workspace-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1.15fr) minmax(360px, 0.85fr);
   gap: 20px;
   align-items: start;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
   .workspace-grid {
     grid-template-columns: 1fr;
   }
@@ -280,26 +385,37 @@ const mockupStyle = computed(() => {
 }
 
 .palette-card {
-  border-radius: 12px;
+  border-radius: 16px;
   transition: all 0.3s ease;
 }
 
 .palette-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
 }
 
 .card-header-title {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   width: 100%;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 12px;
+}
+
+.header-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .palette-name {
-  font-size: 1.1rem;
-  font-weight: 600;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.palette-description {
+  font-size: 0.92rem;
+  opacity: 0.72;
 }
 
 .badge-row {
@@ -307,88 +423,213 @@ const mockupStyle = computed(() => {
   gap: 6px;
 }
 
-.planets-wrapper {
-  background: rgba(0, 0, 0, 0.02);
-  border-radius: 8px;
-  padding: 24px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: 8px 0;
-  border: 1px dashed rgba(0, 0, 0, 0.05);
-}
-
-.planets-canvas {
+.swatches-showcase {
   position: relative;
-  width: 240px;
-  height: 180px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(90px, 1fr));
+  gap: 12px;
+  align-items: start;
+  padding: 32px 18px 18px;
+  margin: 8px 0 14px;
+  border-radius: 18px;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.78) 0%, rgba(245, 239, 228, 0.44) 100%);
+  border: 1px solid rgba(148, 123, 82, 0.12);
 }
 
-.planet {
+.orbit-line {
   position: absolute;
-  border-radius: 50%;
-  cursor: pointer;
-  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  left: 50%;
+  border: 1px solid rgba(185, 165, 132, 0.12);
+  border-radius: 999px;
+  transform: translateX(-50%);
+  pointer-events: none;
 }
 
-.planet:hover {
-  transform: scale(1.15);
-  z-index: 10;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+.orbit-line-large {
+  top: 52px;
+  width: calc(100% - 32px);
+  height: 108px;
 }
 
-.planet-bg {
-  width: 90px;
-  height: 90px;
+.orbit-line-medium {
+  top: 68px;
+  width: calc(100% - 86px);
+  height: 76px;
+}
+
+.orbit-line-small {
+  top: 84px;
+  width: calc(100% - 160px);
+  height: 44px;
+}
+
+.swatch-item {
+  position: relative;
   z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: inherit;
+  text-align: center;
 }
 
-.planet-heading {
-  width: 70px;
-  height: 70px;
-  left: 20px;
-  top: 15px;
-  z-index: 2;
+.swatch-sphere {
+  position: relative;
+  display: block;
+  border-radius: 50%;
+  box-shadow:
+    inset 10px 10px 18px rgba(255, 255, 255, 0.24),
+    inset -12px -12px 24px rgba(0, 0, 0, 0.14),
+    0 10px 22px rgba(0, 0, 0, 0.14);
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
 }
 
-.planet-text {
+.swatch-sphere::before {
+  content: '';
+  position: absolute;
+  top: 12%;
+  left: 14%;
+  width: 28%;
+  height: 28%;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  filter: blur(1px);
+}
+
+.swatch-item:hover .swatch-sphere {
+  transform: translateY(-3px) scale(1.04);
+  box-shadow:
+    inset 10px 10px 18px rgba(255, 255, 255, 0.26),
+    inset -12px -12px 24px rgba(0, 0, 0, 0.16),
+    0 14px 28px rgba(0, 0, 0, 0.18);
+}
+
+.is-background .swatch-sphere {
+  width: 98px;
+  height: 98px;
+}
+
+.is-heading .swatch-sphere {
+  width: 82px;
+  height: 82px;
+  margin-top: 36px;
+}
+
+.is-text .swatch-sphere {
   width: 60px;
   height: 60px;
-  right: 25px;
-  top: 20px;
-  z-index: 3;
+  margin-top: 24px;
 }
 
-.planet-button {
-  width: 50px;
-  height: 50px;
-  left: 35px;
-  bottom: 20px;
-  z-index: 4;
+.is-button .swatch-sphere {
+  width: 78px;
+  height: 78px;
+  margin-top: 44px;
 }
 
-.planet-accent {
-  width: 42px;
-  height: 42px;
-  right: 35px;
-  bottom: 15px;
-  z-index: 5;
+.is-accent .swatch-sphere {
+  width: 54px;
+  height: 54px;
+  margin-top: 16px;
+}
+
+.swatch-label {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.swatch-hex {
+  font-family: ui-monospace, SFMono-Regular, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace;
+  font-size: 0.86rem;
+  letter-spacing: 0.03em;
+  opacity: 0.76;
+}
+
+.copy-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(212, 175, 55, 0.06);
+  border: 1px solid rgba(212, 175, 55, 0.14);
+}
+
+.copy-strip-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.copy-strip-title {
+  font-weight: 700;
+}
+
+.copy-strip-hint {
+  font-size: 0.84rem;
+  opacity: 0.72;
+}
+
+.copy-chip-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.copy-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 123, 82, 0.16);
+  background: rgba(255, 255, 255, 0.72);
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+  color: inherit;
+}
+
+.copy-chip:hover {
+  transform: translateY(-1px);
+  border-color: rgba(148, 123, 82, 0.28);
+}
+
+.copy-chip-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.copy-chip-value {
+  font-family: ui-monospace, SFMono-Regular, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace;
+  font-size: 0.8rem;
+  opacity: 0.8;
 }
 
 .card-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 12px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.footer-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .source-tag {
-  font-size: 0.8rem;
-  opacity: 0.7;
+  font-size: 0.82rem;
+  opacity: 0.72;
 }
 
 .preview-container {
@@ -398,22 +639,24 @@ const mockupStyle = computed(() => {
 
 .sticky-wrapper {
   background: v-bind('themeVars?.cardColor || "#ffffff"');
-  border-radius: 12px;
+  border-radius: 16px;
   border: 1px solid rgba(0, 0, 0, 0.05);
   padding: 16px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.03);
 }
 
 .preview-header-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
   margin-bottom: 12px;
-  font-weight: 500;
+  font-weight: 600;
+  flex-wrap: wrap;
 }
 
 .mockup-frame {
-  border-radius: 8px;
+  border-radius: 14px;
   padding: 24px;
   min-height: 480px;
   transition: background-color 0.4s ease, color 0.4s ease;
@@ -431,6 +674,7 @@ const mockupStyle = computed(() => {
   font-size: 0.9rem;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
   padding-bottom: 12px;
+  gap: 16px;
 }
 
 .mockup-nav .logo {
@@ -441,6 +685,7 @@ const mockupStyle = computed(() => {
   display: flex;
   gap: 16px;
   opacity: 0.8;
+  flex-wrap: wrap;
 }
 
 .mockup-hero {
@@ -452,16 +697,16 @@ const mockupStyle = computed(() => {
 
 .hero-badge {
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
   padding: 3px 8px;
-  border-radius: 4px;
+  border-radius: 999px;
   background: rgba(0, 0, 0, 0.03);
   border: 1px solid var(--accent-color);
   color: var(--accent-color);
 }
 
 .hero-title {
-  font-size: 1.8rem;
+  font-size: 1.9rem;
   font-weight: 800;
   line-height: 1.2;
   color: var(--heading-color);
@@ -469,9 +714,9 @@ const mockupStyle = computed(() => {
 }
 
 .hero-desc {
-  font-size: 0.95rem;
-  line-height: 1.6;
-  opacity: 0.9;
+  font-size: 0.98rem;
+  line-height: 1.7;
+  opacity: 0.92;
   color: var(--text-color);
   margin: 0;
 }
@@ -480,13 +725,14 @@ const mockupStyle = computed(() => {
   display: flex;
   gap: 12px;
   margin-top: 8px;
+  flex-wrap: wrap;
 }
 
 .btn {
   padding: 8px 18px;
-  border-radius: 6px;
+  border-radius: 999px;
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -498,7 +744,7 @@ const mockupStyle = computed(() => {
 }
 
 .btn-primary:hover {
-  opacity: 0.9;
+  opacity: 0.92;
   transform: translateY(-1px);
 }
 
@@ -528,22 +774,49 @@ const mockupStyle = computed(() => {
 }
 
 .feature-card p {
-  font-size: 0.82rem;
-  line-height: 1.5;
-  opacity: 0.8;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  opacity: 0.84;
   margin: 0;
+}
+
+@media (max-width: 720px) {
+  .swatches-showcase {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding-top: 24px;
+  }
+
+  .swatch-item {
+    min-width: 0;
+  }
+
+  .is-heading .swatch-sphere,
+  .is-text .swatch-sphere,
+  .is-button .swatch-sphere,
+  .is-accent .swatch-sphere {
+    margin-top: 0;
+  }
+
+  .orbit-line {
+    display: none;
+  }
+
+  .mockup-features {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
 
 <style>
-/* 覆寫外層 it-tools 的 tool.layout.vue 限制 */
 .tool-content:has(.find-color-container) {
-  max-width: 1200px !important;
+  max-width: 1320px !important;
 }
+
 .tool-content:has(.find-color-container) > * {
   flex: 1 1 100% !important;
 }
+
 .tool-layout:has(+ .tool-content .find-color-container) {
-  max-width: 1200px !important;
+  max-width: 1320px !important;
 }
 </style>
