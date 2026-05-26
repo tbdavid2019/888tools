@@ -63,6 +63,9 @@ tools:
     crypto: Crypto
     converter: Converter
     web: Web
+    images: Imágenes
+    videos: Videos
+    audio: Audio
     images and videos: 'Images & Videos'
     development: Development
     network: Network
@@ -70,3 +73,6 @@ tools:
     measurement: Measurement
     text: Text
     data: Data
+    pdf: PDF
+    books: Books
+    editor: Editor

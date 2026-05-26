@@ -63,6 +63,9 @@ tools:
     crypto: Krypto
     converter: Konvertering
     web: Web
+    images: Bilder
+    videos: Video
+    audio: Lyd
     images and videos: 'Bilder & Videoer'
     development: Utvikling
     network: Nettverk
@@ -70,6 +73,9 @@ tools:
     measurement: Måling
     text: Tekst
     data: Data
+    pdf: PDF
+    books: Bøker
+    editor: Redigering
 
   password-strength-analyser:
     title: Analyseverktøy for passordstyrke

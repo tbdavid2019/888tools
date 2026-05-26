@@ -63,6 +63,9 @@ tools:
     crypto: Mã hóa
     converter: Chuyển đổi
     web: Web
+    images: Hình ảnh
+    videos: Video
+    audio: Âm thanh
     images and videos: 'Hình ảnh & Video'
     development: Phát triển
     network: Mạng
@@ -70,6 +73,9 @@ tools:
     measurement: Đo lường
     text: Văn bản
     data: Dữ liệu
+    pdf: PDF
+    books: Sách
+    editor: Trình biên tập
 
   password-strength-analyser:
     title: Bộ phân tích độ mạnh mật khẩu

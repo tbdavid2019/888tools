@@ -85,6 +85,9 @@ tools:
     crypto: Krypto
     converter: Konverter
     web: Web
+    images: Bilder
+    videos: Videos
+    audio: Audio
     images and videos: Bilder & Videos
     development: Entwicklung
     network: Netzwerk
@@ -92,6 +95,9 @@ tools:
     measurement: Messung
     text: Text
     data: Daten
+    pdf: PDF
+    books: Bücher
+    editor: Editor
   password-strength-analyser:
     title: Passwortstärken-Analysator
     description: >-

@@ -63,6 +63,9 @@ tools:
     crypto: Крипта
     converter: Конвертер
     web: Веб
+    images: Зображення
+    videos: Відео
+    audio: Аудіо
     images and videos: 'Зображення та відео'
     development: Розробка
     network: Мережа
@@ -70,3 +73,6 @@ tools:
     measurement: Вимірювання
     text: Текст
     data: Дані
+    pdf: PDF
+    books: Книги
+    editor: Редактор

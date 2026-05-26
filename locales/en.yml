@@ -63,6 +63,9 @@ tools:
     crypto: Crypto
     converter: Converter
     web: Web
+    images: Images
+    videos: Videos
+    audio: Audio
     images and videos: 'Images & Videos'
     development: Development
     network: Network
@@ -70,6 +73,7 @@ tools:
     measurement: Measurement
     text: Text
     data: Data
+    pdf: PDF
     books: Books
     editor: Editor
 
@@ -583,7 +587,6 @@ tools:
   post-writer:
     title: "Social Post Formatter"
     description: Format and beautify social media posts. Supports magazine style, broetry style, full-width punctuation conversion, and live FB/IG/Threads previews.
-
 
 
 

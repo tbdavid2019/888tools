@@ -57,6 +57,9 @@ tools:
     crypto: Cryptographie
     converter: Convertisseur
     web: Web
+    images: Images
+    videos: Vidéos
+    audio: Audio
     images and videos: 'Images & Vidéos'
     development: Développement
     network: Réseau
@@ -64,6 +67,9 @@ tools:
     measurement: Mesure
     text: Texte
     data: Données
+    pdf: PDF
+    books: Livres
+    editor: Éditeur
 
   token-generator:
     title: Générateur de token

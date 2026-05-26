@@ -59,6 +59,9 @@ tools:
     crypto: '加密'
     converter: '轉換器'
     web: Web
+    images: '圖片'
+    videos: '影片'
+    audio: '音訊'
     images and videos: '圖片和影片'
     development: '開發'
     network: '網路'
@@ -66,6 +69,7 @@ tools:
     measurement: '測量'
     text: '文字'
     data: '資料'
+    pdf: 'PDF'
     books: '書籍'
     editor: '編輯區'
 
@@ -579,7 +583,6 @@ tools:
   post-writer:
     title: "社群貼文排版"
     description: 全程本機處理，提供雜誌感排版與 Broetry 文體排版，自動換行、全形標點符號轉換、標題框線裝飾，并提供 FB/IG/Threads 模擬預覽與字數計算。
-
 
 
 

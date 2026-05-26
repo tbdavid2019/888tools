@@ -118,15 +118,15 @@ import { tool as epubEditor } from './epub-editor';
 
 export const toolsByCategory: ToolCategory[] = [
   {
-    name: 'Measurement',
+    name: 'measurement',
     components: [chronometer, countdownTimer, worldClock, temperatureConverter, benchmarkBuilder, birthdayCalculator, dogAgeCalculator, catAgeCalculator, onlineClock],
   },
   {
-    name: 'Crypto',
+    name: 'crypto',
     components: [tokenGenerator, hashText, bcrypt, uuidGenerator, ulidGenerator, cypher, bip39, hmacGenerator, rsaKeyPairGenerator, passwordStrengthAnalyser, pdfSignatureChecker],
   },
   {
-    name: 'Converter',
+    name: 'converter',
     components: [
       dateTimeConverter,
       baseConverter,
@@ -147,7 +147,7 @@ export const toolsByCategory: ToolCategory[] = [
     ],
   },
   {
-    name: 'Web',
+    name: 'web',
     components: [
       urlEncoder,
       htmlEntities,
@@ -167,19 +167,19 @@ export const toolsByCategory: ToolCategory[] = [
     ],
   },
   {
-    name: '圖片',
+    name: 'images',
     components: [colorCorrection, svgTools, removeBackground, imageCompression, barcodeScanner, imageConverter, qrCodeGenerator, qrChecker, wifiQrCodeGenerator, svgPlaceholderGenerator, barcodeGenerator],
   },
   {
-    name: '影片',
+    name: 'videos',
     components: [micCameraTester, videoConverter, cameraRecorder],
   },
   {
-    name: '音訊',
+    name: 'audio',
     components: [audioEditor, lyricPlayer],
   },
   {
-    name: 'Development',
+    name: 'development',
     components: [
       gitMemo,
       randomPortGenerator,
@@ -198,19 +198,19 @@ export const toolsByCategory: ToolCategory[] = [
     ],
   },
   {
-    name: 'Network',
+    name: 'network',
     components: [ipv4SubnetCalculator, ipv4AddressConverter, ipv4RangeExpander, macAddressLookup, macAddressGenerator, ipv6UlaGenerator],
   },
   {
-    name: 'Math',
+    name: 'math',
     components: [mathEvaluator, etaCalculator, percentageCalculator],
   },
   {
-    name: '編輯區',
-    components: [markdownToHtml, tongWenConverter],
+    name: 'editor',
+    components: [htmlWysiwygEditor, findColor, postWriter, markdownToHtml, tongWenConverter],
   },
   {
-    name: 'Text',
+    name: 'text',
     components: [
       loremIpsumGenerator,
       textStatistics,
@@ -226,20 +226,16 @@ export const toolsByCategory: ToolCategory[] = [
     ],
   },
   {
-    name: 'Data',
+    name: 'data',
     components: [csvExcelViewer, phoneParserAndFormatter, ibanValidatorAndParser],
   },
   {
-    name: 'PDF',
+    name: 'pdf',
     components: [pdfTools],
   },
   {
-    name: 'Books',
+    name: 'books',
     components: [txtToEpub, epubEditor],
-  },
-  {
-    name: 'Editor',
-    components: [htmlWysiwygEditor, findColor, postWriter],
   },
 ];
 
