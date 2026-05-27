@@ -45,11 +45,11 @@ syncRef(
 
 <style>
 @font-face {
-  font-family: 'Iansui';
-  src: url('/fonts/Iansui-Regular.woff2') format('woff2');
+  font-family: 'Maple Mono';
+  src: url('/fonts/MapleMono-wght-VF.woff2') format('woff2');
   font-display: swap;
   font-style: normal;
-  font-weight: 400;
+  font-weight: 100 900;
 }
 
 body {
@@ -57,7 +57,7 @@ body {
   margin: 0;
   padding: 0;
   background-color: transparent !important;
-  font-family: 'Iansui', 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+  font-family: 'Maple Mono', 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
 }
 
 html {
@@ -65,6 +65,12 @@ html {
   margin: 0;
   padding: 0;
   background-color: transparent !important;
+  font-family: 'Maple Mono', 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+}
+
+#app,
+.n-config-provider {
+  font-family: 'Maple Mono', 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
 }
 
 * {

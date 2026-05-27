@@ -45,7 +45,7 @@ const allToolsCount = computed(() => {
         <HeroGradient class="gradient" />
         <div class="text-wrapper">
           <div class="title">
-            Tool.David888.com
+            888 Tool
           </div>
           <div class="divider" />
           <div class="subtitle">
@@ -178,26 +178,33 @@ const allToolsCount = computed(() => {
     width: 100%;
     text-align: center;
     top: 16px;
-    color: v-bind('warmPalette.text');
+    color: #fffaf0;
+    text-shadow: 0 2px 10px rgba(61, 52, 33, 0.28);
 
     .title {
-      font-size: 25px;
+      font-size: clamp(16px, 1.5vw, 21px);
       font-weight: 700;
-      color: v-bind('warmPalette.heading');
+      color: #fffdf7;
       letter-spacing: 0.04em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding: 0 12px;
     }
 
     .divider {
-      width: 50px;
+      width: 42px;
       height: 2px;
       border-radius: 4px;
-      background-color: v-bind('warmPalette.accent');
+      background-color: rgba(255, 249, 242, 0.92);
       margin: 0 auto 5px;
     }
 
     .subtitle {
-      font-size: 16px;
-      color: v-bind('warmPalette.text');
+      font-size: 12px;
+      line-height: 1.35;
+      color: rgba(255, 249, 242, 0.96);
+      padding: 0 16px;
     }
   }
 }

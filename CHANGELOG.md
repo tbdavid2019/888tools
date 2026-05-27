@@ -8,6 +8,9 @@ All notable changes to this project will be documented in this file. See [standa
 - **lyric-player**: 新增「AI 歌詞播放器」工具，支援本機 Whisper 模型下載與瀏覽器端推論，可上傳音訊後自動辨識歌詞、貼上既有歌詞做時間對齊，並支援 LRC 上傳、編輯、簡轉繁與匯出。
 - **layout**: 為 `lyric-player` 新增寬版工具頁配置，避免多欄內容被全站預設 600px 版寬壓縮。
 - **categories**: 將原本 `Images and videos` 拆分為「圖片」、「影片」、「音訊」，並新增「編輯區」分類，將 `Markdown to HTML` 與 `同文堂繁簡轉換器` 移入該分類。
+- **ui**: 首頁側欄外觀改版，新增顯示設定區塊、統一暖色系主題、預設分類折疊、品牌字樣簡化為 `888 Tool`。
+- **fonts**: 全站預設字體改為內建 `Maple Mono` variable webfont，並套用到 Naive UI 主題與全域介面。
+- **layout**: 全工具頁桌面版統一改為寬版配置，改善 `svg-tools` 等多欄工具的可用空間，同時保留手機版單欄 RWD。
 
 ## Version 2026.05.20
 

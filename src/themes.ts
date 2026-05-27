@@ -1,8 +1,11 @@
 import type { GlobalThemeOverrides } from 'naive-ui';
 import { warmPalette } from './theme/palette';
 
+const appFontFamily = '\'Maple Mono\', \'Noto Sans TC\', \'PingFang TC\', \'Microsoft JhengHei\', sans-serif';
+
 export const lightThemeOverrides: GlobalThemeOverrides = {
   common: {
+    fontFamily: appFontFamily,
     bodyColor: warmPalette.background,
     cardColor: warmPalette.surface,
     modalColor: warmPalette.surface,
@@ -67,6 +70,7 @@ export const lightThemeOverrides: GlobalThemeOverrides = {
 
 export const darkThemeOverrides: GlobalThemeOverrides = {
   common: {
+    fontFamily: appFontFamily,
     bodyColor: warmPalette.background,
     cardColor: warmPalette.surface,
     modalColor: warmPalette.surface,

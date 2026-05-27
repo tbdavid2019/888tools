@@ -38,6 +38,8 @@
 | 28  | 新增「社群貼文排版」工具（編輯區 分類），提供針對 FB、IG、Threads 等社群平台的換行與排版轉換，支援 Magazine 雜誌風與 Broetry 體轉換，支援字數限制計量，並支援多平台行動端預覽模擬（https://tool.david888.com/post-writer ） |
 | 29  | 新增「AI 歌詞播放器」工具（音訊 分類），使用本機 Whisper 模型於瀏覽器端辨識或對齊歌詞，支援 LRC 上傳、編輯、簡轉繁與匯出（https://tool.david888.com/lyric-player ） |
 | 30  | 分類調整：原本 `Images and videos` 拆分為「圖片 / 影片 / 音訊」，並新增「編輯區」分類，將 Markdown to HTML 與同文堂繁簡轉換器移入該分類 |
+| 31  | 首頁介面與品牌調整：側欄新增顯示設定區塊、改用暖色系主題，品牌字樣簡化為 `888 Tool`，並將所有工具頁桌面版統一改為寬版配置 |
+| 32  | 全站預設字體改為內建 `Maple Mono` variable webfont，套用於首頁、工具頁與 Naive UI 元件 |
 
 ## Changelog
 
@@ -46,6 +48,8 @@
 - 新增「AI 歌詞播放器」工具：支援音訊上傳後在瀏覽器端下載並執行 Whisper 模型，可直接辨識歌詞，或先貼歌詞再自動對齊時間，並支援 LRC 上傳、編輯、簡轉繁與匯出（https://tool.david888.com/lyric-player ）
 - 介面調整：`AI 歌詞播放器` 改用寬版雙欄工具頁，提升桌面版可讀性與歌詞區顯示空間
 - 分類重整：原本 `Images and videos` 拆分為「圖片 / 影片 / 音訊」，並新增「編輯區」分類，將 Markdown to HTML 與同文堂繁簡轉換器移入該分類
+- 側欄與品牌更新：顯示設定區塊移至工具總數下方、主題配色改為暖色系、預設分類折疊、品牌字樣簡化為 `888 Tool`
+- 全站字體與版面更新：內建 `Maple Mono` variable webfont 作為預設字體，並將工具頁桌面版統一調整為寬版，同時保留手機版單欄 RWD
 
 ### 2026-01-29
 
