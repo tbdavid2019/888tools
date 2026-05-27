@@ -44,11 +44,20 @@ syncRef(
 </template>
 
 <style>
+@font-face {
+  font-family: 'Iansui';
+  src: url('/fonts/Iansui-Regular.woff2') format('woff2');
+  font-display: swap;
+  font-style: normal;
+  font-weight: 400;
+}
+
 body {
   min-height: 100%;
   margin: 0;
   padding: 0;
   background-color: transparent !important;
+  font-family: 'Iansui', 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
 }
 
 html {
@@ -60,6 +69,13 @@ html {
 
 * {
   box-sizing: border-box;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
 }
 
 /* Global overrides for Naive UI layouts when wallpaper is enabled */

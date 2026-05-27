@@ -41,9 +41,8 @@ const toolDescription = computed<string>(() => t(`tools.${i18nKey.value}.descrip
 
 const currentTool = computed(() => toolStore.tools.find(tool => tool.path === route.path));
 const category = computed(() => currentTool.value?.category);
-const isWideLayout = computed(() => ['/lyric-player'].includes(route.path));
-const contentMaxWidth = computed(() => (isWideLayout.value ? '1180px' : '600px'));
-const contentFlexBasis = computed(() => (isWideLayout.value ? '1180px' : '600px'));
+const contentMaxWidth = computed(() => '1180px');
+const contentFlexBasis = computed(() => '520px');
 </script>
 
 <template>
@@ -96,6 +95,7 @@ const contentFlexBasis = computed(() => (isWideLayout.value ? '1180px' : '600px'
   align-items: flex-start;
   flex-wrap: wrap;
   gap: 16px;
+  width: 100%;
   max-width: v-bind('contentMaxWidth');
   margin: 0 auto;
   box-sizing: border-box;
@@ -116,6 +116,7 @@ const contentFlexBasis = computed(() => (isWideLayout.value ? '1180px' : '600px'
 }
 
 .tool-layout {
+  width: 100%;
   max-width: v-bind('contentMaxWidth');
   margin: 0 auto;
   box-sizing: border-box;
@@ -192,6 +193,41 @@ const contentFlexBasis = computed(() => (isWideLayout.value ? '1180px' : '600px'
   .breadcrumb-separator {
     margin: 0 12px;
     opacity: 0.4;
+  }
+}
+
+@media (max-width: 700px) {
+  .tool-content {
+    gap: 12px;
+
+    &.glass-effect {
+      padding: 18px;
+      border-radius: 20px;
+    }
+
+    ::v-deep(& > *) {
+      flex-basis: 100%;
+      min-width: 0;
+    }
+  }
+
+  .tool-layout .tool-header {
+    padding: 28px 20px;
+
+    .n-h1 {
+      font-size: 32px;
+      line-height: 1.1;
+    }
+
+    .separator {
+      width: 120px;
+    }
+  }
+
+  .tool-breadcrumb {
+    margin-top: 32px;
+    padding: 14px 18px;
+    max-width: 100%;
   }
 }
 </style>
