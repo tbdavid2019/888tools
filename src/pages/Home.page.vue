@@ -12,7 +12,7 @@ import { config } from '@/config';
 const toolStore = useToolStore();
 const styleStore = useStyleStore();
 
-useHead({ title: 'tool.david888 - Handy online tools for developers' });
+useHead({ title: 'Tool.David888.com - Creative tools for text, media, and everyday work' });
 const { t } = useI18n();
 
 const favoriteTools = computed(() => toolStore.favoriteTools);
@@ -119,4 +119,3 @@ function onUpdateFavoriteTools() {
   }
 }
 </style>
-

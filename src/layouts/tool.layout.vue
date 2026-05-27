@@ -20,7 +20,7 @@ const layoutBackgroundColor = computed(() => {
 });
 
 const head = computed<HeadObject>(() => ({
-  title: `${route.meta.name} - tool.david888`,
+  title: `${route.meta.name} - Tool.David888.com`,
   meta: [
     {
       name: 'description',

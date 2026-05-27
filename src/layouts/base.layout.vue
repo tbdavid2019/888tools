@@ -45,7 +45,7 @@ const allToolsCount = computed(() => {
         <HeroGradient class="gradient" />
         <div class="text-wrapper">
           <div class="title">
-            DAVID888 TOOL
+            Tool.David888.com
           </div>
           <div class="divider" />
           <div class="subtitle">

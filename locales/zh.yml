@@ -4,7 +4,7 @@ home:
     favoriteTools: '我的收藏'
     allTools: '全部工具'
     favoritesDndToolTip: '拖放重新排列收藏夹'
-  subtitle: '萬用的工具組合站'
+  subtitle: '文字、影音与日常工作工具箱'
   availableApps: '目前共有 {count} 个工具'
   toggleMenu: '切换菜单'
   home: '主页'

@@ -13,7 +13,7 @@ const makeLabel = (tool: Tool) => () => h(RouterLink, { to: tool.path }, { defau
 const makeIcon = (tool: Tool) => () => h(MenuIconItem, { tool });
 
 const collapsedCategories = useStorage<Record<string, boolean>>(
-  'menu-tool-option:collapsed-categories',
+  'menu-tool-option:collapsed-categories:v2',
   {},
   undefined,
   {
