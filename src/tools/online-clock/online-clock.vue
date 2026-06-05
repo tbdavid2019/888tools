@@ -464,7 +464,7 @@ const flipDigits = computed(() => {
 .number,
 .flip :deep(.digit),
 .chinese-row.main {
-  font-family: monospace !important;
+  font-family: 'Maple Mono', 'JetBrains Mono', monospace !important;
 }
 
 .date {

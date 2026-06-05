@@ -52,12 +52,20 @@ syncRef(
   font-weight: 100 900;
 }
 
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('/fonts/JetBrainsMono-Medium.woff2') format('woff2');
+  font-display: swap;
+  font-style: normal;
+  font-weight: 500;
+}
+
 body {
   min-height: 100%;
   margin: 0;
   padding: 0;
   background-color: transparent !important;
-  font-family: 'Maple Mono', 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+  font-family: 'Maple Mono', 'JetBrains Mono', 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
 }
 
 html {
@@ -65,12 +73,12 @@ html {
   margin: 0;
   padding: 0;
   background-color: transparent !important;
-  font-family: 'Maple Mono', 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+  font-family: 'Maple Mono', 'JetBrains Mono', 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
 }
 
 #app,
 .n-config-provider {
-  font-family: 'Maple Mono', 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+  font-family: 'Maple Mono', 'JetBrains Mono', 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
 }
 
 * {
