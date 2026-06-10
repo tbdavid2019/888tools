@@ -151,6 +151,23 @@ function applyPalette(palette: Palette) {
   message.success(`${uiText.value.applyPreview}: ${palette.name}`);
 }
 
+function getReadableTextColor(hex: string) {
+  const normalizedHex = hex.replace('#', '');
+  const safeHex = normalizedHex.length >= 6 ? normalizedHex.slice(0, 6) : normalizedHex.padEnd(6, '0');
+  const color = Number.parseInt(safeHex, 16);
+  const red = (color >> 16) & 255;
+  const green = (color >> 8) & 255;
+  const blue = color & 255;
+
+  const toLinear = (channel: number) => {
+    const value = channel / 255;
+    return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+  };
+
+  const luminance = (0.2126 * toLinear(red)) + (0.7152 * toLinear(green)) + (0.0722 * toLinear(blue));
+  return luminance > 0.36 ? '#1F1714' : '#FFF9F5';
+}
+
 const mockupStyle = computed(() => {
   const palette = selectedPalette.value;
   return {
@@ -158,7 +175,7 @@ const mockupStyle = computed(() => {
     'color': palette.colors.text,
     '--heading-color': palette.colors.heading,
     '--button-bg-color': palette.colors.button,
-    '--button-text-color': palette.mode === 'dark' ? '#FFFFFF' : palette.colors.background,
+    '--button-text-color': getReadableTextColor(palette.colors.button),
     '--accent-color': palette.colors.accent,
     '--text-color': palette.colors.text,
   };
@@ -265,10 +282,10 @@ const mockupStyle = computed(() => {
                 <div class="card-footer">
                   <span class="source-tag">{{ uiText.source }}: {{ palette.source }}</span>
                   <div class="footer-actions">
-                    <n-button size="small" quaternary @click="copyPalette(palette)">
+                    <n-button class="copy-palette-button" size="small" quaternary @click="copyPalette(palette)">
                       {{ uiText.copyPalette }}
                     </n-button>
-                    <n-button size="small" type="primary" @click="applyPalette(palette)">
+                    <n-button class="apply-preview-button" size="small" type="primary" @click="applyPalette(palette)">
                       {{ uiText.applyPreview }}
                     </n-button>
                   </div>
@@ -590,16 +607,18 @@ const mockupStyle = computed(() => {
   gap: 8px;
   padding: 8px 10px;
   border-radius: 999px;
-  border: 1px solid rgba(148, 123, 82, 0.16);
-  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(167, 138, 93, 0.34);
+  background: rgba(253, 247, 236, 0.96);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
   cursor: pointer;
-  transition: transform 0.2s ease, border-color 0.2s ease;
-  color: inherit;
+  transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+  color: #4f372d;
 }
 
 .copy-chip:hover {
   transform: translateY(-1px);
-  border-color: rgba(148, 123, 82, 0.28);
+  border-color: rgba(167, 138, 93, 0.56);
+  background: rgba(255, 243, 222, 1);
 }
 
 .copy-chip-label {
@@ -610,7 +629,7 @@ const mockupStyle = computed(() => {
 .copy-chip-value {
   font-family: ui-monospace, SFMono-Regular, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace;
   font-size: 0.8rem;
-  opacity: 0.8;
+  color: #8a623d;
 }
 
 .card-footer {
@@ -625,6 +644,31 @@ const mockupStyle = computed(() => {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.footer-actions :deep(.copy-palette-button) {
+  background: rgba(255, 242, 214, 0.18) !important;
+  border: 1px solid rgba(224, 193, 135, 0.36) !important;
+  color: #ecd9ac !important;
+}
+
+.footer-actions :deep(.copy-palette-button:hover) {
+  background: rgba(255, 242, 214, 0.26) !important;
+  border-color: rgba(234, 204, 145, 0.56) !important;
+  color: #fff2cb !important;
+}
+
+.footer-actions :deep(.apply-preview-button) {
+  background: linear-gradient(135deg, #5f80d9 0%, #8aa4f2 100%) !important;
+  border: 1px solid rgba(166, 190, 255, 0.52) !important;
+  color: #111827 !important;
+  box-shadow: 0 8px 18px rgba(69, 103, 190, 0.26);
+}
+
+.footer-actions :deep(.apply-preview-button:hover) {
+  background: linear-gradient(135deg, #6d8de4 0%, #99b1f5 100%) !important;
+  border-color: rgba(191, 209, 255, 0.72) !important;
+  color: #0f172a !important;
 }
 
 .source-tag {

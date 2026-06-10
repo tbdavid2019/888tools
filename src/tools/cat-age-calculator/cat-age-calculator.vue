@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import { useThemeVars } from 'naive-ui';
 import { useI18n } from 'vue-i18n';
 import { calculateHumanMonthsFromPetAge, normalizePetMonths, toYearsAndMonths } from '../pet-age-calculator/pet-age';
 
 const { t } = useI18n();
+const themeVars = useThemeVars();
 const years = ref<number | null>(0);
 const months = ref<number | null>(0);
 
@@ -31,23 +33,27 @@ function recalculate() {
 </script>
 
 <template>
-  <c-card>
+  <c-card class="cat-age-card">
     <n-space vertical size="large">
       <n-form label-placement="top" label-width="auto">
         <n-grid cols="1 640:2" x-gap="16" y-gap="8">
           <n-form-item-gi :span="1" :label="t('tools.cat-age-calculator.fields.age')" path="age">
-            <n-space>
+            <n-space class="age-input-row">
               <n-input-number v-model:value="years" :min="0" :max="40" :precision="0" />
-              <span>{{ t('tools.cat-age-calculator.units.years') }}</span>
+              <span class="input-unit">{{ t('tools.cat-age-calculator.units.years') }}</span>
               <n-input-number v-model:value="months" :min="0" :max="11" :precision="0" />
-              <span>{{ t('tools.cat-age-calculator.units.months') }}</span>
+              <span class="input-unit">{{ t('tools.cat-age-calculator.units.months') }}</span>
             </n-space>
           </n-form-item-gi>
         </n-grid>
         <n-form-item>
           <n-space>
-            <c-button type="primary" @click="recalculate">{{ t('tools.cat-age-calculator.actions.calculate') }}</c-button>
-            <c-button quaternary @click="reset">{{ t('tools.cat-age-calculator.actions.reset') }}</c-button>
+            <c-button type="primary" @click="recalculate">
+              {{ t('tools.cat-age-calculator.actions.calculate') }}
+            </c-button>
+            <c-button quaternary @click="reset">
+              {{ t('tools.cat-age-calculator.actions.reset') }}
+            </c-button>
           </n-space>
         </n-form-item>
       </n-form>
@@ -72,6 +78,34 @@ function recalculate() {
 </template>
 
 <style scoped>
+.cat-age-card {
+  width: 100%;
+}
+
+.age-input-row {
+  align-items: center;
+}
+
+.input-unit {
+  color: v-bind('themeVars.textColor2');
+  font-weight: 600;
+}
+
+.cat-age-card :deep(.n-form-item-label__text),
+.cat-age-card :deep(.n-card-header__main) {
+  color: v-bind('themeVars.textColor1');
+}
+
+.cat-age-card :deep(.n-input-number),
+.cat-age-card :deep(.n-input-number .n-input__input-el),
+.cat-age-card :deep(.n-input-number .n-input__placeholder) {
+  color: v-bind('themeVars.textColor1');
+}
+
+.cat-age-card :deep(.n-input-number .n-input-wrapper) {
+  background-color: v-bind('themeVars.inputColor');
+}
+
 .result-row {
   display: flex;
   gap: 24px;
@@ -91,11 +125,17 @@ function recalculate() {
 
 .unit {
   font-size: 14px;
-  color: var(--text-color-2);
+  color: v-bind('themeVars.textColor2');
   font-weight: 500;
 }
 
 .hint {
-  color: var(--text-color-3);
+  color: v-bind('themeVars.textColor2');
+}
+
+@media (max-width: 700px) {
+  .age-input-row {
+    align-items: flex-start;
+  }
 }
 </style>

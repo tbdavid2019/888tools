@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
  
+## Version 2026.06.10
+
+### Bug Fixes
+- **theme**: 修正 Kanagawa Light/Dark 主題 token 映射錯誤，避免 light mode 誤用 dark palette，並讓 `c-card` 在亮色模式下改回正確的 Kanagawa 淺色玻璃背景。
+- **world-clock**: 修正世界時間卡片未完整套用 Kanagawa 主題色的問題，統一本地時間卡與各洲時區卡片的背景、邊框、文字與分隔線色彩，並維持桌面版寬屏多欄排列。
+- **cat-age-calculator**: 修正 dark mode 下表單標籤、單位字與結果提示字過暗導致難以閱讀的問題。
+- **find-color**: 提升色票頁操作按鈕與快速複製 chip 的對比，避免淺色文字在深色卡片上難以辨識。
+
+### Features
+- **svg-tools**: 重構 SVG 工具箱編輯器版面，改為寬屏雙欄配置，整理上傳/複製/下載操作區，並改善預覽區在桌面版的可用空間與 RWD 表現。
+
 ## Version 2026.05.26
 
 ### Features

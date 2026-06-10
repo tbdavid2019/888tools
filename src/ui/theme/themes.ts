@@ -1,12 +1,12 @@
 import { defineThemes } from './theme.models';
-import { kanagawaPalette } from '@/theme/palette';
+import { kanagawaDarkPalette, kanagawaLightPalette } from '@/theme/palette';
 
 export const { themes: appThemes, useTheme: useAppTheme } = defineThemes({
   light: {
-    background: kanagawaPalette.background,
+    background: kanagawaLightPalette.background,
     text: {
-      baseColor: kanagawaPalette.text,
-      mutedColor: kanagawaPalette.textMuted,
+      baseColor: kanagawaLightPalette.text,
+      mutedColor: kanagawaLightPalette.textMuted,
     },
     default: {
       color: 'rgba(139, 105, 20, 0.07)',
@@ -14,19 +14,19 @@ export const { themes: appThemes, useTheme: useAppTheme } = defineThemes({
       colorPressed: 'rgba(139, 105, 20, 0.18)',
     },
     primary: {
-      color: kanagawaPalette.button,
-      colorHover: kanagawaPalette.buttonHover,
-      colorPressed: kanagawaPalette.buttonPressed,
+      color: kanagawaLightPalette.button,
+      colorHover: kanagawaLightPalette.buttonHover,
+      colorPressed: kanagawaLightPalette.buttonPressed,
       colorFaded: '#2C528220',
     },
     warning: {
-      color: kanagawaPalette.accent,
+      color: kanagawaLightPalette.accent,
       colorHover: '#dfbe57',
       colorPressed: '#b99624',
       colorFaded: '#D4AF3726',
     },
     success: {
-      color: kanagawaPalette.accent,
+      color: kanagawaLightPalette.accent,
       colorHover: '#dfbe57',
       colorPressed: '#b99624',
       colorFaded: '#D4AF3726',
@@ -39,10 +39,10 @@ export const { themes: appThemes, useTheme: useAppTheme } = defineThemes({
     },
   },
   dark: {
-    background: kanagawaPalette.background,
+    background: kanagawaDarkPalette.background,
     text: {
-      baseColor: kanagawaPalette.text,
-      mutedColor: kanagawaPalette.textMuted,
+      baseColor: kanagawaDarkPalette.text,
+      mutedColor: kanagawaDarkPalette.textMuted,
     },
     default: {
       color: 'rgba(139, 105, 20, 0.07)',
@@ -50,19 +50,19 @@ export const { themes: appThemes, useTheme: useAppTheme } = defineThemes({
       colorPressed: 'rgba(139, 105, 20, 0.18)',
     },
     primary: {
-      color: kanagawaPalette.button,
-      colorHover: kanagawaPalette.buttonHover,
-      colorPressed: kanagawaPalette.buttonPressed,
+      color: kanagawaDarkPalette.button,
+      colorHover: kanagawaDarkPalette.buttonHover,
+      colorPressed: kanagawaDarkPalette.buttonPressed,
       colorFaded: '#2C528220',
     },
     warning: {
-      color: kanagawaPalette.accent,
+      color: kanagawaDarkPalette.accent,
       colorHover: '#dfbe57',
       colorPressed: '#b99624',
       colorFaded: '#D4AF3726',
     },
     success: {
-      color: kanagawaPalette.accent,
+      color: kanagawaDarkPalette.accent,
       colorHover: '#dfbe57',
       colorPressed: '#b99624',
       colorFaded: '#D4AF3726',

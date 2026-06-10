@@ -1,8 +1,11 @@
 <script setup lang="ts">
+import { useThemeVars } from 'naive-ui';
+
+const themeVars = useThemeVars();
 const show24h = ref(true);
 const now = ref(new Date());
 
-const formatTime = (tz: string) => {
+function formatTime(tz: string) {
   const formatter = new Intl.DateTimeFormat('en-GB', {
     hour: '2-digit',
     minute: '2-digit',
@@ -10,9 +13,9 @@ const formatTime = (tz: string) => {
     timeZone: tz,
   });
   return formatter.format(now.value);
-};
+}
 
-const formatDay = (tz: string) => {
+function formatDay(tz: string) {
   const formatter = new Intl.DateTimeFormat('en-GB', {
     weekday: 'short',
     day: '2-digit',
@@ -20,7 +23,7 @@ const formatDay = (tz: string) => {
     timeZone: tz,
   });
   return formatter.format(now.value);
-};
+}
 
 const localTime = computed(() => ({
   time: new Intl.DateTimeFormat('en-GB', {
@@ -129,14 +132,18 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
-  if (timer) window.clearInterval(timer);
+  if (timer) {
+    window.clearInterval(timer);
+  }
 });
 </script>
 
 <template>
-  <c-card>
+  <c-card class="world-clock-card">
     <div class="header">
-      <div class="title">{{ $t('tools.world-clock.title') }}</div>
+      <div class="title">
+        {{ $t('tools.world-clock.title') }}
+      </div>
       <div class="actions">
         <c-button size="small" @click="show24h = !show24h">
           {{ show24h ? '24h' : '12h' }}
@@ -144,20 +151,34 @@ onBeforeUnmount(() => {
       </div>
     </div>
     <n-card size="small" class="local">
-      <div class="local-title">{{ $t('tools.world-clock.local') }}</div>
-      <div class="local-time">{{ localTime.time }}</div>
-      <div class="local-day">{{ localTime.day }}</div>
+      <div class="local-title">
+        {{ $t('tools.world-clock.local') }}
+      </div>
+      <div class="local-time">
+        {{ localTime.time }}
+      </div>
+      <div class="local-day">
+        {{ localTime.day }}
+      </div>
     </n-card>
     <div class="grid">
       <n-card v-for="group in groups" :key="group.name" class="zone" size="small" :title="group.name">
         <div v-for="item in group.items" :key="item.tz" class="row">
           <div class="time">
-            <div class="clock">{{ formatTime(item.tz) }}</div>
-            <div class="day">{{ formatDay(item.tz) }}</div>
+            <div class="clock">
+              {{ formatTime(item.tz) }}
+            </div>
+            <div class="day">
+              {{ formatDay(item.tz) }}
+            </div>
           </div>
           <div class="city">
-            <div class="name">{{ item.city }}</div>
-            <div class="country">{{ item.country }}</div>
+            <div class="name">
+              {{ item.city }}
+            </div>
+            <div class="country">
+              {{ item.country }}
+            </div>
           </div>
         </div>
       </n-card>
@@ -166,6 +187,12 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped lang="less">
+.world-clock-card {
+  width: 100%;
+  max-width: none;
+  flex: 1 1 100%;
+}
+
 .header {
   display: flex;
   justify-content: space-between;
@@ -175,35 +202,48 @@ onBeforeUnmount(() => {
 .title {
   font-size: 20px;
   font-weight: 600;
+  color: v-bind('themeVars.textColor1');
 }
 .local {
   margin-bottom: 12px;
   text-align: center;
 }
+.world-clock-card :deep(.n-card) {
+  background-color: v-bind('themeVars.cardColor');
+  border-color: v-bind('themeVars.borderColor');
+}
+
+.world-clock-card :deep(.n-card-header__main),
+.world-clock-card :deep(.n-card-header__extra) {
+  color: v-bind('themeVars.textColor1');
+}
+
 .local-title {
   font-weight: 600;
-  color: #555;
+  color: v-bind('themeVars.textColor2');
 }
 .local-time {
   font-size: 26px;
   font-weight: 700;
+  color: v-bind('themeVars.textColor1');
 }
 .local-day {
-  color: #777;
+  color: v-bind('themeVars.textColor2');
 }
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+  align-items: start;
 }
 .zone {
-  min-height: 200px;
+  min-height: 100%;
 }
 .row {
   display: flex;
   gap: 10px;
   padding: 8px 0;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid v-bind('themeVars.borderColor');
 }
 .row:last-child {
   border-bottom: none;
@@ -215,16 +255,38 @@ onBeforeUnmount(() => {
 .clock {
   font-size: 18px;
   font-weight: 700;
+  color: v-bind('themeVars.textColor1');
 }
 .day {
-  color: #777;
+  color: v-bind('themeVars.textColor2');
   font-size: 12px;
 }
 .city .name {
   font-weight: 600;
+  color: v-bind('themeVars.textColor1');
 }
 .city .country {
-  color: #666;
+  color: v-bind('themeVars.textColor2');
   font-size: 12px;
+}
+
+@media (max-width: 700px) {
+  .header {
+    gap: 10px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .title {
+    font-size: 18px;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .time {
+    width: 84px;
+  }
 }
 </style>
