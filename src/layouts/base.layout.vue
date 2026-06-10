@@ -156,8 +156,8 @@ const allToolsCount = computed(() => {
   -webkit-backdrop-filter: blur(16px);
   margin: 10px auto 20px;
   width: fit-content;
-  border: 1px solid v-bind('styleStore.isDarkTheme ? kanagawaPalette.dark.overlayBorder : kanagawaPalette.light.overlayBorder');
-  box-shadow: v-bind('styleStore.isDarkTheme ? kanagawaPalette.dark.shadow : kanagawaPalette.light.shadow');
+  border: 1px solid v-bind('kanagawaPalette.overlayBorder');
+  box-shadow: v-bind('kanagawaPalette.shadow');
 }
 
 .hero-wrapper {

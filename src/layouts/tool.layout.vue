@@ -147,7 +147,7 @@ const contentFlexBasis = computed(() => '520px');
     .separator {
       width: 200px;
       height: 2px;
-      background: v-bind('styleStore.isDarkTheme ? kanagawaPalette.dark.accent : kanagawaPalette.light.accent');
+      background: v-bind('kanagawaPalette.accent');
       opacity: 0.45;
 
       margin: 10px 0;

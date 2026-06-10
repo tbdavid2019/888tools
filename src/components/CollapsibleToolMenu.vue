@@ -101,7 +101,7 @@ const menuOptions = computed(() =>
       width: 2px;
       height: 100%;
       content: ' ';
-      background-color: v-bind('styleStore.isDarkTheme ? kanagawaPalette.dark.textMuted : kanagawaPalette.light.textMuted');
+      background-color: v-bind('kanagawaPalette.textMuted');
       border-radius: 2px;
       position: absolute;
       top: 0;
