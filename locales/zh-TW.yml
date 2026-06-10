@@ -588,5 +588,8 @@ tools:
   post-writer:
     title: "社群貼文排版"
     description: 全程本機處理，提供雜誌感排版與 Broetry 文體排版，自動換行、全形標點符號轉換、標題框線裝飾，并提供 FB/IG/Threads 模擬預覽與字數計算。
+  p2p-file-transfer:
+    title: "P2P 點對點傳檔"
+    description: "透過 WebRTC 協定在裝置之間直接傳送檔案，無檔案大小限制且端對端加密。"
 
 

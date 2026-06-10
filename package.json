@@ -104,6 +104,7 @@
     "pdf-lib": "^1.17.1",
     "pdf-signature-reader": "^1.4.2",
     "pdfjs-dist": "^5.4.530",
+    "peerjs": "^1.5.5",
     "pinia": "^2.0.34",
     "plausible-tracker": "^0.3.8",
     "qr-code-styling": "^1.9.2",

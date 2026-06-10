@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file. See [standa
 ## Version 2026.05.26
 
 ### Features
+- **p2p-file-transfer**: 新增「P2P 點對點傳檔」工具，支援透過 WebRTC 協定在裝置間直接傳送檔案，內建 PeerJS 自動信令與手動信令雙模式，並支援大檔案自動切割傳輸與背壓控制。
 - **lyric-player**: 新增「AI 歌詞播放器」工具，支援本機 Whisper 模型下載與瀏覽器端推論，可上傳音訊後自動辨識歌詞、貼上既有歌詞做時間對齊，並支援 LRC 上傳、編輯、簡轉繁與匯出。
 - **layout**: 為 `lyric-player` 新增寬版工具頁配置，避免多欄內容被全站預設 600px 版寬壓縮。
 - **categories**: 將原本 `Images and videos` 拆分為「圖片」、「影片」、「音訊」，並新增「編輯區」分類，將 `Markdown to HTML` 與 `同文堂繁簡轉換器` 移入該分類。

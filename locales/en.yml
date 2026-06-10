@@ -592,5 +592,8 @@ tools:
   post-writer:
     title: "Social Post Formatter"
     description: Format and beautify social media posts. Supports magazine style, broetry style, full-width punctuation conversion, and live FB/IG/Threads previews.
+  p2p-file-transfer:
+    title: "P2P File Transfer"
+    description: "Transfer files directly between devices using WebRTC."
 
 

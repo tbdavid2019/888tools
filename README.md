@@ -40,10 +40,13 @@
 | 30  | 分類調整：原本 `Images and videos` 拆分為「圖片 / 影片 / 音訊」，並新增「編輯區」分類，將 Markdown to HTML 與同文堂繁簡轉換器移入該分類 |
 | 31  | 首頁介面與品牌調整：側欄新增顯示設定區塊、改用暖色系主題，品牌字樣簡化為 `888 Tool`，並將所有工具頁桌面版統一改為寬版配置 |
 | 32  | 全站預設字體改為內建 `Maple Mono` variable webfont，套用於首頁、工具頁與 Naive UI 元件 |
+| 33  | 新增「P2P 點對點傳檔」工具（網路 分類），透過 WebRTC 協定在裝置之間直接傳送大檔案，無伺服器中轉限制且端對端加密（https://tool.david888.com/p2p-file-transfer ） |
 
 ## Changelog
 
 ### 2026-05-26
+
+- 新增「P2P 點對點傳檔」工具：透過 WebRTC 協定在裝置之間直接傳送檔案，無檔案大小限制且端對端加密，內建 PeerJS 信令（https://tool.david888.com/p2p-file-transfer ）
 
 - 新增「AI 歌詞播放器」工具：支援音訊上傳後在瀏覽器端下載並執行 Whisper 模型，可直接辨識歌詞，或先貼歌詞再自動對齊時間，並支援 LRC 上傳、編輯、簡轉繁與匯出（https://tool.david888.com/lyric-player ）
 - 介面調整：`AI 歌詞播放器` 改用寬版雙欄工具頁，提升桌面版可讀性與歌詞區顯示空間
