@@ -43,11 +43,11 @@ const theme = useThemeVars();
 
 <style scoped lang="less">
 .tool-title {
-  color: v-bind('kanagawaPalette.heading');
+  color: v-bind('styleStore.isDarkTheme ? kanagawaPalette.dark.heading : kanagawaPalette.light.heading');
   font-weight: 600;
 }
 
 .tool-description {
-  color: v-bind('kanagawaPalette.textMuted');
+  color: v-bind('styleStore.isDarkTheme ? kanagawaPalette.dark.textMuted : kanagawaPalette.light.textMuted');
 }
 </style>

@@ -17,9 +17,10 @@ const themeOverrides = computed(() => (styleStore.isDarkTheme ? darkThemeOverrid
 const { locale } = useI18n();
 
 const layoutBackgroundColor = computed(() => {
-  if (!styleStore.isBingWallpaperEnabled) return kanagawaPalette.background;
+  const palette = styleStore.isDarkTheme ? kanagawaPalette.dark : kanagawaPalette.light;
+  if (!styleStore.isBingWallpaperEnabled) return palette.background;
   const opacity = styleStore.cardOpacity; // Use raw opacity for better contrast
-  return `rgba(${kanagawaPalette.glassBackgroundRgb}, ${opacity})`;
+  return `rgba(${palette.glassBackgroundRgb}, ${opacity})`;
 });
 
 syncRef(
