@@ -1,17 +1,17 @@
-export const warmPalette = {
-  background: '#FFF9F2',
-  surface: '#FFFCF7',
-  surfaceMuted: '#F6ECDD',
-  heading: '#8B6914',
-  text: '#3D3421',
-  textMuted: '#7C6A49',
-  button: '#2C5282',
-  buttonHover: '#356196',
-  buttonPressed: '#1F3C62',
-  accent: '#D4AF37',
-  accentSoft: '#F3E2A1',
-  border: 'rgba(139, 105, 20, 0.14)',
-  overlayBorder: 'rgba(139, 105, 20, 0.2)',
-  shadow: '0 14px 30px rgba(61, 52, 33, 0.08)',
-  glassBackgroundRgb: '255, 249, 242',
+export const kanagawaPalette = {
+  background: '#1F1F28', // sumiInk1
+  surface: '#2A2A37',    // sumiInk3
+  surfaceMuted: '#363646', // sumiInk4
+  heading: '#DCD7BA',    // fujiWhite
+  text: '#DCD7BA',       // fujiWhite
+  textMuted: '#C8C093',  // oldWhite
+  button: '#7E9CD8',     // crystalBlue
+  buttonHover: '#7FB4CA', // springWater
+  buttonPressed: '#223249', // waveBlue2
+  accent: '#98BB6C',     // springGreen
+  accentSoft: '#6A9589', // waveAqua1
+  border: '#54546D',     // sumiInk6
+  overlayBorder: 'rgba(220, 215, 186, 0.2)',
+  shadow: '0 14px 30px rgba(0, 0, 0, 0.5)',
+  glassBackgroundRgb: '31, 31, 40',
 } as const;
