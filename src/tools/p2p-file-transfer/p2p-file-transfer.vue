@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onUnmounted, computed } from 'vue';
+import { ref, onUnmounted } from 'vue';
 import { NProgress, NIcon } from 'naive-ui';
 import { P2PService, type Role } from './p2p-file-transfer.service';
 import {
@@ -9,6 +9,8 @@ import {
   SendOutlined as IconSend,
   DownloadOutlined as IconDownload,
   PlayArrowOutlined as IconPlay,
+  UploadFileOutlined as IconUploadFile,
+  CloseOutlined as IconClose
 } from '@vicons/material';
 
 const connectionMode = ref<'peerjs' | 'manual'>('peerjs');
@@ -166,7 +168,7 @@ async function acceptManualAnswer() {
 <template>
   <div class="p2p-wrapper">
     <div class="mb-8 pl-4 border-l-4 border-primary">
-      <h1 class="text-4xl font-bold mb-2">
+      <h1 class="text-4xl font-bold mb-2 text-heading">
         P2P 點對點傳檔
       </h1>
       <p class="text-textColor2 max-w-3xl">
@@ -175,9 +177,9 @@ async function acceptManualAnswer() {
     </div>
 
     <!-- Configuration Step -->
-    <c-card v-if="!isRoomCreated" class="setup-card">
+    <c-card v-if="!isRoomCreated" class="setup-card !p-8 shadow-xl relative">
       <div class="mb-8">
-        <h3 class="font-bold mb-4 text-base">請選擇連線方式</h3>
+        <h3 class="font-bold mb-4 text-base text-textColor1">請選擇連線方式</h3>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           
           <div 
@@ -211,7 +213,7 @@ async function acceptManualAnswer() {
       </div>
 
       <div class="mb-8">
-        <h3 class="font-bold mb-4 text-base">請選擇您的角色</h3>
+        <h3 class="font-bold mb-4 text-base text-textColor1">請選擇您的角色</h3>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           
           <div 
@@ -237,40 +239,39 @@ async function acceptManualAnswer() {
         </div>
       </div>
 
-      <c-button type="primary" size="large" class="w-full text-lg h-14 font-bold" @click="startConnection">
+      <c-button type="primary" size="large" class="w-full text-lg h-14 font-bold tracking-widest" @click="startConnection">
         <template #icon><n-icon><IconPlay /></n-icon></template>
         建立房間
       </c-button>
     </c-card>
 
     <!-- Active Room Step -->
-    <c-card v-else class="active-room-card">
+    <c-card v-else class="active-room-card !p-8 shadow-xl">
       <div class="flex justify-between items-center mb-6 border-b pb-4 border-dividerColor">
-        <div>
-          <h2 class="text-2xl font-bold">房間已建立</h2>
-          <div class="text-sm op-70 mt-1">模式: {{ connectionMode === 'peerjs' ? 'PeerJS' : '手動信令' }} | 角色: {{ role === 'sender' ? '傳送端' : '接收端' }}</div>
+        <div class="flex items-center gap-2">
+          <div class="w-3 h-3 rounded-full" :class="{
+            'bg-gray-400': state === 'disconnected',
+            'bg-yellow-400': state === 'connecting',
+            'bg-[#98BB6C]': state === 'connected',
+            'bg-red-500': state === 'error'
+          }"></div>
+          <div class="font-bold text-sm" :class="{ 'text-[#98BB6C]': state === 'connected', 'text-textColor1': state !== 'connected' }">
+            {{ state === 'connected' ? '已連線 (端對端加密)' : `狀態: ${state.toUpperCase()}` }}
+          </div>
         </div>
-        <c-button size="small" @click="resetConnection">重新設定</c-button>
-      </div>
-
-      <!-- Status Indicator -->
-      <div class="p-3 mb-6 rounded font-bold text-center" :class="{
-        'bg-actionColor text-textColor1': state === 'disconnected',
-        'bg-warningColor text-black': state === 'connecting',
-        'bg-successColor text-white': state === 'connected',
-        'bg-red-500 text-white': state === 'error'
-      }">
-        連線狀態: {{ state.toUpperCase() }}
+        <div class="cursor-pointer text-xs op-60 hover:op-100 transition flex items-center gap-1 text-textColor2" @click="resetConnection">
+          <n-icon><IconClose /></n-icon> 中斷連線
+        </div>
       </div>
 
       <div v-if="state !== 'connected'" class="flex flex-col gap-6">
         <!-- PeerJS Signaling -->
         <div v-if="connectionMode === 'peerjs'">
-          <div v-if="role === 'receiver'" class="bg-actionColor p-6 rounded-xl text-center">
-            <div class="text-sm op-70 mb-2">請將以下代碼分享給傳送端</div>
-            <div class="text-3xl font-mono font-bold select-all tracking-wider text-primary">{{ peerId || '生成中...' }}</div>
+          <div v-if="role === 'receiver'" class="bg-actionColor p-8 rounded-xl text-center border border-dividerColor">
+            <div class="text-sm op-80 mb-4">請將以下代碼分享給傳送端</div>
+            <div class="text-4xl font-mono font-bold select-all tracking-wider text-primary">{{ peerId || '生成中...' }}</div>
           </div>
-          <div v-if="role === 'sender'" class="flex flex-col gap-2">
+          <div v-if="role === 'sender'" class="flex flex-col gap-3">
             <c-label label="輸入接收端的房間代碼"></c-label>
             <div class="flex gap-2">
               <c-input-text v-model:value="targetPeerId" placeholder="例如: 123-abc-456" class="flex-1 text-lg font-mono" />
@@ -284,18 +285,18 @@ async function acceptManualAnswer() {
           <div v-if="role === 'sender'" class="flex flex-col gap-4">
             <c-button type="primary" @click="generateManualOffer" class="w-full">1. 產生邀請碼 (Offer)</c-button>
             <c-label label="您的邀請碼 (複製給接收端)"></c-label>
-            <c-input-text v-model:value="manualOffer" multiline rows="4" readonly class="font-mono text-xs" />
+            <c-input-text v-model:value="manualOffer" multiline rows="3" readonly class="font-mono text-xs" />
             <c-label label="接收端的回條 (貼上至此)"></c-label>
-            <c-input-text v-model:value="manualAnswer" multiline rows="4" class="font-mono text-xs" />
+            <c-input-text v-model:value="manualAnswer" multiline rows="3" class="font-mono text-xs" />
             <c-button type="primary" @click="acceptManualAnswer" class="w-full">2. 確認連線</c-button>
           </div>
 
           <div v-if="role === 'receiver'" class="flex flex-col gap-4">
             <c-label label="傳送端的邀請碼 (貼上至此)"></c-label>
-            <c-input-text v-model:value="manualOffer" multiline rows="4" class="font-mono text-xs" />
+            <c-input-text v-model:value="manualOffer" multiline rows="3" class="font-mono text-xs" />
             <c-button type="primary" @click="acceptManualOffer" class="w-full">1. 接受邀請並產生回條</c-button>
             <c-label label="您的回條 (複製給傳送端)"></c-label>
-            <c-input-text v-model:value="manualAnswer" multiline rows="4" readonly class="font-mono text-xs" />
+            <c-input-text v-model:value="manualAnswer" multiline rows="3" readonly class="font-mono text-xs" />
           </div>
         </div>
       </div>
@@ -304,33 +305,38 @@ async function acceptManualAnswer() {
       <template v-if="state === 'connected'">
         
         <div v-if="role === 'sender'" class="mt-4">
-          <c-file-upload
-            v-if="!selectedFile"
-            @file-upload="handleFileUpload"
-          />
-          <div v-else class="bg-actionColor p-4 rounded-xl flex items-center justify-between">
-            <div class="flex flex-col">
-              <span class="font-bold text-lg truncate max-w-xs">{{ selectedFile.name }}</span>
-              <span class="text-sm op-70">{{ (selectedFile.size / 1024 / 1024).toFixed(2) }} MB</span>
-            </div>
-            <div class="flex gap-2">
-              <c-button type="danger" @click="selectedFile = null">移除</c-button>
-              <c-button type="primary" @click="sendFile">開始傳送</c-button>
+          <div class="border-2 border-dashed border-[#7E9CD8] bg-[rgba(126,156,216,0.05)] rounded-2xl p-12 flex flex-col items-center justify-center text-center transition hover:bg-[rgba(126,156,216,0.1)] relative">
+            <c-file-upload v-if="!selectedFile" @file-upload="handleFileUpload" class="absolute inset-0 w-full h-full opacity-0 z-10 cursor-pointer" />
+            <n-icon size="42" class="text-[#7E9CD8] mb-3"><IconUploadFile /></n-icon>
+            <div class="text-[#7E9CD8] font-bold tracking-wider">點擊或拖曳檔案至此</div>
+            
+            <div v-if="selectedFile" class="absolute inset-0 bg-surface rounded-2xl flex flex-col items-center justify-center z-20">
+               <div class="font-bold text-lg text-heading truncate max-w-sm">{{ selectedFile.name }}</div>
+               <div class="text-sm op-70 mt-1 mb-4">{{ (selectedFile.size / 1024 / 1024).toFixed(2) }} MB</div>
+               <c-button size="small" type="danger" @click="selectedFile = null; transferProgress = 0" class="!absolute top-4 right-4">移除</c-button>
             </div>
           </div>
+          <c-button v-if="selectedFile" type="primary" class="w-full mt-6 h-12 text-lg font-bold tracking-wider" @click="sendFile">
+            <template #icon><n-icon><IconPlay /></n-icon></template>
+            傳送檔案
+          </c-button>
         </div>
 
         <div v-if="role === 'receiver'" class="mt-4">
-          <div class="border-2 border-dashed border-dividerColor rounded-xl p-10 flex flex-col items-center justify-center text-center">
-            <n-icon size="48" class="text-successColor mb-4"><IconDownload /></n-icon>
-            <div class="text-xl font-bold">等待接收檔案...</div>
-            <div class="text-sm op-70 mt-2">連線已就緒，請請傳送端選擇檔案並發送。</div>
+          <div class="border-2 border-dashed border-[#98BB6C] bg-[rgba(152,187,108,0.05)] rounded-2xl p-16 flex flex-col items-center justify-center text-center">
+            <n-icon size="56" class="text-[#98BB6C] mb-4"><IconDownload /></n-icon>
+            <div class="text-2xl font-bold text-heading">等待接收檔案...</div>
+            <div class="text-sm op-70 mt-2">連線已就緒，請傳送端選擇檔案並發送。</div>
           </div>
         </div>
 
         <div v-if="transferProgress > 0" class="mt-8">
           <c-label label="傳輸進度">
-            <n-progress type="line" :percentage="transferProgress" indicator-placement="inside" />
+            <div class="flex justify-between text-xs font-mono op-70 mb-1">
+              <span>Transferring...</span>
+              <span>{{ transferProgress }}%</span>
+            </div>
+            <n-progress type="line" :percentage="transferProgress" :show-indicator="false" :height="8" color="#7FB4CA" />
           </c-label>
         </div>
       </template>
@@ -339,13 +345,17 @@ async function acceptManualAnswer() {
 </template>
 
 <style lang="less" scoped>
+.setup-card, .active-room-card {
+  border-radius: 20px;
+}
+
 .mode-card {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 1.5rem;
-  border: 2px solid var(--border-color, #e5e7eb);
+  border: 2px solid var(--border-color, rgba(255, 255, 255, 0.1));
   border-radius: 0.75rem;
   cursor: pointer;
   transition: all 0.2s ease-in-out;

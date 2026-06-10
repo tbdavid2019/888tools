@@ -28,7 +28,7 @@ const styleStore = useStyleStore();
 .appearance-settings {
   padding: 18px 16px 20px;
   margin-top: 12px;
-  background: rgba(255, 252, 247, 0.78);
+  background: rgba(42, 42, 55, 0.78);
   border: 1px solid v-bind('kanagawaPalette.border');
   border-radius: 20px;
   box-shadow: v-bind('kanagawaPalette.shadow');
