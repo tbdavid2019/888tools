@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Copy } from '@vicons/tabler';
 import { useElementSize } from '@vueuse/core';
+import { useThemeVars } from 'naive-ui';
 import hljs from 'highlight.js/lib/core';
 import jsonHljs from 'highlight.js/lib/languages/json';
 import sqlHljs from 'highlight.js/lib/languages/sql';
@@ -35,6 +36,7 @@ hljs.registerLanguage('markdown', markdownHljs);
 
 const { value, language, followHeightOf, copyPlacement, copyMessage } = toRefs(props);
 const { height } = followHeightOf.value ? useElementSize(followHeightOf) : { height: ref(null) };
+const themeVars = useThemeVars();
 
 const { copy, isJustCopied } = useCopy({ source: value, createToast: false });
 const tooltipText = computed(() => isJustCopied.value ? 'Copied!' : copyMessage.value);
@@ -72,5 +74,22 @@ const tooltipText = computed(() => isJustCopied.value ? 'Copied!' : copyMessage.
 ::v-deep(.n-scrollbar) {
   padding-bottom: 10px;
   margin-bottom: -10px;
+}
+
+::v-deep(.n-code) {
+  background-color: v-bind('themeVars.codeColor') !important;
+  color: v-bind('themeVars.textColor1');
+}
+
+::v-deep(.n-code pre),
+::v-deep(.n-code code),
+::v-deep(.hljs) {
+  background-color: transparent !important;
+  color: v-bind('themeVars.textColor1');
+}
+
+::v-deep(.hljs-comment),
+::v-deep(.hljs-quote) {
+  color: v-bind('themeVars.textColor3');
 }
 </style>

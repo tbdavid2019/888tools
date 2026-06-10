@@ -1,6 +1,6 @@
 import { defineThemes } from '../theme/theme.models';
 import { appThemes } from '../theme/themes';
-import { kanagawaPalette } from '@/theme/palette';
+import { kanagawaDarkPalette, kanagawaLightPalette } from '@/theme/palette';
 
 const sizes = {
   small: {
@@ -21,13 +21,13 @@ export const { useTheme } = defineThemes({
   dark: {
     sizes,
 
-    backgroundColor: kanagawaPalette.surface,
-    borderColor: kanagawaPalette.border,
-    dropdownShadow: kanagawaPalette.shadow,
+    backgroundColor: kanagawaDarkPalette.surface,
+    borderColor: kanagawaDarkPalette.border,
+    dropdownShadow: kanagawaDarkPalette.shadow,
 
     option: {
       hover: {
-        backgroundColor: kanagawaPalette.accentSoft,
+        backgroundColor: kanagawaDarkPalette.accentSoft,
       },
       active: {
         textColor: appThemes.dark.primary.color,
@@ -35,19 +35,19 @@ export const { useTheme } = defineThemes({
     },
 
     focus: {
-      backgroundColor: kanagawaPalette.surface,
+      backgroundColor: kanagawaDarkPalette.surface,
     },
   },
   light: {
     sizes,
 
-    backgroundColor: kanagawaPalette.surface,
-    borderColor: kanagawaPalette.border,
-    dropdownShadow: kanagawaPalette.shadow,
+    backgroundColor: kanagawaLightPalette.surface,
+    borderColor: kanagawaLightPalette.border,
+    dropdownShadow: kanagawaLightPalette.shadow,
 
     option: {
       hover: {
-        backgroundColor: kanagawaPalette.accentSoft,
+        backgroundColor: kanagawaLightPalette.accentSoft,
       },
       active: {
         textColor: appThemes.light.primary.color,
@@ -55,7 +55,7 @@ export const { useTheme } = defineThemes({
     },
 
     focus: {
-      backgroundColor: kanagawaPalette.surface,
+      backgroundColor: kanagawaLightPalette.surface,
     },
   },
 });

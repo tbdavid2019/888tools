@@ -61,6 +61,39 @@ export const lightThemeOverrides: GlobalThemeOverrides = {
     textColorTextPrimaryPressed: kanagawaLightPalette.buttonPressed,
   },
 
+  Select: {
+    peers: {
+      InternalSelection: {
+        color: kanagawaLightPalette.surface,
+        colorActive: kanagawaLightPalette.surface,
+        colorDisabled: kanagawaLightPalette.surfaceMuted,
+        border: `1px solid ${kanagawaLightPalette.border}`,
+        borderActive: `1px solid ${kanagawaLightPalette.button}`,
+        borderHover: `1px solid ${kanagawaLightPalette.button}`,
+        textColor: kanagawaLightPalette.text,
+        placeholderColor: kanagawaLightPalette.textMuted,
+        caretColor: kanagawaLightPalette.textMuted,
+      },
+      InternalSelectMenu: {
+        color: kanagawaLightPalette.surface,
+        optionTextColor: kanagawaLightPalette.text,
+        optionColorHover: 'rgba(126, 156, 216, 0.12)',
+        optionTextColorPressed: kanagawaLightPalette.text,
+        optionColorPending: 'rgba(126, 156, 216, 0.18)',
+      },
+    },
+  },
+
+  Input: {
+    color: kanagawaLightPalette.surface,
+    colorFocus: kanagawaLightPalette.surface,
+    textColor: kanagawaLightPalette.text,
+    placeholderColor: kanagawaLightPalette.textMuted,
+    border: `1px solid ${kanagawaLightPalette.border}`,
+    borderHover: `1px solid ${kanagawaLightPalette.button}`,
+    borderFocus: `1px solid ${kanagawaLightPalette.button}`,
+  },
+
   AutoComplete: {
     peers: {
       InternalSelectMenu: { height: '500px', color: kanagawaLightPalette.surface },
@@ -117,6 +150,39 @@ export const darkThemeOverrides: GlobalThemeOverrides = {
 
   Menu: {
     itemHeight: '32px',
+  },
+
+  Select: {
+    peers: {
+      InternalSelection: {
+        color: kanagawaDarkPalette.surface,
+        colorActive: kanagawaDarkPalette.surface,
+        colorDisabled: kanagawaDarkPalette.surfaceMuted,
+        border: `1px solid ${kanagawaDarkPalette.border}`,
+        borderActive: `1px solid ${kanagawaDarkPalette.button}`,
+        borderHover: `1px solid ${kanagawaDarkPalette.button}`,
+        textColor: kanagawaDarkPalette.text,
+        placeholderColor: kanagawaDarkPalette.textMuted,
+        caretColor: kanagawaDarkPalette.textMuted,
+      },
+      InternalSelectMenu: {
+        color: kanagawaDarkPalette.surface,
+        optionTextColor: kanagawaDarkPalette.text,
+        optionColorHover: 'rgba(126, 180, 202, 0.16)',
+        optionTextColorPressed: kanagawaDarkPalette.text,
+        optionColorPending: 'rgba(126, 156, 216, 0.2)',
+      },
+    },
+  },
+
+  Input: {
+    color: kanagawaDarkPalette.surface,
+    colorFocus: kanagawaDarkPalette.surface,
+    textColor: kanagawaDarkPalette.text,
+    placeholderColor: kanagawaDarkPalette.textMuted,
+    border: `1px solid ${kanagawaDarkPalette.border}`,
+    borderHover: `1px solid ${kanagawaDarkPalette.button}`,
+    borderFocus: `1px solid ${kanagawaDarkPalette.button}`,
   },
 
   Layout: {
