@@ -253,9 +253,9 @@ defineExpose({
     display: flex;
     flex-direction: row;
     align-items: center;
-    background-color: v-bind('theme.backgroundColor');
+    background-color: v-bind('theme.backgroundColor') !important;
     color: transparent;
-    border: 1px solid v-bind('theme.borderColor');
+    border: 1px solid v-bind('theme.borderColor') !important;
     border-radius: 4px;
     padding: 0 4px 0 12px;
     transition: border-color 0.2s ease-in-out;
@@ -274,7 +274,7 @@ defineExpose({
         outline: none;
         font-family: inherit;
         font-size: inherit;
-        color: v-bind('appTheme.text.baseColor');
+        color: v-bind('appTheme.text.baseColor') !important;
 
         &::placeholder {
           color: v-bind('appTheme.text.mutedColor');
@@ -294,7 +294,7 @@ defineExpose({
       -moz-box-shadow: none;
       box-shadow: none;
       border: none;
-      color: v-bind('appTheme.text.baseColor');
+      color: v-bind('appTheme.text.baseColor') !important;
 
       &::placeholder {
         color: v-bind('appTheme.text.mutedColor');
@@ -308,7 +308,7 @@ defineExpose({
     &:focus-within {
       border-color: v-bind('appTheme.primary.color');
 
-      background-color: v-bind('theme.focus.backgroundColor');
+      background-color: v-bind('theme.focus.backgroundColor') !important;
     }
   }
 

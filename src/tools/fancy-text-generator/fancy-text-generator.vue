@@ -1,19 +1,26 @@
 <script setup lang="ts">
-import { useClipboard } from '@vueuse/core';
+import { useThemeVars } from 'naive-ui';
+import { useCopy } from '@/composable/copy';
 
 type Mapping = Record<string, string>;
 
 const text = ref('');
-const { copy } = useClipboard();
+const { copy } = useCopy({ source: text });
+const themeVars = useThemeVars();
 
-const toChars = (value: string) => Array.from(value);
+function toChars(value: string) {
+  return Array.from(value);
+}
 
-const transformWithMapping = (value: string, mapping: Mapping) =>
-  toChars(value)
+function transformWithMapping(value: string, mapping: Mapping) {
+  return toChars(value)
     .map(ch => mapping[ch] ?? ch)
     .join('');
+}
 
-const strike = (value: string, mark: string) => value.split('').map(ch => ch + mark).join('');
+function strike(value: string, mark: string) {
+  return value.split('').map(ch => ch + mark).join('');
+}
 
 const base = {
   latinLower: 'abcdefghijklmnopqrstuvwxyz',
@@ -21,7 +28,7 @@ const base = {
   digits: '0123456789',
 };
 
-const makeMap = (lower: string, upper: string, digits?: string): Mapping => {
+function makeMap(lower: string, upper: string, digits?: string): Mapping {
   const map: Mapping = {};
   const lowerChars = toChars(lower);
   const upperChars = toChars(upper);
@@ -33,7 +40,7 @@ const makeMap = (lower: string, upper: string, digits?: string): Mapping => {
     toChars(base.digits).forEach((ch, i) => (map[ch] = digitChars?.[i] ?? ch));
   }
   return map;
-};
+}
 
 const styles = [
   {
@@ -191,7 +198,7 @@ const styles = [
   },
   {
     name: 'Double Overline',
-    transform: (v: string) => strike(v, '\u035e\u035f'),
+    transform: (v: string) => strike(v, '\u035E\u035F'),
   },
   {
     name: 'Double Underline',
@@ -214,8 +221,10 @@ const copyValue = (value: string) => copy(value);
 </script>
 
 <template>
-<c-card class="fancy-text-card">
-    <div class="title">{{ $t('tools.fancy-text-generator.title') }}</div>
+  <c-card class="fancy-text-card">
+    <div class="title">
+      {{ $t('tools.fancy-text-generator.title') }}
+    </div>
     <n-input
       v-model:value="text"
       type="textarea"
@@ -224,8 +233,12 @@ const copyValue = (value: string) => copy(value);
     />
     <div class="list">
       <div v-for="item in results" :key="item.name" class="row">
-        <div class="label">{{ item.name }}</div>
-        <div class="value">{{ item.value }}</div>
+        <div class="label">
+          {{ item.name }}
+        </div>
+        <div class="value">
+          {{ item.value }}
+        </div>
         <c-button tertiary size="tiny" @click="copyValue(item.value)">
           {{ $t('tools.fancy-text-generator.copy') }}
         </c-button>
@@ -245,6 +258,7 @@ const copyValue = (value: string) => copy(value);
   font-size: 20px;
   font-weight: 600;
   margin-bottom: 8px;
+  color: v-bind('themeVars.textColor1');
 }
 .list {
   margin-top: 16px;
@@ -257,18 +271,20 @@ const copyValue = (value: string) => copy(value);
   align-items: center;
   gap: 10px;
   padding: 10px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid v-bind('themeVars.borderColor');
   border-radius: 8px;
-  background: #fafafa;
+  background: v-bind('themeVars.cardColor');
 }
 .label {
   min-width: 120px;
   font-weight: 600;
+  color: v-bind('themeVars.textColor2');
 }
 .value {
   flex: 1;
   font-size: 18px;
   word-break: break-all;
+  color: v-bind('themeVars.textColor1');
 }
 @media (max-width: 768px) {
   .row {

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Colord } from 'colord';
 import { colord, extend } from 'colord';
+import { useThemeVars } from 'naive-ui';
 import _ from 'lodash';
 import cmykPlugin from 'colord/plugins/cmyk';
 import hwbPlugin from 'colord/plugins/hwb';
@@ -9,6 +10,7 @@ import lchPlugin from 'colord/plugins/lch';
 import { buildColorFormat } from './color-converter.models';
 
 extend([cmykPlugin, hwbPlugin, namesPlugin, lchPlugin]);
+const themeVars = useThemeVars();
 
 const formats = {
   picker: buildColorFormat({
@@ -101,3 +103,20 @@ function updateColorValue(value: Colord | undefined, omitLabel?: string) {
     </template>
   </c-card>
 </template>
+
+<style scoped>
+:deep(.c-input-text .input-wrapper) {
+  background-color: v-bind('themeVars.inputColor') !important;
+  border-color: v-bind('themeVars.borderColor') !important;
+}
+
+:deep(.c-input-text .input),
+:deep(.c-input-text textarea) {
+  color: v-bind('themeVars.textColor1') !important;
+}
+
+:deep(.c-input-text .input::placeholder),
+:deep(.c-input-text textarea::placeholder) {
+  color: v-bind('themeVars.textColor3') !important;
+}
+</style>
