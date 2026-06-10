@@ -43,6 +43,9 @@
 | 33  | 新增「P2P 點對點傳檔」工具（網路 分類），透過 WebRTC 協定在裝置之間直接傳送大檔案，無伺服器中轉限制且端對端加密（https://tool.david888.com/p2p-file-transfer ） |
 | 34  | 主題修正：Kanagawa Light / Dark 配色映射改回正確 token，修復 light mode 誤用 dark palette，並同步校正 `c-card` 亮色玻璃底色與 `世界時間` 卡片的文字、邊框、分隔線顏色 |
 | 35  | 工具頁可用性修正：`SVG 工具箱` 重構為寬屏雙欄編輯器版面；`貓年齡計算器` 與 `潘通色票庫` 修正 dark mode 對比不足，改善按鈕、提示字與表單文字可讀性 |
+| 36  | 版面擴充：`世界時間`、`QR Code 生成器`、`SVG Placeholder Generator` 改為桌面版寬屏布局，提升多欄工具在大螢幕下的可用空間（https://tool.david888.com/world-clock 、https://tool.david888.com/qrcode-generator 、https://tool.david888.com/svg-placeholder-generator ） |
+| 37  | 側欄與共用元件主題修正：light mode 側欄、語系下拉、輸入框、選單、程式碼區塊與工具卡全面改回正確的 Kanagawa light 配色，不再殘留 dark palette 樣式 |
+| 38  | 對比與可讀性修正：`Color 選擇器`、`特殊字體產生器` 等工具頁移除硬編碼深/淺底色，改為統一使用 theme token，避免 light mode 看不到字或 dark mode 白底刺眼 |
 
 ## Changelog
 
@@ -52,6 +55,9 @@
 - 世界時間：改為寬屏多欄版面，並讓本地時間卡與各洲卡片完整套用 Kanagawa 主題色
 - SVG 工具箱：重構為桌面版寬屏雙欄編輯器，改善上傳、複製、下載與預覽區配置
 - 深色模式可讀性：修正 `貓年齡計算器`、`潘通色票庫` 在 dark mode 下文字與按鈕對比過低的問題
+- 版面擴充：`QR Code 生成器`、`SVG Placeholder Generator` 改為桌面版寬屏布局，`世界時間` 補上更完整的多欄排列
+- 共用主題修正：側欄、語系下拉、`c-input-text`、`c-select`、`TextareaCopyable` 與工具卡統一套用正確的 Kanagawa Light / Dark token
+- 工具頁可讀性修正：`Color 選擇器`、`特殊字體產生器` 等頁面移除硬編碼深淺底色，改為 theme-driven 對比樣式
 
 ### 2026-05-26
 

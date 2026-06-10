@@ -9,6 +9,10 @@ All notable changes to this project will be documented in this file. See [standa
 - **world-clock**: 修正世界時間卡片未完整套用 Kanagawa 主題色的問題，統一本地時間卡與各洲時區卡片的背景、邊框、文字與分隔線色彩，並維持桌面版寬屏多欄排列。
 - **cat-age-calculator**: 修正 dark mode 下表單標籤、單位字與結果提示字過暗導致難以閱讀的問題。
 - **find-color**: 提升色票頁操作按鈕與快速複製 chip 的對比，避免淺色文字在深色卡片上難以辨識。
+- **layout**: 修正 `qrcode-generator` 與 `svg-placeholder-generator` 在桌面版仍受窄欄限制的問題，改為寬屏雙欄配置。
+- **sidebar/theme**: 修正 light mode 側欄、語系下拉、工具卡、輸入框、選單與程式碼區塊仍殘留 dark palette 的漏網樣式。
+- **color-converter**: 修正 `Color 選擇器` 欄位在 light mode 下誤顯示深色背景，導致內容不可讀的問題。
+- **fancy-text-generator**: 修正 `特殊字體產生器` 在 dark mode 下結果列硬編碼淺色背景過亮刺眼的問題。
 
 ### Features
 - **svg-tools**: 重構 SVG 工具箱編輯器版面，改為寬屏雙欄配置，整理上傳/複製/下載操作區，並改善預覽區在桌面版的可用空間與 RWD 表現。
