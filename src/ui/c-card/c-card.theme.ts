@@ -1,13 +1,13 @@
 import { defineThemes } from '../theme/theme.models';
-import { warmPalette } from '@/theme/palette';
+import { kanagawaPalette } from '@/theme/palette';
 
 export const { useTheme } = defineThemes({
   dark: {
     backgroundColor: 'rgba(255, 252, 247, 0.78)',
-    borderColor: warmPalette.border,
+    borderColor: kanagawaPalette.border,
   },
   light: {
     backgroundColor: 'rgba(255, 252, 247, 0.78)',
-    borderColor: warmPalette.border,
+    borderColor: kanagawaPalette.border,
   },
 });

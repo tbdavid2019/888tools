@@ -213,6 +213,7 @@ declare module '@vue/runtime-core' {
     NumeronymGenerator: typeof import('./src/tools/numeronym-generator/numeronym-generator.vue')['default']
     OnlineClock: typeof import('./src/tools/online-clock/online-clock.vue')['default']
     OtpCodeGeneratorAndValidator: typeof import('./src/tools/otp-code-generator-and-validator/otp-code-generator-and-validator.vue')['default']
+    P2pFileTransfer: typeof import('./src/tools/p2p-file-transfer/p2p-file-transfer.vue')['default']
     PasswordStrengthAnalyser: typeof import('./src/tools/password-strength-analyser/password-strength-analyser.vue')['default']
     PdfSignatureChecker: typeof import('./src/tools/pdf-signature-checker/pdf-signature-checker.vue')['default']
     PdfSignatureDetails: typeof import('./src/tools/pdf-signature-checker/components/pdf-signature-details.vue')['default']

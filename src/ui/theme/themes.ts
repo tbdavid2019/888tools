@@ -1,12 +1,12 @@
 import { defineThemes } from './theme.models';
-import { warmPalette } from '@/theme/palette';
+import { kanagawaPalette } from '@/theme/palette';
 
 export const { themes: appThemes, useTheme: useAppTheme } = defineThemes({
   light: {
-    background: warmPalette.background,
+    background: kanagawaPalette.background,
     text: {
-      baseColor: warmPalette.text,
-      mutedColor: warmPalette.textMuted,
+      baseColor: kanagawaPalette.text,
+      mutedColor: kanagawaPalette.textMuted,
     },
     default: {
       color: 'rgba(139, 105, 20, 0.07)',
@@ -14,19 +14,19 @@ export const { themes: appThemes, useTheme: useAppTheme } = defineThemes({
       colorPressed: 'rgba(139, 105, 20, 0.18)',
     },
     primary: {
-      color: warmPalette.button,
-      colorHover: warmPalette.buttonHover,
-      colorPressed: warmPalette.buttonPressed,
+      color: kanagawaPalette.button,
+      colorHover: kanagawaPalette.buttonHover,
+      colorPressed: kanagawaPalette.buttonPressed,
       colorFaded: '#2C528220',
     },
     warning: {
-      color: warmPalette.accent,
+      color: kanagawaPalette.accent,
       colorHover: '#dfbe57',
       colorPressed: '#b99624',
       colorFaded: '#D4AF3726',
     },
     success: {
-      color: warmPalette.accent,
+      color: kanagawaPalette.accent,
       colorHover: '#dfbe57',
       colorPressed: '#b99624',
       colorFaded: '#D4AF3726',
@@ -39,10 +39,10 @@ export const { themes: appThemes, useTheme: useAppTheme } = defineThemes({
     },
   },
   dark: {
-    background: warmPalette.background,
+    background: kanagawaPalette.background,
     text: {
-      baseColor: warmPalette.text,
-      mutedColor: warmPalette.textMuted,
+      baseColor: kanagawaPalette.text,
+      mutedColor: kanagawaPalette.textMuted,
     },
     default: {
       color: 'rgba(139, 105, 20, 0.07)',
@@ -50,19 +50,19 @@ export const { themes: appThemes, useTheme: useAppTheme } = defineThemes({
       colorPressed: 'rgba(139, 105, 20, 0.18)',
     },
     primary: {
-      color: warmPalette.button,
-      colorHover: warmPalette.buttonHover,
-      colorPressed: warmPalette.buttonPressed,
+      color: kanagawaPalette.button,
+      colorHover: kanagawaPalette.buttonHover,
+      colorPressed: kanagawaPalette.buttonPressed,
       colorFaded: '#2C528220',
     },
     warning: {
-      color: warmPalette.accent,
+      color: kanagawaPalette.accent,
       colorHover: '#dfbe57',
       colorPressed: '#b99624',
       colorFaded: '#D4AF3726',
     },
     success: {
-      color: warmPalette.accent,
+      color: kanagawaPalette.accent,
       colorHover: '#dfbe57',
       colorPressed: '#b99624',
       colorFaded: '#D4AF3726',

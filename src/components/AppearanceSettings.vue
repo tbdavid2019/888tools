@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useStyleStore } from '@/stores/style.store';
-import { warmPalette } from '@/theme/palette';
+import { kanagawaPalette } from '@/theme/palette';
 
 const styleStore = useStyleStore();
 </script>
@@ -29,14 +29,14 @@ const styleStore = useStyleStore();
   padding: 18px 16px 20px;
   margin-top: 12px;
   background: rgba(255, 252, 247, 0.78);
-  border: 1px solid v-bind('warmPalette.border');
+  border: 1px solid v-bind('kanagawaPalette.border');
   border-radius: 20px;
-  box-shadow: v-bind('warmPalette.shadow');
+  box-shadow: v-bind('kanagawaPalette.shadow');
 
   .section-title {
     font-size: 14px;
     font-weight: 600;
-    color: v-bind('warmPalette.heading');
+    color: v-bind('kanagawaPalette.heading');
     margin-bottom: 12px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -65,12 +65,12 @@ const styleStore = useStyleStore();
 
   .label {
     font-size: 15px;
-    color: v-bind('warmPalette.text');
+    color: v-bind('kanagawaPalette.text');
   }
 
   .value {
     font-size: 14px;
-    color: v-bind('warmPalette.textMuted');
+    color: v-bind('kanagawaPalette.textMuted');
   }
 }
 </style>

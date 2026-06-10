@@ -11,7 +11,7 @@ import NavbarButtons from '../components/NavbarButtons.vue';
 import AppearanceSettings from '../components/AppearanceSettings.vue';
 import { useStyleStore } from '@/stores/style.store';
 import { config } from '@/config';
-import { warmPalette } from '@/theme/palette';
+import { kanagawaPalette } from '@/theme/palette';
 import type { ToolCategory } from '@/tools/tools.types';
 import { useToolStore } from '@/tools/tools.store';
 import CollapsibleToolMenu from '@/components/CollapsibleToolMenu.vue';
@@ -22,7 +22,7 @@ const { t } = useI18n();
 
 const layoutBackgroundColor = computed(() => {
   if (!styleStore.isBingWallpaperEnabled) return 'transparent';
-  return `rgba(${warmPalette.glassBackgroundRgb}, ${styleStore.cardOpacity})`;
+  return `rgba(${kanagawaPalette.glassBackgroundRgb}, ${styleStore.cardOpacity})`;
 });
 
 const toolStore = useToolStore();
@@ -156,8 +156,8 @@ const allToolsCount = computed(() => {
   -webkit-backdrop-filter: blur(16px);
   margin: 10px auto 20px;
   width: fit-content;
-  border: 1px solid v-bind('warmPalette.overlayBorder');
-  box-shadow: v-bind('warmPalette.shadow');
+  border: 1px solid v-bind('kanagawaPalette.overlayBorder');
+  box-shadow: v-bind('kanagawaPalette.shadow');
 }
 
 .hero-wrapper {
@@ -213,7 +213,7 @@ const allToolsCount = computed(() => {
   margin-top: 20px;
   text-align: center;
   font-size: 12px;
-  color: v-bind('warmPalette.textMuted');
+  color: v-bind('kanagawaPalette.textMuted');
   padding-bottom: 20px;
 }
 </style>

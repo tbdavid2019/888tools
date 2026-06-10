@@ -2,7 +2,7 @@
 import { useStorage } from '@vueuse/core';
 import { RouterLink, useRoute } from 'vue-router';
 import MenuIconItem from './MenuIconItem.vue';
-import { warmPalette } from '@/theme/palette';
+import { kanagawaPalette } from '@/theme/palette';
 import type { Tool, ToolCategory } from '@/tools/tools.types';
 
 const props = withDefaults(defineProps<{ toolsByCategory?: ToolCategory[] }>(), { toolsByCategory: () => [] });
@@ -101,7 +101,7 @@ const menuOptions = computed(() =>
       width: 2px;
       height: 100%;
       content: ' ';
-      background-color: v-bind('warmPalette.textMuted');
+      background-color: v-bind('kanagawaPalette.textMuted');
       border-radius: 2px;
       position: absolute;
       top: 0;

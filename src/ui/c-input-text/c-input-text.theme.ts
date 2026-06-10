@@ -1,21 +1,21 @@
 import { defineThemes } from '../theme/theme.models';
-import { warmPalette } from '@/theme/palette';
+import { kanagawaPalette } from '@/theme/palette';
 
 export const { useTheme } = defineThemes({
   dark: {
-    backgroundColor: warmPalette.surface,
-    borderColor: warmPalette.border,
+    backgroundColor: kanagawaPalette.surface,
+    borderColor: kanagawaPalette.border,
 
     focus: {
-      backgroundColor: warmPalette.surface,
+      backgroundColor: kanagawaPalette.surface,
     },
   },
   light: {
-    backgroundColor: warmPalette.surface,
-    borderColor: warmPalette.border,
+    backgroundColor: kanagawaPalette.surface,
+    borderColor: kanagawaPalette.border,
 
     focus: {
-      backgroundColor: warmPalette.surface,
+      backgroundColor: kanagawaPalette.surface,
     },
   },
 });

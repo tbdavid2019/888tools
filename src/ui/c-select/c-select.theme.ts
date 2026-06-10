@@ -1,6 +1,6 @@
 import { defineThemes } from '../theme/theme.models';
 import { appThemes } from '../theme/themes';
-import { warmPalette } from '@/theme/palette';
+import { kanagawaPalette } from '@/theme/palette';
 
 const sizes = {
   small: {
@@ -21,13 +21,13 @@ export const { useTheme } = defineThemes({
   dark: {
     sizes,
 
-    backgroundColor: warmPalette.surface,
-    borderColor: warmPalette.border,
-    dropdownShadow: warmPalette.shadow,
+    backgroundColor: kanagawaPalette.surface,
+    borderColor: kanagawaPalette.border,
+    dropdownShadow: kanagawaPalette.shadow,
 
     option: {
       hover: {
-        backgroundColor: warmPalette.accentSoft,
+        backgroundColor: kanagawaPalette.accentSoft,
       },
       active: {
         textColor: appThemes.dark.primary.color,
@@ -35,19 +35,19 @@ export const { useTheme } = defineThemes({
     },
 
     focus: {
-      backgroundColor: warmPalette.surface,
+      backgroundColor: kanagawaPalette.surface,
     },
   },
   light: {
     sizes,
 
-    backgroundColor: warmPalette.surface,
-    borderColor: warmPalette.border,
-    dropdownShadow: warmPalette.shadow,
+    backgroundColor: kanagawaPalette.surface,
+    borderColor: kanagawaPalette.border,
+    dropdownShadow: kanagawaPalette.shadow,
 
     option: {
       hover: {
-        backgroundColor: warmPalette.accentSoft,
+        backgroundColor: kanagawaPalette.accentSoft,
       },
       active: {
         textColor: appThemes.light.primary.color,
@@ -55,7 +55,7 @@ export const { useTheme } = defineThemes({
     },
 
     focus: {
-      backgroundColor: warmPalette.surface,
+      backgroundColor: kanagawaPalette.surface,
     },
   },
 });

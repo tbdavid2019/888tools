@@ -8,7 +8,7 @@ import FavoriteButton from '@/components/FavoriteButton.vue';
 import type { Tool } from '@/tools/tools.types';
 import { useToolStore } from '@/tools/tools.store';
 import { useStyleStore } from '@/stores/style.store';
-import { warmPalette } from '@/theme/palette';
+import { kanagawaPalette } from '@/theme/palette';
 
 const route = useRoute();
 const toolStore = useToolStore();
@@ -16,7 +16,7 @@ const styleStore = useStyleStore();
 
 const layoutBackgroundColor = computed(() => {
   if (!styleStore.isBingWallpaperEnabled) return 'transparent';
-  return `rgba(${warmPalette.glassBackgroundRgb}, ${styleStore.cardOpacity})`;
+  return `rgba(${kanagawaPalette.glassBackgroundRgb}, ${styleStore.cardOpacity})`;
 });
 
 const head = computed<HeadObject>(() => ({
@@ -107,7 +107,7 @@ const contentFlexBasis = computed(() => '520px');
     border-radius: 24px;
     padding: 30px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    border: 1px solid v-bind('warmPalette.overlayBorder');
+    border: 1px solid v-bind('kanagawaPalette.overlayBorder');
   }
 
   ::v-deep(& > *) {
@@ -141,13 +141,13 @@ const contentFlexBasis = computed(() => '520px');
       font-weight: 400;
       margin: 0;
       line-height: 1;
-      color: v-bind('warmPalette.heading');
+      color: v-bind('kanagawaPalette.heading');
     }
 
     .separator {
       width: 200px;
       height: 2px;
-      background: v-bind('warmPalette.accent');
+      background: v-bind('kanagawaPalette.accent');
       opacity: 0.45;
 
       margin: 10px 0;
@@ -156,7 +156,7 @@ const contentFlexBasis = computed(() => '520px');
     .description {
       margin: 0;
       opacity: 0.9;
-      color: v-bind('warmPalette.text');
+      color: v-bind('kanagawaPalette.text');
     }
   }
 }
@@ -176,9 +176,9 @@ const contentFlexBasis = computed(() => '520px');
     background-color: v-bind('layoutBackgroundColor');
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    box-shadow: v-bind('warmPalette.shadow');
+    box-shadow: v-bind('kanagawaPalette.shadow');
     border-top: none;
-    border: 1px solid v-bind('warmPalette.overlayBorder');
+    border: 1px solid v-bind('kanagawaPalette.overlayBorder');
   }
 
   .breadcrumb-link {

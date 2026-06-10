@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useThemeVars } from 'naive-ui';
 import FavoriteButton from './FavoriteButton.vue';
-import { warmPalette } from '@/theme/palette';
+import { kanagawaPalette } from '@/theme/palette';
 import type { Tool } from '@/tools/tools.types';
 
 const props = defineProps<{ tool: Tool & { category: string } }>();
@@ -43,11 +43,11 @@ const theme = useThemeVars();
 
 <style scoped lang="less">
 .tool-title {
-  color: v-bind('warmPalette.heading');
+  color: v-bind('kanagawaPalette.heading');
   font-weight: 600;
 }
 
 .tool-description {
-  color: v-bind('warmPalette.textMuted');
+  color: v-bind('kanagawaPalette.textMuted');
 }
 </style>
