@@ -17,6 +17,7 @@ const themeOverrides = computed(() => (styleStore.isDarkTheme ? darkThemeOverrid
 const { locale } = useI18n();
 
 const layoutBackgroundColor = computed(() => {
+  if (!styleStore.isBingWallpaperEnabled) return kanagawaPalette.background;
   const opacity = styleStore.cardOpacity; // Use raw opacity for better contrast
   return `rgba(${kanagawaPalette.glassBackgroundRgb}, ${opacity})`;
 });
@@ -92,16 +93,16 @@ textarea {
   font: inherit;
 }
 
-/* Global overrides for Naive UI layouts when wallpaper is enabled */
-.with-wallpaper .n-layout, 
+/* Global overrides for Naive UI layouts */
+.with-wallpaper .n-layout,
 .with-wallpaper .n-layout-scroll-container {
   background-color: transparent !important;
 }
 
-.with-wallpaper .n-layout-sider {
+.n-layout-sider {
   background-color: v-bind('layoutBackgroundColor') !important;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border-right: 1px solid rgba(128, 128, 128, 0.2);
+  border-right: 1px solid rgba(128, 128, 128, 0.2) !important;
 }
 </style>
