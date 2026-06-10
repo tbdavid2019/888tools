@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { useStyleStore } from '@/stores/style.store';
-import { kanagawaPalette } from '@/theme/palette';
+import { kanagawaDarkPalette, kanagawaLightPalette } from '@/theme/palette';
 
 const styleStore = useStyleStore();
+const activePalette = computed(() => (styleStore.isDarkTheme ? kanagawaDarkPalette : kanagawaLightPalette));
 </script>
 
 <template>
@@ -28,15 +29,15 @@ const styleStore = useStyleStore();
 .appearance-settings {
   padding: 18px 16px 20px;
   margin-top: 12px;
-  background: rgba(42, 42, 55, 0.78);
-  border: 1px solid v-bind('kanagawaPalette.border');
+  background: v-bind('styleStore.isDarkTheme ? "rgba(42, 42, 55, 0.78)" : "rgba(220, 215, 186, 0.82)"');
+  border: 1px solid v-bind('activePalette.border');
   border-radius: 20px;
-  box-shadow: v-bind('kanagawaPalette.shadow');
+  box-shadow: v-bind('activePalette.shadow');
 
   .section-title {
     font-size: 14px;
     font-weight: 600;
-    color: v-bind('kanagawaPalette.heading');
+    color: v-bind('activePalette.heading');
     margin-bottom: 12px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -65,12 +66,12 @@ const styleStore = useStyleStore();
 
   .label {
     font-size: 15px;
-    color: v-bind('kanagawaPalette.text');
+    color: v-bind('activePalette.text');
   }
 
   .value {
     font-size: 14px;
-    color: v-bind('kanagawaPalette.textMuted');
+    color: v-bind('activePalette.textMuted');
   }
 }
 </style>

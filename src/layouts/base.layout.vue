@@ -11,18 +11,21 @@ import NavbarButtons from '../components/NavbarButtons.vue';
 import AppearanceSettings from '../components/AppearanceSettings.vue';
 import { useStyleStore } from '@/stores/style.store';
 import { config } from '@/config';
-import { kanagawaPalette } from '@/theme/palette';
+import { kanagawaDarkPalette, kanagawaLightPalette } from '@/theme/palette';
 import type { ToolCategory } from '@/tools/tools.types';
 import { useToolStore } from '@/tools/tools.store';
 import CollapsibleToolMenu from '@/components/CollapsibleToolMenu.vue';
 
 const styleStore = useStyleStore();
+const activePalette = computed(() => (styleStore.isDarkTheme ? kanagawaDarkPalette : kanagawaLightPalette));
 
 const { t } = useI18n();
 
 const layoutBackgroundColor = computed(() => {
-  if (!styleStore.isBingWallpaperEnabled) return 'transparent';
-  return `rgba(${kanagawaPalette.glassBackgroundRgb}, ${styleStore.cardOpacity})`;
+  if (!styleStore.isBingWallpaperEnabled) {
+    return 'transparent';
+  }
+  return `rgba(${activePalette.value.glassBackgroundRgb}, ${styleStore.cardOpacity})`;
 });
 
 const toolStore = useToolStore();
@@ -64,7 +67,7 @@ const allToolsCount = computed(() => {
         </div>
 
         <CollapsibleToolMenu :tools-by-category="tools" />
-        
+
         <div class="tool-count">
           {{ $t('home.availableApps', { count: allToolsCount }) }}
         </div>
@@ -156,8 +159,8 @@ const allToolsCount = computed(() => {
   -webkit-backdrop-filter: blur(16px);
   margin: 10px auto 20px;
   width: fit-content;
-  border: 1px solid v-bind('kanagawaPalette.overlayBorder');
-  box-shadow: v-bind('kanagawaPalette.shadow');
+  box-shadow: v-bind('activePalette.shadow');
+  border: 1px solid v-bind('activePalette.overlayBorder');
 }
 
 .hero-wrapper {
@@ -213,7 +216,7 @@ const allToolsCount = computed(() => {
   margin-top: 20px;
   text-align: center;
   font-size: 12px;
-  color: v-bind('kanagawaPalette.textMuted');
+  color: v-bind('activePalette.textMuted');
   padding-bottom: 20px;
 }
 </style>

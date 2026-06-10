@@ -32,69 +32,123 @@ const { download } = useDownloadFileFromBase64({ source: base64 });
 </script>
 
 <template>
-  <div>
-    <n-form label-placement="left" label-width="100">
-      <div flex gap-3>
-        <n-form-item label="Width (in px)" flex-1>
-          <n-input-number v-model:value="width" placeholder="SVG width..." min="1" />
+  <c-card class="svg-placeholder-card">
+    <div class="svg-placeholder-grid">
+      <div class="form-column">
+        <n-form label-placement="left" label-width="100">
+          <div flex gap-3>
+            <n-form-item label="Width (in px)" flex-1>
+              <n-input-number v-model:value="width" placeholder="SVG width..." min="1" />
+            </n-form-item>
+            <n-form-item label="Background" flex-1>
+              <n-color-picker v-model:value="bgColor" :modes="['hex']" />
+            </n-form-item>
+          </div>
+          <div flex gap-3>
+            <n-form-item label="Height (in px)" flex-1>
+              <n-input-number v-model:value="height" placeholder="SVG height..." min="1" />
+            </n-form-item>
+            <n-form-item label="Text color" flex-1>
+              <n-color-picker v-model:value="fgColor" :modes="['hex']" />
+            </n-form-item>
+          </div>
+          <div flex gap-3>
+            <n-form-item label="Font size" flex-1>
+              <n-input-number v-model:value="fontSize" placeholder="Font size..." min="1" />
+            </n-form-item>
+
+            <c-input-text
+              v-model:value="customText"
+              label="Custom text"
+              :placeholder="`Default is ${width}x${height}`"
+              label-position="left"
+              label-width="100px"
+              label-align="right"
+              flex-1
+            />
+          </div>
+          <n-form-item label="Use exact size" label-placement="left">
+            <n-switch v-model:value="useExactSize" />
+          </n-form-item>
+        </n-form>
+
+        <n-form-item label="SVG HTML element">
+          <TextareaCopyable :value="svgString" copy-placement="none" />
         </n-form-item>
-        <n-form-item label="Background" flex-1>
-          <n-color-picker v-model:value="bgColor" :modes="['hex']" />
-        </n-form-item>
-      </div>
-      <div flex gap-3>
-        <n-form-item label="Height (in px)" flex-1>
-          <n-input-number v-model:value="height" placeholder="SVG height..." min="1" />
-        </n-form-item>
-        <n-form-item label="Text color" flex-1>
-          <n-color-picker v-model:value="fgColor" :modes="['hex']" />
-        </n-form-item>
-      </div>
-      <div flex gap-3>
-        <n-form-item label="Font size" flex-1>
-          <n-input-number v-model:value="fontSize" placeholder="Font size..." min="1" />
+        <n-form-item label="SVG in Base64">
+          <TextareaCopyable :value="base64" copy-placement="none" />
         </n-form-item>
 
-        <c-input-text
-          v-model:value="customText"
-          label="Custom text"
-          :placeholder="`Default is ${width}x${height}`"
-          label-position="left"
-          label-width="100px"
-          label-align="right"
-          flex-1
-        />
+        <div flex justify-center gap-3>
+          <c-button @click="copySVG()">
+            Copy svg
+          </c-button>
+          <c-button @click="copyBase64()">
+            Copy base64
+          </c-button>
+          <c-button @click="download()">
+            Download svg
+          </c-button>
+        </div>
       </div>
-      <n-form-item label="Use exact size" label-placement="left">
-        <n-switch v-model:value="useExactSize" />
-      </n-form-item>
-    </n-form>
 
-    <n-form-item label="SVG HTML element">
-      <TextareaCopyable :value="svgString" copy-placement="none" />
-    </n-form-item>
-    <n-form-item label="SVG in Base64">
-      <TextareaCopyable :value="base64" copy-placement="none" />
-    </n-form-item>
-
-    <div flex justify-center gap-3>
-      <c-button @click="copySVG()">
-        Copy svg
-      </c-button>
-      <c-button @click="copyBase64()">
-        Copy base64
-      </c-button>
-      <c-button @click="download()">
-        Download svg
-      </c-button>
+      <div class="preview-column">
+        <div class="preview-frame">
+          <img :src="base64" alt="Image">
+        </div>
+      </div>
     </div>
-  </div>
-
-  <img :src="base64" alt="Image">
+  </c-card>
 </template>
 
 <style lang="less" scoped>
+.svg-placeholder-card {
+  width: 100%;
+  max-width: none;
+  flex: 1 1 100%;
+}
+
+.svg-placeholder-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
+.preview-column {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.form-column {
+  min-width: 0;
+}
+
+.preview-frame {
+  width: 100%;
+  padding: 20px;
+  border-radius: 18px;
+  border: 1px dashed var(--border-color);
+  background: var(--card-color);
+  display: flex;
+  justify-content: center;
+  overflow: auto;
+}
+
+.preview-frame img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
 .n-input-number {
   width: 100%;
+}
+
+@media (min-width: 980px) {
+  .svg-placeholder-grid {
+    grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+    align-items: start;
+  }
 }
 </style>

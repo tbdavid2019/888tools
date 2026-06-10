@@ -5,7 +5,7 @@ import { darkThemeOverrides, lightThemeOverrides } from './themes';
 import { layouts } from './layouts';
 import { useStyleStore } from './stores/style.store';
 import BingBackground from './components/BingBackground.vue';
-import { kanagawaPalette } from './theme/palette';
+import { kanagawaDarkPalette, kanagawaLightPalette } from './theme/palette';
 
 const route = useRoute();
 const layout = computed(() => route?.meta?.layout ?? layouts.base);
@@ -13,13 +13,16 @@ const styleStore = useStyleStore();
 
 const theme = computed(() => (styleStore.isDarkTheme ? darkTheme : null));
 const themeOverrides = computed(() => (styleStore.isDarkTheme ? darkThemeOverrides : lightThemeOverrides));
+const activePalette = computed(() => (styleStore.isDarkTheme ? kanagawaDarkPalette : kanagawaLightPalette));
 
 const { locale } = useI18n();
 
 const layoutBackgroundColor = computed(() => {
-  if (!styleStore.isBingWallpaperEnabled) return kanagawaPalette.background;
+  if (!styleStore.isBingWallpaperEnabled) {
+    return activePalette.value.background;
+  }
   const opacity = styleStore.cardOpacity; // Use raw opacity for better contrast
-  return `rgba(${kanagawaPalette.glassBackgroundRgb}, ${opacity})`;
+  return `rgba(${activePalette.value.glassBackgroundRgb}, ${opacity})`;
 });
 
 syncRef(
@@ -103,6 +106,6 @@ textarea {
   background-color: v-bind('layoutBackgroundColor') !important;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border-right: 1px solid rgba(128, 128, 128, 0.2) !important;
+  border-right: 1px solid v-bind('activePalette.overlayBorder') !important;
 }
 </style>

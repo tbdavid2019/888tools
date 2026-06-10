@@ -49,7 +49,7 @@ const { download } = useQRCode({
   image: logoDataUrl,
 });
 
-const resetToBasic = () => {
+function resetToBasic() {
   text.value = 'https://tool.david888.com';
   foreground.value = '#000000ff';
   background.value = '#ffffffff';
@@ -60,9 +60,9 @@ const resetToBasic = () => {
   logoDataUrl.value = undefined;
   logoMargin.value = 0;
   errorCorrectionLevel.value = 'medium';
-};
+}
 
-const onLogoChange = (event: Event) => {
+function onLogoChange(event: Event) {
   const target = event.target as HTMLInputElement;
   const file = target.files?.[0];
   if (!file) {
@@ -70,19 +70,19 @@ const onLogoChange = (event: Event) => {
     return;
   }
   const reader = new FileReader();
-  reader.onload = e => {
+  reader.onload = (e) => {
     logoDataUrl.value = e.target?.result as string;
   };
   reader.readAsDataURL(file);
-};
+}
 </script>
 
 <template>
-  <c-card>
-    <n-grid x-gap="12" y-gap="12" cols="1">
+  <c-card class="qr-generator-card">
+    <n-grid class="qr-generator-grid" x-gap="18" y-gap="18" cols="1">
       <n-gi>
-        <div flex flex-col items-center gap-3 mt-2>
-          <div ref="qrContainer" p-4 flex items-center justify-center rd-8px bg-white shadow-sm />
+        <div class="preview-panel" mt-2 flex flex-col items-center gap-3>
+          <div ref="qrContainer" flex items-center justify-center rd-8px bg-white p-4 shadow-sm />
           <c-button @click="download">
             Download qr-code
           </c-button>
@@ -95,11 +95,11 @@ const onLogoChange = (event: Event) => {
           label-width="130px"
           label-align="right"
           label="Text:"
-          multiline
+
           rows="1"
-          autosize
+
           placeholder="Your link or text..."
-          mb-6
+          autosize multiline mb-6
         />
         <n-form label-width="130" label-placement="left">
           <div flex justify-end>
@@ -138,7 +138,7 @@ const onLogoChange = (event: Event) => {
             <n-input-number v-model:value="size" :min="180" :max="640" />
           </n-form-item>
           <n-form-item label="Logo image:">
-            <input type="file" accept="image/*" @change="onLogoChange" />
+            <input type="file" accept="image/*" @change="onLogoChange">
           </n-form-item>
           <n-form-item label="Logo margin:">
             <n-input-number v-model:value="logoMargin" :min="0" :max="30" />
@@ -156,3 +156,23 @@ const onLogoChange = (event: Event) => {
     </n-grid>
   </c-card>
 </template>
+
+<style scoped>
+.qr-generator-card {
+  width: 100%;
+  max-width: none;
+  flex: 1 1 100%;
+}
+
+.preview-panel {
+  position: sticky;
+  top: 8px;
+}
+
+@media (min-width: 980px) {
+  .qr-generator-grid {
+    grid-template-columns: minmax(320px, 0.7fr) minmax(0, 1.3fr) !important;
+    align-items: start;
+  }
+}
+</style>

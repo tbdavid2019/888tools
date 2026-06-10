@@ -2,12 +2,15 @@
 import { useStorage } from '@vueuse/core';
 import { RouterLink, useRoute } from 'vue-router';
 import MenuIconItem from './MenuIconItem.vue';
-import { kanagawaPalette } from '@/theme/palette';
+import { kanagawaDarkPalette, kanagawaLightPalette } from '@/theme/palette';
+import { useStyleStore } from '@/stores/style.store';
 import type { Tool, ToolCategory } from '@/tools/tools.types';
 
 const props = withDefaults(defineProps<{ toolsByCategory?: ToolCategory[] }>(), { toolsByCategory: () => [] });
 const { toolsByCategory } = toRefs(props);
 const route = useRoute();
+const styleStore = useStyleStore();
+const activePalette = computed(() => (styleStore.isDarkTheme ? kanagawaDarkPalette : kanagawaLightPalette));
 
 const makeLabel = (tool: Tool) => () => h(RouterLink, { to: tool.path }, { default: () => tool.name });
 const makeIcon = (tool: Tool) => () => h(MenuIconItem, { tool });
@@ -101,7 +104,7 @@ const menuOptions = computed(() =>
       width: 2px;
       height: 100%;
       content: ' ';
-      background-color: v-bind('kanagawaPalette.textMuted');
+      background-color: v-bind('activePalette.textMuted');
       border-radius: 2px;
       position: absolute;
       top: 0;
