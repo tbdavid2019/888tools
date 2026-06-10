@@ -32,13 +32,13 @@ export class P2PService {
 
     this.peer.on('open', (id) => {
       this.peerId.value = id;
-      if (role === 'receiver') {
+      if (role === 'sender') {
         this.state.value = 'disconnected'; // Waiting for connection
       }
     });
 
     this.peer.on('connection', (conn) => {
-      if (role === 'receiver') {
+      if (role === 'sender') {
         this.setupDataConnection(conn);
       }
     });

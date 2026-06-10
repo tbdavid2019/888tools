@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onUnmounted } from 'vue';
-import { NProgress, NIcon } from 'naive-ui';
+import { useClipboard } from '@vueuse/core';
+import { NProgress, NIcon, useMessage } from 'naive-ui';
 import { P2PService, type Role } from './p2p-file-transfer.service';
 import {
   PublicOutlined as IconWorld,
@@ -124,6 +125,16 @@ function resetConnection() {
 onUnmounted(() => {
   p2pService.destroy();
 });
+
+const { copy } = useClipboard();
+const message = useMessage();
+
+function copyPeerId() {
+  if (peerId.value) {
+    copy(peerId.value);
+    message.success('已複製房間代碼！');
+  }
+}
 
 function handleFileUpload(file: File) {
   selectedFile.value = file;
@@ -262,12 +273,17 @@ async function acceptManualAnswer() {
 
         <!-- PeerJS Signaling -->
         <div v-if="connectionMode === 'peerjs'" class="mt-2">
-          <div v-if="role === 'receiver'" class="p-8 rounded-xl text-center border" style="background-color: var(--action-color); border-color: var(--divider-color)">
-            <div class="text-sm mb-4" style="color: var(--text-color-2)">請將以下代碼分享給傳送端</div>
-            <div class="text-3xl md:text-4xl font-mono font-bold select-all tracking-wider" style="color: var(--primary-color)">{{ peerId || '生成中...' }}</div>
+          <div v-if="role === 'sender'" class="p-8 rounded-xl text-center border" style="background-color: var(--action-color); border-color: var(--divider-color)">
+            <div class="text-sm mb-4" style="color: var(--text-color-2)">請將以下代碼分享給接收端</div>
+            <div class="flex items-center justify-center gap-4">
+              <div class="text-3xl md:text-4xl font-mono font-bold select-all tracking-wider" style="color: var(--primary-color)">{{ peerId || '生成中...' }}</div>
+              <c-button v-if="peerId" @click="copyPeerId" size="small" type="primary" secondary>
+                複製
+              </c-button>
+            </div>
           </div>
-          <div v-if="role === 'sender'" class="flex flex-col gap-3">
-            <c-label label="輸入接收端的房間代碼"></c-label>
+          <div v-if="role === 'receiver'" class="flex flex-col gap-3">
+            <c-label label="輸入傳送端的房間代碼"></c-label>
             <div class="flex gap-2">
               <c-input-text v-model:value="targetPeerId" placeholder="例如: 123-abc-456" class="flex-1 text-lg font-mono" />
               <c-button type="primary" size="large" @click="connectPeerJS">連線</c-button>
