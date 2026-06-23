@@ -9,4 +9,5 @@ export const tool = defineTool({
   keywords: ['p2p', 'file', 'transfer', 'webrtc', 'peerjs', 'share', 'direct'],
   component: () => import('./p2p-file-transfer.vue'),
   icon: WifiTetheringOutlined,
+  createdAt: new Date('2026-06-23'),
 });

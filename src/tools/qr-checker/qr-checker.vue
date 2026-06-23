@@ -38,16 +38,24 @@ const startCamera = async () => {
   if (!previewRef.value) return;
   error.value = '';
   scanning.value = true;
-  scanner = new Html5Qrcode(previewRef.value.id);
+  scanner = new Html5Qrcode(previewRef.value.id, {
+    verbose: false,
+    formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
+  });
   try {
     const cams = await Html5Qrcode.getCameras();
     availableCameras.value = cams.map(c => ({ id: c.id, label: c.label || c.id }));
     const id = cameraId.value ?? cams[0]?.id;
     if (!id) throw new Error('No camera found');
     cameraId.value = id;
-    await scanner.start({ deviceId: { exact: id } }, { fps: 10, formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE] }, (decodedText) => {
-      addResult(decodedText);
-    });
+    await scanner.start(
+      { deviceId: { exact: id } },
+      { fps: 10 },
+      (decodedText) => {
+        addResult(decodedText);
+      },
+      undefined,
+    );
     cameraEnabled.value = true;
   } catch (e: any) {
     error.value = e?.message ?? String(e);

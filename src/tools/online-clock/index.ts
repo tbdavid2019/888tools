@@ -9,4 +9,5 @@ export const tool = defineTool({
   keywords: ['clock', 'time', 'flip'],
   component: () => import('./online-clock.vue'),
   icon: Clock,
+  createdAt: new Date('2026-06-23'),
 });

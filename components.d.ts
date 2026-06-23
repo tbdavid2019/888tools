@@ -152,6 +152,7 @@ declare module '@vue/runtime-core' {
     MacAddressLookup: typeof import('./src/tools/mac-address-lookup/mac-address-lookup.vue')['default']
     MarkdownToHtml: typeof import('./src/tools/markdown-to-html/markdown-to-html.vue')['default']
     MathEvaluator: typeof import('./src/tools/math-evaluator/math-evaluator.vue')['default']
+    MeetingCaptions: typeof import('./src/tools/meeting-captions/meeting-captions.vue')['default']
     MenuBar: typeof import('./src/tools/html-wysiwyg-editor/editor/menu-bar.vue')['default']
     MenuBarItem: typeof import('./src/tools/html-wysiwyg-editor/editor/menu-bar-item.vue')['default']
     MenuIconItem: typeof import('./src/components/MenuIconItem.vue')['default']

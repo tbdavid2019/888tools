@@ -81,7 +81,8 @@ const renderBarcode = () => {
       delete (options as any).backgroundcolor;
     }
 
-    bwipjs.toCanvas(canvasRef.value, options);
+    (bwipjs as unknown as { toCanvas: (canvas: HTMLCanvasElement, options: Record<string, unknown>) => void })
+      .toCanvas(canvasRef.value, options);
   } catch (e: any) {
     // console.error(e);
     // Don't spam messages on every keystroke error, but maybe show in UI?

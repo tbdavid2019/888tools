@@ -108,6 +108,7 @@ import { tool as imageConverter } from './image-converter';
 import { tool as videoConverter } from './video-converter';
 import { tool as audioEditor } from './audio-editor';
 import { tool as lyricPlayer } from './lyric-player';
+import { tool as meetingCaptions } from './meeting-captions';
 import { tool as micCameraTester } from './mic-camera-tester';
 import { tool as colorCorrection } from './color-correction';
 import { tool as svgTools } from './svg-tools';
@@ -177,7 +178,7 @@ export const toolsByCategory: ToolCategory[] = [
   },
   {
     name: 'audio',
-    components: [audioEditor, lyricPlayer],
+    components: [audioEditor, lyricPlayer, meetingCaptions],
   },
   {
     name: 'development',

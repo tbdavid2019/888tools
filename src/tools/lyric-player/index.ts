@@ -9,5 +9,5 @@ export const tool = defineTool({
   keywords: ['lyrics', 'lrc', 'whisper', 'audio', 'music', 'transcription', 'karaoke'],
   component: () => import('./lyric-player.vue'),
   icon: Music,
-  createdAt: new Date('2026-05-26'),
+  createdAt: new Date('2026-06-23'),
 });

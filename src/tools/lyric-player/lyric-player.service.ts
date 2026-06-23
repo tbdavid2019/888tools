@@ -75,7 +75,7 @@ export function hasStructureMarkers(lines: string[]): boolean {
 
 export function structuredDistribute(lines: string[], duration: number): LyricLine[] {
   const sections = parseSongStructure(lines);
-  const gapEstimates = {
+  const gapEstimates: Record<string, number> = {
     intro: Math.min(duration * 0.06, 12),
     break: 3,
     instrumental: Math.min(duration * 0.08, 18),

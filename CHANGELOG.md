@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
  
+## Version 2026.06.23
+
+### Features
+- **meeting-captions**: 新增「即時會議字幕」工具，使用瀏覽器端本地 Whisper 模型進行麥克風近即時聽寫，支援延遲轉寫、上下文保留、暫停/繼續、歷史回看與 localStorage 保存。
+- **meeting-captions**: 支援 Tiny/Base/Small/Medium Whisper 模型選單，頁面載入時會先預載模型，錄音開始後可直接收音並週期性轉寫。
+- **meeting-captions**: 停止錄音時可自動下載完整 WAV 錄音檔，並保留逐字稿文字匯出與複製功能。
+- **meeting-captions**: 新增 history 改名與清除功能，清除按鈕固定放在 history 面板底部，避免與 New 操作混在同一區。
+- **meeting-captions**: 補齊繁體中文與英文 i18n 文案，包含按鈕、狀態、提示、錯誤訊息、prompt 與 confirm。
+- **home**: 將 `meeting-captions`、`lyric-player`、`p2p-file-transfer`、`online-clock` 標記為最新工具，讓首頁 New / 最新工具區顯示最近 4 個工具更新。
+
+### Bug Fixes
+- **meeting-captions**: 改用 Web Audio PCM 捕捉與重採樣，避免 MediaRecorder WebM chunk concat/decode 不穩定造成轉寫失敗。
+- **meeting-captions**: 修正工具頁被全站窄版 layout 壓縮的問題，改為 history + wide stage 的寬版桌面布局，並保留 RWD 單欄 fallback。
+- **typecheck**: 修復多個既有工具的 TypeScript 型別問題，讓全站 `pnpm typecheck` 可通過。
+
 ## Version 2026.06.10
 
 ### Bug Fixes

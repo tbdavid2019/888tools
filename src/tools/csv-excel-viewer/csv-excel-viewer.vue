@@ -55,7 +55,6 @@ const parseWorkbook = (workbook: XLSX.WorkBook) => {
     header: 1,
     defval: '',
     raw: false,
-    cellText: true,
   }) as any[][];
 
   const normalized = normalizeTable(jsonData);

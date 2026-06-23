@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useTimestamp } from '@vueuse/core';
 import { useThemeVars } from 'naive-ui';
-import { useQRCode } from '../qr-code-generator/useQRCode';
+import QRCode from 'qrcode';
 import { base32toHex, buildKeyUri, generateSecret, generateTOTP, getCounterFromTime } from './otp.service';
 import TokenDisplay from './token-display.vue';
 import { useStyleStore } from '@/stores/style.store';
@@ -29,14 +29,18 @@ const [tokens] = computedRefreshable(
 );
 
 const keyUri = computed(() => buildKeyUri({ secret: secret.value }));
+const qrcode = ref('');
 
-const { qrcode } = useQRCode({
-  text: keyUri,
-  color: {
-    background: computed(() => (styleStore.isDarkTheme ? '#ffffff' : '#00000000')),
-    foreground: '#000000',
-  },
-  options: { width: 210 },
+watch([keyUri, computed(() => styleStore.isDarkTheme)], async () => {
+  qrcode.value = await QRCode.toDataURL(keyUri.value, {
+    width: 210,
+    color: {
+      dark: '#000000',
+      light: styleStore.isDarkTheme ? '#ffffff' : '#00000000',
+    },
+  });
+}, {
+  immediate: true,
 });
 
 const secretValidationRules = [

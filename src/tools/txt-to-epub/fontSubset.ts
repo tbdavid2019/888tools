@@ -121,10 +121,10 @@ export async function subsetFont(
 
     onProgress({ stage: 'generating', message: '正在產生子集化字型...' });
 
-    const subsetBuffer = font.write({
+    const subsetBuffer = normalizeFontOutput(font.write({
       type: 'ttf',
       hinting: false,
-    });
+    }));
 
     onProgress({ stage: 'done', message: '字型子集化完成！' });
 
@@ -139,6 +139,18 @@ export async function subsetFont(
     console.error('字型子集化失敗:', error);
     throw new Error(`字型子集化失敗: ${error.message}`);
   }
+}
+
+function normalizeFontOutput(output: ArrayBuffer | Buffer | string): ArrayBuffer {
+  if (output instanceof ArrayBuffer) {
+    return output;
+  }
+
+  if (typeof output === 'string') {
+    return new TextEncoder().encode(output).buffer;
+  }
+
+  return output.buffer.slice(output.byteOffset, output.byteOffset + output.byteLength);
 }
 
 export function generateFontFaceCSS(family: string, filename: string, format = 'truetype'): string {

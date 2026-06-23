@@ -11,6 +11,9 @@ const message = useMessage();
 
 // EPUB File state
 const file = ref<File | null>(null);
+const fileInput = ref<HTMLInputElement | null>(null);
+const fontInput = ref<HTMLInputElement | null>(null);
+const coverInput = ref<HTMLInputElement | null>(null);
 const isProcessing = ref(false);
 const progressStage = ref('');
 const progressPercent = ref(0);
@@ -51,6 +54,10 @@ const originalCover = ref<{ path: string; mimeType: string; dataUrl: string } | 
 const coverAction = ref<'keep' | 'replace' | 'remove'>('keep');
 const newCoverBlob = ref<File | null>(null);
 const newCoverPreviewUrl = ref('');
+
+function clickFileInput(input: HTMLInputElement | null) {
+  input?.click();
+}
 
 // Live Preview Sample Text
 const previewTitle = ref('即時排版預覽');
@@ -1381,7 +1388,7 @@ onUnmounted(() => {
         @dragenter="isDragging = true"
         @dragleave="isDragging = false"
         @drop.prevent="handleDrop"
-        @click="$refs.fileInput.click()"
+        @click="clickFileInput(fileInput)"
       >
         <input
           ref="fileInput"
@@ -1484,7 +1491,7 @@ onUnmounted(() => {
               </span>
             </div>
             <div class="flex gap-2">
-              <c-button size="small" tertiary class="flex-1" @click="$refs.fontInput.click()">
+              <c-button size="small" tertiary class="flex-1" @click="clickFileInput(fontInput)">
                 {{ customFontFile ? '重新選擇字型' : '選擇字型檔案' }}
               </c-button>
               <input
@@ -1578,7 +1585,7 @@ onUnmounted(() => {
                 </span>
               </div>
               <div class="flex flex-wrap gap-2">
-                <c-button size="small" tertiary @click="$refs.coverInput.click()">替換封面</c-button>
+                <c-button size="small" tertiary @click="clickFileInput(coverInput)">替換封面</c-button>
                 <c-button v-if="coverAction !== 'remove'" size="small" danger tertiary @click="removeCover">移除封面</c-button>
                 <c-button v-if="coverAction !== 'keep'" size="small" tertiary @click="restoreOriginalCover">還原</c-button>
               </div>
@@ -1594,7 +1601,7 @@ onUnmounted(() => {
             @dragenter="isCoverDragging = true"
             @dragleave="isCoverDragging = false"
             @drop.prevent="handleCoverDrop"
-            @click="$refs.coverInput.click()"
+            @click="clickFileInput(coverInput)"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />

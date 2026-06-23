@@ -234,7 +234,7 @@ const timezones = computed(() => {
       'Asia/Singapore',
       'Australia/Sydney',
     ];
-  return tzList.map(tz => ({ label: tz, value: tz }));
+  return tzList.map((tz: string) => ({ label: tz, value: tz }));
 });
 
 const hourRotation = computed(() => {

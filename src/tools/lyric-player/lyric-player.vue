@@ -208,9 +208,15 @@ const convertLyricsToTraditional = () => {
 };
 
 const getPreferredRuntime = async (): Promise<{ device: 'webgpu' | 'wasm', dtype: 'fp32' | 'q8' }> => {
-  if (navigator.gpu) {
+  const webGpuNavigator = navigator as Navigator & {
+    gpu?: {
+      requestAdapter: () => Promise<unknown>
+    }
+  };
+
+  if (webGpuNavigator.gpu) {
     try {
-      const adapter = await navigator.gpu.requestAdapter();
+      const adapter = await webGpuNavigator.gpu.requestAdapter();
       if (adapter) {
         return { device: 'webgpu', dtype: 'fp32' };
       }
@@ -310,7 +316,8 @@ const transcribeChunks = async (file: File, transcriber: Transcriber): Promise<W
           continue;
         }
 
-        const [start = 0, stop = start] = chunk.timestamp ?? [];
+        const start = chunk.timestamp?.[0] ?? 0;
+        const stop = chunk.timestamp?.[1] ?? start;
         timestampCount += 1;
         if (start < 1) {
           nearZeroCount += 1;
@@ -404,7 +411,7 @@ onBeforeUnmount(() => {
       ref="dropZoneRef"
       class="upload-zone"
       :class="{ disabled: hasAudio }"
-      @click="openAudioDialog"
+      @click="() => openAudioDialog()"
     >
       <n-icon size="42" :component="Upload" />
       <div>

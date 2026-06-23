@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { PetSize, calculateHumanMonthsFromPetAge, normalizePetMonths, toYearsAndMonths } from '../pet-age-calculator/pet-age';
+import { calculateHumanMonthsFromPetAge, normalizePetMonths, toYearsAndMonths } from '../pet-age-calculator/pet-age';
+import type { PetSize } from '../pet-age-calculator/pet-age';
 
 const { t } = useI18n();
 const size = ref<PetSize>('small');

@@ -565,6 +565,101 @@ tools:
     title: AI 歌詞播放器
     description: 使用本機 Whisper 模型辨識或對齊歌詞，支援 LRC 上傳、編輯與匯出。
 
+  meeting-captions:
+    title: 即時會議字幕
+    description: 使用本地 Whisper 模型做麥克風近即時聽寫，支援暫停、歷史回看與 localStorage 保存。
+    history:
+      eyebrow: History
+      title: Session
+      empty: 目前還沒有會議紀錄，按 New 建立第一場。
+      lineCount: "{count} lines"
+    language:
+      chinese: 中文
+      english: 英文
+      japanese: 日文
+      korean: 韓文
+      auto: 自動偵測
+    models:
+      tiny:
+        label: Tiny - 最快
+        hint: 反應最快，準確度最低，適合先確認流程。
+      base:
+        label: Base - 快速
+        hint: 比 Tiny 聰明，仍偏輕量。
+      small:
+        label: Small - 平衡
+        hint: 目前預設，中文可用性和速度比較平衡。
+      medium:
+        label: Medium - 更聰明/較慢
+        hint: 更大更準，但下載、記憶體和轉寫時間都會明顯增加。
+    fields:
+      language: 語言
+      whisperModel: Whisper 模型
+      downloadOnStop: 停止時下載錄音
+      downloadOnStopHint: 目前輸出 WAV；MP3 需要額外編碼器。
+    actions:
+      new: New
+      clearHistory: 清除 history
+      rename: 改名
+      start: 開始
+      pause: 暫停
+      resume: 繼續
+      stop: 停止
+      saveNow: 立即儲存
+    recordingState:
+      idle: 待機
+      recording: 錄音中
+      paused: 已暫停
+    status:
+      modelNotLoaded: Whisper 未載入
+      waitingFirstTranscript: 收音中，等待第一段轉寫...
+      preparePreload: 準備預載 {model}
+      transcribing: 本地 Whisper 轉寫中...
+      pausedCaptionsSaved: 已暫停，字幕已保留
+      listening: 聽寫中...
+      webgpuFallback: WebGPU 載入失敗，改用 WASM...
+      preloadingRuntime: 預載 {model}（{runtime}）...
+      preloadedRuntime: "{model} 已預載（{runtime}）"
+      downloadingModel: 下載模型中 {progress}%
+      preloading: 預載 {model} 中...
+      startedListening: 已開始收音，{status}
+      pausedEllipsis: 已暫停...
+      listeningEllipsis: 聽寫中...
+      processingLatest: 正在整理最新一段字幕
+    prompts:
+      renameSession: 輸入新的會議名稱
+      clearHistory: 確定清除所有會議歷史？這會刪除 localStorage 內的逐字稿紀錄。
+    messages:
+      cannotSwitchWhileRecording: 錄音中無法切換歷史紀錄
+      sessionRenamed: 會議名稱已更新
+      historyCleared: 歷史紀錄已清除
+      transcriptCopied: 逐字稿已複製
+      noAudioToDownload: 沒有錄到可下載的音訊
+      wavDownloaded: 已下載 WAV 錄音檔
+    errors:
+      microphoneAccess: 無法存取麥克風
+      startFailed: "啟動錄音失敗：{reason}"
+      transcriptionFailed: 轉寫失敗
+      transcriptionFailedWithReason: "轉寫失敗：{reason}"
+      modelLoadFailed: 模型載入失敗
+      modelLoadFailedWithReason: "模型載入失敗：{reason}"
+    sections:
+      transcript: 逐字稿
+      status: 狀態
+    transcript:
+      empty: 還沒有字幕內容。
+    statusPanel:
+      model: 模型
+      modelStatus: 模型狀態
+      progress: 進度
+      audioDownload: 錄音下載
+      downloadWavOnStop: 停止時下載 WAV
+      off: 關閉
+      storage: 儲存
+      history: 歷史
+      sessionCount: "{count} sessions"
+      pauseDisplay: 暫停顯示
+
   mic-camera-tester:
     title: 麥克風與攝影機測試
     description: 測試與預覽您的攝影機與麥克風裝置，提供視覺化音量回饋。
@@ -591,5 +686,3 @@ tools:
   p2p-file-transfer:
     title: "P2P 點對點傳檔"
     description: "透過 WebRTC 協定在裝置之間直接傳送檔案，無檔案大小限制且端對端加密。"
-
-

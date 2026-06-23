@@ -12,7 +12,6 @@ const config: Config = {
   output: {
     format: 'image/png',
     quality: 1,
-    type: 'foreground',
   },
   progress: (key: string, current: number, total: number) => {
     // Optional: could handle detailed progress here

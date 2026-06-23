@@ -569,6 +569,101 @@ tools:
     title: AI Lyric Player
     description: Recognize or align lyrics with a browser-side Whisper model, with LRC upload, editing, and export.
 
+  meeting-captions:
+    title: Live Meeting Captions
+    description: Near real-time microphone transcription with a local Whisper model, plus pause, history, and localStorage persistence.
+    history:
+      eyebrow: History
+      title: Sessions
+      empty: No meeting records yet. Press New to create the first session.
+      lineCount: "{count} lines"
+    language:
+      chinese: Chinese
+      english: English
+      japanese: Japanese
+      korean: Korean
+      auto: Auto detect
+    models:
+      tiny:
+        label: Tiny - fastest
+        hint: Fastest response, lowest accuracy. Good for testing the flow.
+      base:
+        label: Base - fast
+        hint: Smarter than Tiny while still lightweight.
+      small:
+        label: Small - balanced
+        hint: Default choice, balancing Chinese accuracy and speed.
+      medium:
+        label: Medium - smarter/slower
+        hint: Larger and more accurate, but downloads, memory usage, and transcription time increase a lot.
+    fields:
+      language: Language
+      whisperModel: Whisper model
+      downloadOnStop: Download recording on stop
+      downloadOnStopHint: Currently exports WAV. MP3 needs an extra encoder.
+    actions:
+      new: New
+      clearHistory: Clear history
+      rename: Rename
+      start: Start
+      pause: Pause
+      resume: Resume
+      stop: Stop
+      saveNow: Save now
+    recordingState:
+      idle: Idle
+      recording: Recording
+      paused: Paused
+    status:
+      modelNotLoaded: Whisper not loaded
+      waitingFirstTranscript: Recording audio, waiting for the first transcript...
+      preparePreload: Preparing to preload {model}
+      transcribing: Local Whisper is transcribing...
+      pausedCaptionsSaved: Paused, captions preserved
+      listening: Listening...
+      webgpuFallback: WebGPU failed, falling back to WASM...
+      preloadingRuntime: Preloading {model} ({runtime})...
+      preloadedRuntime: "{model} preloaded ({runtime})"
+      downloadingModel: Downloading model {progress}%
+      preloading: Preloading {model}...
+      startedListening: Audio capture started, {status}
+      pausedEllipsis: Paused...
+      listeningEllipsis: Listening...
+      processingLatest: Processing the latest caption segment
+    prompts:
+      renameSession: Enter a new meeting name
+      clearHistory: Clear all meeting history? This deletes transcript records from localStorage.
+    messages:
+      cannotSwitchWhileRecording: Cannot switch history while recording
+      sessionRenamed: Meeting name updated
+      historyCleared: History cleared
+      transcriptCopied: Transcript copied
+      noAudioToDownload: No downloadable audio was recorded
+      wavDownloaded: WAV recording downloaded
+    errors:
+      microphoneAccess: Cannot access microphone
+      startFailed: "Failed to start recording: {reason}"
+      transcriptionFailed: Transcription failed
+      transcriptionFailedWithReason: "Transcription failed: {reason}"
+      modelLoadFailed: Model load failed
+      modelLoadFailedWithReason: "Model load failed: {reason}"
+    sections:
+      transcript: Transcript
+      status: Status
+    transcript:
+      empty: No captions yet.
+    statusPanel:
+      model: Model
+      modelStatus: Model status
+      progress: Progress
+      audioDownload: Audio download
+      downloadWavOnStop: Download WAV on stop
+      off: "Off"
+      storage: Storage
+      history: History
+      sessionCount: "{count} sessions"
+      pauseDisplay: Pause display
+
   mic-camera-tester:
     title: Mic & Camera Tester
     description: Test and preview your camera and microphone devices with visual feedback.
@@ -595,5 +690,3 @@ tools:
   p2p-file-transfer:
     title: "P2P File Transfer"
     description: "Transfer files directly between devices using WebRTC."
-
-

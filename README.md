@@ -46,8 +46,22 @@
 | 36  | 版面擴充：`世界時間`、`QR Code 生成器`、`SVG Placeholder Generator` 改為桌面版寬屏布局，提升多欄工具在大螢幕下的可用空間（https://tool.david888.com/world-clock 、https://tool.david888.com/qrcode-generator 、https://tool.david888.com/svg-placeholder-generator ） |
 | 37  | 側欄與共用元件主題修正：light mode 側欄、語系下拉、輸入框、選單、程式碼區塊與工具卡全面改回正確的 Kanagawa light 配色，不再殘留 dark palette 樣式 |
 | 38  | 對比與可讀性修正：`Color 選擇器`、`特殊字體產生器` 等工具頁移除硬編碼深/淺底色，改為統一使用 theme token，避免 light mode 看不到字或 dark mode 白底刺眼 |
+| 39  | 新增「即時會議字幕」工具（音訊 分類），使用本地 Whisper 模型做麥克風近即時聽寫，支援模型預載、Tiny/Base/Small/Medium 模型切換、暫停/繼續、localStorage 歷史、會議改名、清除 history、停止時下載 WAV 錄音檔，以及繁體中文/英文介面（https://tool.david888.com/meeting-captions ） |
+| 40  | `AI 歌詞播放器` 更新為最新工具：保留本地 Whisper 歌詞辨識/對齊、LRC 編輯與匯出能力，並納入首頁「最新工具」區方便快速進入（https://tool.david888.com/lyric-player ） |
+| 41  | `P2P 點對點傳檔` 更新為最新工具：透過 WebRTC 直接傳送檔案，無伺服器中轉限制且端對端加密，並納入首頁「最新工具」區（https://tool.david888.com/p2p-file-transfer ） |
+| 42  | `線上時鐘` 更新為最新工具：支援網路校時、翻頁/模擬時鐘與全螢幕顯示，並納入首頁「最新工具」區（https://tool.david888.com/online-clock ） |
 
 ## Changelog
+
+### 2026-06-23
+
+- 新增「即時會議字幕」工具：使用瀏覽器端本地 Whisper 模型進行麥克風近即時聽寫，支援延遲轉寫、上下文保留、暫停/繼續、歷史回看與 localStorage 保存（https://tool.david888.com/meeting-captions ）
+- 即時會議字幕：新增 Tiny/Base/Small/Medium Whisper 模型選單，頁面載入時會先預載模型，錄音開始後可直接收音並週期性轉寫
+- 即時會議字幕：停止錄音時可自動下載完整 WAV 錄音檔，並保留逐字稿文字匯出與複製功能
+- 即時會議字幕：新增 history 改名與清除功能，清除按鈕固定放在 history 面板底部，避免和 New 操作混在一起
+- 即時會議字幕：補齊繁體中文與英文 i18n 文案，包含按鈕、狀態、提示、錯誤訊息、prompt 與 confirm
+- 首頁最新工具：將 `即時會議字幕`、`AI 歌詞播放器`、`P2P 點對點傳檔`、`線上時鐘` 標記為最新工具，出現在首頁 New / 最新工具區
+- 品質修正：修復多個既有工具的 TypeScript 型別問題，讓全站 `pnpm typecheck` 可通過
 
 ### 2026-06-10
 

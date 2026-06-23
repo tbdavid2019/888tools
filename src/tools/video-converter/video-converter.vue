@@ -141,8 +141,10 @@ const handleProcess = async (mode: 'trim' | 'convert') => {
 
   isProcessing.value = true;
   let audioContext: AudioContext | null = null;
+  let processingVideoEl: HTMLVideoElement | null = null;
   try {
     const videoEl = document.createElement('video');
+    processingVideoEl = videoEl;
     videoEl.src = video.value.url;
     videoEl.crossOrigin = 'anonymous';
     videoEl.preload = 'auto';
@@ -209,6 +211,7 @@ const handleProcess = async (mode: 'trim' | 'convert') => {
       message.success('Video processed successfully!');
       audioContext?.close();
       document.body.removeChild(videoEl);
+      processingVideoEl = null;
     };
 
     mediaRecorder.ondataavailable = (e) => {
@@ -243,8 +246,8 @@ const handleProcess = async (mode: 'trim' | 'convert') => {
     message.error('Error processing video: ' + e.message);
     isProcessing.value = false;
     await audioContext?.close();
-    if (videoEl.parentNode) {
-      videoEl.parentNode.removeChild(videoEl);
+    if (processingVideoEl?.parentNode) {
+      processingVideoEl.parentNode.removeChild(processingVideoEl);
     }
   }
 };

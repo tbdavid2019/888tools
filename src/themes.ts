@@ -36,8 +36,6 @@ export const lightThemeOverrides: GlobalThemeOverrides = {
     placeholderColorDisabled: kanagawaLightPalette.textMuted,
     inputColor: kanagawaLightPalette.surface,
     actionColor: kanagawaLightPalette.surfaceMuted,
-    actionColorHover: kanagawaLightPalette.accentSoft,
-    actionColorPressed: kanagawaLightPalette.surfaceMuted,
   },
 
   Menu: {
@@ -77,7 +75,6 @@ export const lightThemeOverrides: GlobalThemeOverrides = {
       InternalSelectMenu: {
         color: kanagawaLightPalette.surface,
         optionTextColor: kanagawaLightPalette.text,
-        optionColorHover: 'rgba(126, 156, 216, 0.12)',
         optionTextColorPressed: kanagawaLightPalette.text,
         optionColorPending: 'rgba(126, 156, 216, 0.18)',
       },
@@ -134,8 +131,6 @@ export const darkThemeOverrides: GlobalThemeOverrides = {
     placeholderColorDisabled: kanagawaDarkPalette.textMuted,
     inputColor: kanagawaDarkPalette.surface,
     actionColor: kanagawaDarkPalette.surfaceMuted,
-    actionColorHover: kanagawaDarkPalette.accentSoft,
-    actionColorPressed: kanagawaDarkPalette.surfaceMuted,
   },
 
   Notification: {
@@ -168,7 +163,6 @@ export const darkThemeOverrides: GlobalThemeOverrides = {
       InternalSelectMenu: {
         color: kanagawaDarkPalette.surface,
         optionTextColor: kanagawaDarkPalette.text,
-        optionColorHover: 'rgba(126, 180, 202, 0.16)',
         optionTextColorPressed: kanagawaDarkPalette.text,
         optionColorPending: 'rgba(126, 156, 216, 0.2)',
       },
