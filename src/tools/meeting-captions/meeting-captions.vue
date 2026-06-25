@@ -1278,6 +1278,36 @@ onBeforeUnmount(() => {
   line-height: 1.5;
 }
 
+.language-card :deep(.n-base-selection),
+.language-card :deep(.n-base-selection-label) {
+  background-color: rgb(255 255 250) !important;
+  color: rgb(28 25 23) !important;
+}
+
+.language-card :deep(.n-base-selection .n-base-selection-label__render-label) {
+  color: rgb(28 25 23) !important;
+  font-weight: 700;
+}
+
+.language-card :deep(.n-base-selection-placeholder),
+.language-card :deep(.n-base-selection-input__content) {
+  color: rgb(68 64 60) !important;
+}
+
+.language-card :deep(.n-base-selection .n-base-icon) {
+  color: rgb(68 64 60) !important;
+}
+
+.language-card :deep(.n-base-selection--disabled),
+.language-card :deep(.n-base-selection--disabled .n-base-selection-label) {
+  background-color: rgb(245 245 239) !important;
+  opacity: 1 !important;
+}
+
+.language-card :deep(.n-base-selection--disabled .n-base-selection-label__render-label) {
+  color: rgb(87 83 78) !important;
+}
+
 .option-card {
   display: flex;
   align-items: center;
