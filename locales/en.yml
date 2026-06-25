@@ -582,23 +582,19 @@ tools:
       english: English
       japanese: Japanese
       korean: Korean
-      auto: Auto detect
+      auto: Mixed Chinese/English / Auto
     models:
-      tiny:
-        label: Tiny - fastest
-        hint: Fastest response, lowest accuracy. Good for testing the flow.
-      base:
-        label: Base - fast
-        hint: Smarter than Tiny while still lightweight.
-      small:
-        label: Small - balanced
-        hint: Default choice, balancing Chinese accuracy and speed.
       medium:
-        label: Medium - smarter/slower
-        hint: Larger and more accurate, but downloads, memory usage, and transcription time increase a lot.
+        label: Medium - live meetings
+        hint: Default WebGPU-only model. More accurate than Small and suitable for live captions.
+      largeTurbo:
+        label: Large v3 Turbo - high quality
+        hint: Higher accuracy with more delay. Best for important meetings or uploaded audio.
     fields:
       language: Language
       whisperModel: Whisper model
+      uploadAudio: Upload audio
+      uploadAudioHint: Supports browser-decodable WAV, MP3, M4A/AAC files. Creates a new meeting transcript.
       downloadOnStop: Download recording on stop
       downloadOnStopHint: Currently exports WAV. MP3 needs an extra encoder.
     actions:
@@ -610,6 +606,8 @@ tools:
       resume: Resume
       stop: Stop
       saveNow: Save now
+      uploadAudio: Select audio to transcribe
+      transcribingUpload: Transcribing upload
     recordingState:
       idle: Idle
       recording: Recording
@@ -621,7 +619,6 @@ tools:
       transcribing: Local Whisper is transcribing...
       pausedCaptionsSaved: Paused, captions preserved
       listening: Listening...
-      webgpuFallback: WebGPU failed, falling back to WASM...
       preloadingRuntime: Preloading {model} ({runtime})...
       preloadedRuntime: "{model} preloaded ({runtime})"
       downloadingModel: Downloading model {progress}%
@@ -630,6 +627,10 @@ tools:
       pausedEllipsis: Paused...
       listeningEllipsis: Listening...
       processingLatest: Processing the latest caption segment
+      decodingUpload: Decoding {file}...
+      transcribingUpload: Transcribing uploaded audio ({current}/{total})
+      uploadComplete: Uploaded audio transcription complete
+      uploadFile: "{file} · {progress}%"
     prompts:
       renameSession: Enter a new meeting name
       clearHistory: Clear all meeting history? This deletes transcript records from localStorage.
@@ -647,8 +648,12 @@ tools:
       transcriptionFailedWithReason: "Transcription failed: {reason}"
       modelLoadFailed: Model load failed
       modelLoadFailedWithReason: "Model load failed: {reason}"
+      webgpuRequired: This tool now requires WebGPU. Use a WebGPU-capable Chrome or Edge browser.
+      uploadTranscriptionFailed: Uploaded audio transcription failed
+      uploadTranscriptionFailedWithReason: "Uploaded audio transcription failed: {reason}"
     sections:
-      transcript: Transcript
+      liveCaptions: Live captions
+      transcript: Meeting transcript
       status: Status
     transcript:
       empty: No captions yet.

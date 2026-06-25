@@ -29,9 +29,24 @@ export interface MeetingSessionsState {
   version: 1
 };
 
+export interface MeetingCaptionsRuntime { device: 'webgpu'; dtype: 'fp32' }
+
 const STORAGE_VERSION = 1;
 
 export const MEETING_CAPTIONS_STORAGE_KEY = 'meeting-captions:sessions';
+export const MEETING_CAPTIONS_DEFAULT_MODEL_ID = 'onnx-community/whisper-medium';
+export const MEETING_CAPTIONS_MODEL_IDS = [
+  MEETING_CAPTIONS_DEFAULT_MODEL_ID,
+  'onnx-community/whisper-large-v3-turbo',
+] as const;
+
+export function getMeetingCaptionsRuntime(hasWebGpu: boolean): MeetingCaptionsRuntime | null {
+  if (!hasWebGpu) {
+    return null;
+  }
+
+  return { device: 'webgpu', dtype: 'fp32' };
+}
 
 export function createMeetingSessionsState(): MeetingSessionsState {
   return {

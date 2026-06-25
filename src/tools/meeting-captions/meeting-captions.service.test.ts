@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
+  MEETING_CAPTIONS_DEFAULT_MODEL_ID,
+  MEETING_CAPTIONS_MODEL_IDS,
   buildSessionTitle,
   createMeetingSession,
   createMeetingSessionsState,
   formatClock,
   formatTimestamp,
+  getMeetingCaptionsRuntime,
   mergeLiveChunks,
   readMeetingSessionsState,
   serializeMeetingSessionsState,
@@ -90,5 +93,18 @@ describe('meeting-captions.service', () => {
 
   it('builds deterministic human title text', () => {
     expect(buildSessionTitle(new Date('2026-06-23T07:02:00.000Z'))).toContain('2026');
+  });
+
+  it('only exposes meeting-grade WebGPU models', () => {
+    expect(MEETING_CAPTIONS_DEFAULT_MODEL_ID).toBe('onnx-community/whisper-medium');
+    expect(MEETING_CAPTIONS_MODEL_IDS).toEqual([
+      'onnx-community/whisper-medium',
+      'onnx-community/whisper-large-v3-turbo',
+    ]);
+  });
+
+  it('requires WebGPU fp32 runtime for meeting captions', () => {
+    expect(getMeetingCaptionsRuntime(true)).toEqual({ device: 'webgpu', dtype: 'fp32' });
+    expect(getMeetingCaptionsRuntime(false)).toBeNull();
   });
 });

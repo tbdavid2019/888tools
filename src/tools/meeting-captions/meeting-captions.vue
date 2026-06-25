@@ -13,19 +13,23 @@ import {
   Plus,
   Square,
   Trash,
+  Upload,
 } from '@vicons/tabler';
 import type {
+  MeetingCaptionsRuntime,
   MeetingSession,
   MeetingSessionsState,
   SupportedLanguage,
   WhisperChunk,
 } from './meeting-captions.service';
 import {
+  MEETING_CAPTIONS_DEFAULT_MODEL_ID,
   MEETING_CAPTIONS_STORAGE_KEY,
-  createMeetingSessionsState,
   createMeetingSession,
+  createMeetingSessionsState,
   formatClock,
   formatTimestamp,
+  getMeetingCaptionsRuntime,
   readMeetingSessionsState,
   serializeMeetingSessionsState,
   sessionToPlainText,
@@ -38,8 +42,6 @@ type Transcriber = (audio: Float32Array, options: Record<string, unknown>) => Pr
   text?: string
   chunks?: Array<{ text?: string; timestamp?: [number?, number?] }>
 }>;
-
-type WhisperRuntime = { device: 'webgpu' | 'wasm'; dtype: 'fp32' | 'q8' };
 
 interface WhisperModelOption {
   label: string
@@ -57,46 +59,40 @@ interface PcmChunk {
 const message = useMessage();
 const { t } = useI18n();
 
-const selectedLanguage = ref<SupportedLanguage>('chinese');
-const selectedModelId = ref('onnx-community/whisper-small');
+const selectedLanguage = ref<SupportedLanguage>('auto');
+const selectedModelId = ref(MEETING_CAPTIONS_DEFAULT_MODEL_ID);
 const downloadAudioOnStop = ref(true);
 const sessionsState = ref<MeetingSessionsState>(loadInitialState());
 const aiStatus = ref(t('tools.meeting-captions.status.modelNotLoaded'));
 const aiProgress = ref(0);
-const modelRuntime = ref<'webgpu' | 'wasm' | null>(null);
+const modelRuntime = ref<'webgpu' | null>(null);
 const recordingState = ref<'idle' | 'recording' | 'paused'>('idle');
 const levelBars = ref<number[]>(Array.from({ length: 20 }, () => 0.08));
 const liveElapsedMs = ref(0);
 const pendingTranscription = ref(false);
+const uploadInput = ref<HTMLInputElement | null>(null);
+const uploadFileName = ref('');
+const uploadProgress = ref(0);
+const isProcessingUpload = ref(false);
 
 const languageOptions = computed(() => [
+  { label: t('tools.meeting-captions.language.auto'), value: 'auto' },
   { label: t('tools.meeting-captions.language.chinese'), value: 'chinese' },
   { label: t('tools.meeting-captions.language.english'), value: 'english' },
   { label: t('tools.meeting-captions.language.japanese'), value: 'japanese' },
   { label: t('tools.meeting-captions.language.korean'), value: 'korean' },
-  { label: t('tools.meeting-captions.language.auto'), value: 'auto' },
 ]);
 
 const modelOptions = computed<WhisperModelOption[]>(() => [
   {
-    label: t('tools.meeting-captions.models.tiny.label'),
-    value: 'onnx-community/whisper-tiny',
-    hint: t('tools.meeting-captions.models.tiny.hint'),
-  },
-  {
-    label: t('tools.meeting-captions.models.base.label'),
-    value: 'onnx-community/whisper-base',
-    hint: t('tools.meeting-captions.models.base.hint'),
-  },
-  {
-    label: t('tools.meeting-captions.models.small.label'),
-    value: 'onnx-community/whisper-small',
-    hint: t('tools.meeting-captions.models.small.hint'),
-  },
-  {
     label: t('tools.meeting-captions.models.medium.label'),
     value: 'onnx-community/whisper-medium',
     hint: t('tools.meeting-captions.models.medium.hint'),
+  },
+  {
+    label: t('tools.meeting-captions.models.largeTurbo.label'),
+    value: 'onnx-community/whisper-large-v3-turbo',
+    hint: t('tools.meeting-captions.models.largeTurbo.hint'),
   },
 ]);
 
@@ -123,16 +119,17 @@ const activeSession = computed<MeetingSession | null>(() => {
 const sessionHistory = computed(() => sessionsState.value.sessions);
 
 const liveClock = computed(() => formatClock(liveElapsedMs.value / 1000));
-const canStart = computed(() => recordingState.value === 'idle');
+const canStart = computed(() => recordingState.value === 'idle' && !isProcessingUpload.value);
 const canPause = computed(() => recordingState.value === 'recording');
 const canResume = computed(() => recordingState.value === 'paused');
 const canStop = computed(() => recordingState.value !== 'idle');
-const canCreateNew = computed(() => recordingState.value === 'idle');
-const canClearHistory = computed(() => recordingState.value === 'idle' && sessionHistory.value.length > 0);
+const canCreateNew = computed(() => recordingState.value === 'idle' && !isProcessingUpload.value);
+const canClearHistory = computed(() => recordingState.value === 'idle' && !isProcessingUpload.value && sessionHistory.value.length > 0);
+const canUploadAudio = computed(() => recordingState.value === 'idle' && !isProcessingUpload.value);
 const transcriptPreview = computed(() => activeSession.value ? sessionToPlainText(activeSession.value) : '');
 const latestLine = computed(() => activeSession.value?.lines.at(-1) ?? null);
 const previousLines = computed(() => activeSession.value?.lines.slice(-8, -1) ?? []);
-const selectedModel = computed(() => modelOptions.value.find(option => option.value === selectedModelId.value) ?? modelOptions.value[2]);
+const selectedModel = computed(() => modelOptions.value.find(option => option.value === selectedModelId.value) ?? modelOptions.value[0]);
 
 function loadInitialState() {
   if (typeof window === 'undefined') {
@@ -166,7 +163,7 @@ function createFreshSession() {
 }
 
 function openSession(sessionId: string) {
-  if (recordingState.value !== 'idle') {
+  if (recordingState.value !== 'idle' || isProcessingUpload.value) {
     message.warning(t('tools.meeting-captions.messages.cannotSwitchWhileRecording'));
     return;
   }
@@ -231,6 +228,67 @@ async function copyCurrentSession() {
   message.success(t('tools.meeting-captions.messages.transcriptCopied'));
 }
 
+function openAudioUploadPicker() {
+  if (!canUploadAudio.value) {
+    return;
+  }
+
+  uploadInput.value?.click();
+}
+
+async function handleAudioFileChange(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  input.value = '';
+
+  if (!file) {
+    return;
+  }
+
+  await processUploadedAudio(file);
+}
+
+async function processUploadedAudio(file: File) {
+  if (!canUploadAudio.value) {
+    return;
+  }
+
+  isProcessingUpload.value = true;
+  pendingTranscription.value = true;
+  uploadFileName.value = file.name;
+  uploadProgress.value = 0;
+  aiProgress.value = 0;
+  aiStatus.value = t('tools.meeting-captions.status.decodingUpload', { file: file.name });
+
+  try {
+    const audioData = await decodeAudioFileTo16kMono(file);
+    const session = {
+      ...createMeetingSession(selectedLanguage.value, new Date()),
+      title: file.name.replace(/\.[^.]+$/, '') || file.name,
+      durationMs: Math.round((audioData.length / 16000) * 1000),
+    };
+
+    sessionsState.value = upsertSession(sessionsState.value, session, { setActive: true });
+    liveElapsedMs.value = session.durationMs;
+    persistState();
+
+    await transcribeUploadedAudio(audioData);
+    aiProgress.value = 100;
+    uploadProgress.value = 100;
+    aiStatus.value = t('tools.meeting-captions.status.uploadComplete');
+  }
+  catch (error) {
+    console.error(error);
+    aiStatus.value = error instanceof Error
+      ? t('tools.meeting-captions.errors.uploadTranscriptionFailedWithReason', { reason: error.message })
+      : t('tools.meeting-captions.errors.uploadTranscriptionFailed');
+  }
+  finally {
+    isProcessingUpload.value = false;
+    pendingTranscription.value = false;
+  }
+}
+
 async function startSession() {
   if (!canStart.value) {
     return;
@@ -286,7 +344,7 @@ function pauseSession() {
   recordingState.value = 'paused';
   stopTimer();
   stopTranscriptionTimer();
-  void processLatestWindow();
+  processLatestWindow().catch(console.error);
 }
 
 function resumeSession() {
@@ -326,7 +384,7 @@ async function stopSession() {
 }
 
 function handleModelChange() {
-  if (recordingState.value !== 'idle') {
+  if (recordingState.value !== 'idle' || isProcessingUpload.value) {
     return;
   }
 
@@ -334,7 +392,7 @@ function handleModelChange() {
   modelRuntime.value = null;
   aiProgress.value = 0;
   aiStatus.value = t('tools.meeting-captions.status.preparePreload', { model: selectedModel.value.label });
-  void loadTranscriber();
+  loadTranscriber().catch(console.error);
 }
 
 async function queueTranscription() {
@@ -456,6 +514,80 @@ function getElapsedMs() {
   return liveElapsedMs.value;
 }
 
+async function decodeAudioFileTo16kMono(file: File): Promise<Float32Array> {
+  const arrayBuffer = await file.arrayBuffer();
+  const decodingContext = new AudioContext();
+
+  try {
+    const decodedBuffer = await decodingContext.decodeAudioData(arrayBuffer.slice(0));
+    const targetSampleRate = 16000;
+    const offlineContext = new OfflineAudioContext(
+      1,
+      Math.max(1, Math.ceil(decodedBuffer.duration * targetSampleRate)),
+      targetSampleRate,
+    );
+    const source = offlineContext.createBufferSource();
+    source.buffer = decodedBuffer;
+    source.connect(offlineContext.destination);
+    source.start(0);
+    const renderedBuffer = await offlineContext.startRendering();
+    return renderedBuffer.getChannelData(0).slice();
+  }
+  finally {
+    await decodingContext.close();
+  }
+}
+
+async function transcribeUploadedAudio(audioData: Float32Array) {
+  if (!activeSession.value) {
+    return;
+  }
+
+  const transcriber = await loadTranscriber();
+  const sampleRate = 16000;
+  const chunkSeconds = 28;
+  const overlapSeconds = 4;
+  const chunkSamples = chunkSeconds * sampleRate;
+  const stepSamples = (chunkSeconds - overlapSeconds) * sampleRate;
+  const totalChunks = Math.max(1, Math.ceil(audioData.length / stepSamples));
+  let position = 0;
+  let processed = 0;
+
+  while (position < audioData.length) {
+    processed += 1;
+    const end = Math.min(position + chunkSamples, audioData.length);
+    const slice = audioData.slice(position, end);
+    const offsetSeconds = position / sampleRate;
+    const options: Record<string, unknown> = {
+      return_timestamps: true,
+      task: 'transcribe',
+    };
+
+    if (selectedLanguage.value !== 'auto') {
+      options.language = selectedLanguage.value;
+    }
+
+    uploadProgress.value = Math.round((processed / totalChunks) * 100);
+    aiProgress.value = uploadProgress.value;
+    aiStatus.value = t('tools.meeting-captions.status.transcribingUpload', {
+      current: processed,
+      total: totalChunks,
+    });
+
+    const result = await transcriber(slice, options);
+    const chunks = normalizeResultChunks(result, offsetSeconds);
+
+    if (chunks.length > 0 && activeSession.value) {
+      replaceActiveSession(updateSessionTranscript(activeSession.value, chunks, {
+        durationMs: liveElapsedMs.value,
+        now: new Date(),
+      }));
+    }
+
+    position += stepSamples;
+  }
+}
+
 function startTimer() {
   stopTimer();
   timerHandle = window.setInterval(() => {
@@ -473,7 +605,7 @@ function stopTimer() {
 function startTranscriptionTimer() {
   stopTranscriptionTimer();
   transcriptionTimerHandle = window.setInterval(() => {
-    void queueTranscription();
+    queueTranscription().catch(console.error);
   }, 4000);
 }
 
@@ -488,19 +620,8 @@ async function loadTranscriber(): Promise<Transcriber> {
   if (!transcriberPromise) {
     transcriberPromise = (async () => {
       const { pipeline } = await import('@huggingface/transformers');
-      const preferredRuntime = await getPreferredRuntime();
-
-      try {
-        return await createTranscriber(pipeline, preferredRuntime);
-      }
-      catch (error) {
-        if (preferredRuntime.device !== 'webgpu') {
-          throw error;
-        }
-
-        aiStatus.value = t('tools.meeting-captions.status.webgpuFallback');
-        return createTranscriber(pipeline, { device: 'wasm', dtype: 'q8' });
-      }
+      const runtime = await getPreferredRuntime();
+      return createTranscriber(pipeline, runtime);
     })().catch((error) => {
       transcriberPromise = null;
       aiStatus.value = error instanceof Error
@@ -515,12 +636,10 @@ async function loadTranscriber(): Promise<Transcriber> {
 
 async function createTranscriber(
   pipeline: any,
-  runtime: WhisperRuntime,
+  runtime: MeetingCaptionsRuntime,
 ): Promise<Transcriber> {
   modelRuntime.value = runtime.device;
-  aiStatus.value = runtime.device === 'webgpu'
-    ? t('tools.meeting-captions.status.preloadingRuntime', { model: selectedModel.value.label, runtime: 'WebGPU' })
-    : t('tools.meeting-captions.status.preloadingRuntime', { model: selectedModel.value.label, runtime: 'WASM' });
+  aiStatus.value = t('tools.meeting-captions.status.preloadingRuntime', { model: selectedModel.value.label, runtime: 'WebGPU' });
 
   const pipe = await pipeline('automatic-speech-recognition', selectedModel.value.value, {
     device: runtime.device,
@@ -534,13 +653,11 @@ async function createTranscriber(
   });
 
   aiProgress.value = 100;
-  aiStatus.value = runtime.device === 'webgpu'
-    ? t('tools.meeting-captions.status.preloadedRuntime', { model: selectedModel.value.label, runtime: 'WebGPU' })
-    : t('tools.meeting-captions.status.preloadedRuntime', { model: selectedModel.value.label, runtime: 'WASM' });
+  aiStatus.value = t('tools.meeting-captions.status.preloadedRuntime', { model: selectedModel.value.label, runtime: 'WebGPU' });
   return pipe as unknown as Transcriber;
 }
 
-async function getPreferredRuntime(): Promise<WhisperRuntime> {
+async function getPreferredRuntime(): Promise<MeetingCaptionsRuntime> {
   const webGpuNavigator = navigator as Navigator & {
     gpu?: {
       requestAdapter: () => Promise<unknown>
@@ -551,15 +668,23 @@ async function getPreferredRuntime(): Promise<WhisperRuntime> {
     try {
       const adapter = await webGpuNavigator.gpu.requestAdapter();
       if (adapter) {
-        return { device: 'webgpu', dtype: 'fp32' };
+        const runtime = getMeetingCaptionsRuntime(true);
+        if (runtime) {
+          return runtime;
+        }
       }
     }
     catch {
-      // fall back to wasm below
+      // Surface the same WebGPU-required error below.
     }
   }
 
-  return { device: 'wasm', dtype: 'q8' };
+  const runtime = getMeetingCaptionsRuntime(false);
+  if (runtime) {
+    return runtime;
+  }
+
+  throw new Error(t('tools.meeting-captions.errors.webgpuRequired'));
 }
 
 function buildTranscriptionAudio(chunks: PcmChunk[], targetSampleRate: number): Float32Array {
@@ -706,7 +831,7 @@ function createWavBlob(chunks: PcmChunk[]): Blob {
 
   for (let index = 0; index < merged.length; index += 1) {
     const sample = Math.max(-1, Math.min(1, merged[index]));
-    const value = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
+    const value = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
     view.setInt16(headerSize + index * bytesPerSample, value, true);
   }
 
@@ -770,7 +895,7 @@ function cleanupMedia() {
 
 onMounted(() => {
   aiStatus.value = t('tools.meeting-captions.status.preloading', { model: selectedModel.value.label });
-  void loadTranscriber();
+  loadTranscriber().catch(console.error);
 });
 
 onBeforeUnmount(() => {
@@ -803,7 +928,7 @@ onBeforeUnmount(() => {
           <n-icon :component="Language" />
           {{ t('tools.meeting-captions.fields.language') }}
         </div>
-        <n-select v-model:value="selectedLanguage" :options="languageOptions" :disabled="recordingState !== 'idle'" />
+        <n-select v-model:value="selectedLanguage" :options="languageOptions" :disabled="recordingState !== 'idle' || isProcessingUpload" />
       </div>
 
       <div class="language-card">
@@ -814,11 +939,37 @@ onBeforeUnmount(() => {
         <n-select
           v-model:value="selectedModelId"
           :options="modelOptions"
-          :disabled="recordingState !== 'idle'"
+          :disabled="recordingState !== 'idle' || isProcessingUpload"
           @update:value="handleModelChange"
         />
         <p class="field-hint">
           {{ selectedModel.hint }}
+        </p>
+      </div>
+
+      <div class="language-card upload-card">
+        <div class="field-label">
+          <n-icon :component="Upload" />
+          {{ t('tools.meeting-captions.fields.uploadAudio') }}
+        </div>
+        <p class="field-hint">
+          {{ t('tools.meeting-captions.fields.uploadAudioHint') }}
+        </p>
+        <input
+          ref="uploadInput"
+          class="sr-only"
+          type="file"
+          accept="audio/wav,audio/x-wav,audio/mpeg,audio/mp3,audio/mp4,audio/aac,audio/x-m4a,.wav,.mp3,.m4a,.aac"
+          @change="handleAudioFileChange"
+        >
+        <n-button secondary block type="primary" :disabled="!canUploadAudio" :loading="isProcessingUpload" @click="openAudioUploadPicker">
+          <template #icon>
+            <n-icon :component="Upload" />
+          </template>
+          {{ isProcessingUpload ? t('tools.meeting-captions.actions.transcribingUpload') : t('tools.meeting-captions.actions.uploadAudio') }}
+        </n-button>
+        <p v-if="uploadFileName" class="field-hint">
+          {{ t('tools.meeting-captions.status.uploadFile', { file: uploadFileName, progress: uploadProgress }) }}
         </p>
       </div>
 
@@ -831,7 +982,7 @@ onBeforeUnmount(() => {
             {{ t('tools.meeting-captions.fields.downloadOnStopHint') }}
           </p>
         </div>
-        <n-switch v-model:value="downloadAudioOnStop" :disabled="recordingState !== 'idle'" />
+        <n-switch v-model:value="downloadAudioOnStop" :disabled="recordingState !== 'idle' || isProcessingUpload" />
       </div>
 
       <div class="history-list">
@@ -854,7 +1005,7 @@ onBeforeUnmount(() => {
             quaternary
             circle
             size="small"
-            :disabled="recordingState !== 'idle'"
+            :disabled="recordingState !== 'idle' || isProcessingUpload"
             :title="t('tools.meeting-captions.actions.rename')"
             @click="renameSession(session)"
           >
@@ -890,7 +1041,7 @@ onBeforeUnmount(() => {
               <span>{{ new Date(activeSession?.createdAt ?? Date.now()).toLocaleString('zh-TW') }}</span>
               <span>{{ liveClock }}</span>
               <span>{{ selectedModel.label }}</span>
-              <span>{{ modelRuntime === 'webgpu' ? 'WebGPU' : modelRuntime === 'wasm' ? 'WASM' : t('tools.meeting-captions.status.modelNotLoaded') }}</span>
+              <span>{{ modelRuntime === 'webgpu' ? 'WebGPU' : t('tools.meeting-captions.status.modelNotLoaded') }}</span>
             </div>
           </div>
 
@@ -901,6 +1052,9 @@ onBeforeUnmount(() => {
         </div>
 
         <div class="captions-stage">
+          <div class="section-label">
+            {{ t('tools.meeting-captions.sections.liveCaptions') }}
+          </div>
           <div v-if="previousLines.length" class="caption-history">
             <div v-for="line in previousLines" :key="line.id" class="caption-line muted">
               <span class="line-time">{{ formatTimestamp(line.time) }}</span>
@@ -1124,6 +1278,24 @@ onBeforeUnmount(() => {
   gap: 12px;
 }
 
+.upload-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .history-list {
   display: flex;
   flex-direction: column;
@@ -1226,6 +1398,15 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+}
+
+.section-label {
+  margin-bottom: 18px;
+  color: rgb(249 115 22);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .caption-history {
