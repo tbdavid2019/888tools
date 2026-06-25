@@ -3,11 +3,14 @@ import {
   MEETING_CAPTIONS_DEFAULT_MODEL_ID,
   MEETING_CAPTIONS_MODEL_IDS,
   buildSessionTitle,
+  calculateAudioRms,
+  cleanTranscriptText,
   createMeetingSession,
   createMeetingSessionsState,
   formatClock,
   formatTimestamp,
   getMeetingCaptionsRuntime,
+  hasAudibleSpeech,
   mergeLiveChunks,
   readMeetingSessionsState,
   serializeMeetingSessionsState,
@@ -105,5 +108,19 @@ describe('meeting-captions.service', () => {
   it('requires WebGPU fp16 runtime for meeting captions', () => {
     expect(getMeetingCaptionsRuntime(true)).toEqual({ device: 'webgpu', dtype: 'fp16' });
     expect(getMeetingCaptionsRuntime(false)).toBeNull();
+  });
+
+  it('detects low energy audio before running transcription', () => {
+    expect(calculateAudioRms(new Float32Array([0, 0, 0]))).toBe(0);
+    expect(hasAudibleSpeech(new Float32Array([0.0001, -0.0001, 0.0001]))).toBe(false);
+    expect(hasAudibleSpeech(new Float32Array([0.02, -0.02, 0.02]))).toBe(true);
+  });
+
+  it('collapses repeated hallucination loops in transcript text', () => {
+    const cleaned = cleanTranscriptText(
+      'I am excited. I am excited. I am excited. I am excited. I am excited.',
+    );
+
+    expect(cleaned).toBe('I am excited. I am excited.');
   });
 });

@@ -30,6 +30,7 @@ import {
   formatClock,
   formatTimestamp,
   getMeetingCaptionsRuntime,
+  hasAudibleSpeech,
   readMeetingSessionsState,
   serializeMeetingSessionsState,
   sessionToPlainText,
@@ -415,6 +416,11 @@ async function processLatestWindow() {
     const audioData = buildTranscriptionAudio(windowChunks, 16000);
     const offsetSeconds = windowChunks[0]?.startMs ? windowChunks[0].startMs / 1000 : 0;
 
+    if (!hasAudibleSpeech(audioData)) {
+      aiStatus.value = t('tools.meeting-captions.status.noSpeechDetected');
+      return;
+    }
+
     aiStatus.value = t('tools.meeting-captions.status.transcribing');
 
     const options: Record<string, unknown> = {
@@ -568,6 +574,11 @@ async function transcribeUploadedAudio(audioData: Float32Array) {
       current: processed,
       total: totalChunks,
     });
+
+    if (!hasAudibleSpeech(slice)) {
+      position += stepSamples;
+      continue;
+    }
 
     const result = await transcriber(slice, options);
     const chunks = normalizeResultChunks(result, offsetSeconds);

@@ -167,11 +167,66 @@ export function formatTimestamp(seconds: number): string {
 }
 
 export function cleanTranscriptText(text: string): string {
-  return text
+  return collapseRepeatedTranscriptLoops(text
     .replace(/(.)\1{3,}/g, '$1～')
     .replace(/(.{2,3})\1{2,}/g, '$1～')
     .replace(/\s+/g, ' ')
-    .trim();
+    .trim());
+}
+
+export function calculateAudioRms(samples: Float32Array): number {
+  if (samples.length === 0) {
+    return 0;
+  }
+
+  let sumSquares = 0;
+  for (const sample of samples) {
+    sumSquares += sample * sample;
+  }
+
+  return Math.sqrt(sumSquares / samples.length);
+}
+
+export function hasAudibleSpeech(samples: Float32Array, threshold = 0.004): boolean {
+  return calculateAudioRms(samples) >= threshold;
+}
+
+export function collapseRepeatedTranscriptLoops(text: string): string {
+  const segments = text
+    .match(/[^.!?。！？]+[.!?。！？]?/g)
+    ?.map(segment => segment.trim())
+    .filter(Boolean);
+
+  if (!segments?.length) {
+    return text;
+  }
+
+  const result: string[] = [];
+  let previousKey = '';
+  let repeatCount = 0;
+
+  for (const segment of segments) {
+    const key = segment
+      .toLowerCase()
+      .replace(/[.!?。！？,，;；:：]+$/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    if (key && key === previousKey) {
+      repeatCount += 1;
+      if (repeatCount >= 2) {
+        continue;
+      }
+    }
+    else {
+      previousKey = key;
+      repeatCount = 0;
+    }
+
+    result.push(segment);
+  }
+
+  return result.join(' ');
 }
 
 export function isTranscriptJunk(text: string): boolean {
