@@ -458,13 +458,6 @@ async function startSession() {
   }
 
   try {
-    if (usesSenseVoice.value && !isSenseVoiceReady.value) {
-      aiStatus.value = t('tools.meeting-captions.status.preloading', { model: selectedModel.value.label });
-      const engine = await loadSenseVoiceEngine();
-      engine.resetStreamingState();
-      pendingSenseVoiceSegments.length = 0;
-    }
-
     mediaStream = await navigator.mediaDevices.getUserMedia({
       audio: {
         echoCancellation: true,
@@ -483,13 +476,10 @@ async function startSession() {
       await analyserContext.resume();
     }
 
-    if (usesSenseVoice.value && senseVoiceEngine) {
-      senseVoiceEngine.resetStreamingState();
-      pendingSenseVoiceSegments.length = 0;
-    }
-
     recordingState.value = 'recording';
-    aiStatus.value = t('tools.meeting-captions.status.waitingFirstTranscript');
+    aiStatus.value = usesSenseVoice.value && !isSenseVoiceReady.value
+      ? '已開始收音，正在初始化 SenseVoice 模型...'
+      : t('tools.meeting-captions.status.waitingFirstTranscript');
     startTimer();
     if (!usesSenseVoice.value) {
       startTranscriptionTimer();
@@ -500,10 +490,42 @@ async function startSession() {
       language: selectedLanguage.value,
       updatedAt: new Date().toISOString(),
     });
+
+    if (usesSenseVoice.value) {
+      pendingSenseVoiceSegments.length = 0;
+
+      if (senseVoiceEngine) {
+        senseVoiceEngine.resetStreamingState();
+      }
+      else {
+        void loadSenseVoiceEngine()
+          .then((engine) => {
+            if (recordingState.value !== 'recording') {
+              return;
+            }
+
+            engine.resetStreamingState();
+            pendingSenseVoiceSegments.length = 0;
+            aiStatus.value = t('tools.meeting-captions.status.waitingFirstTranscript');
+          })
+          .catch((error) => {
+            console.error(error);
+            isSenseVoiceReady.value = false;
+            aiStatus.value = error instanceof Error
+              ? error.message
+              : t('tools.meeting-captions.errors.modelLoadFailed');
+            message.error(aiStatus.value);
+          });
+      }
+    }
   }
   catch (error) {
     cleanupMedia();
+    if (usesSenseVoice.value) {
+      isSenseVoiceReady.value = false;
+    }
     const reason = error instanceof Error ? error.message : t('tools.meeting-captions.errors.microphoneAccess');
+    aiStatus.value = reason;
     message.error(t('tools.meeting-captions.errors.startFailed', { reason }));
   }
 }

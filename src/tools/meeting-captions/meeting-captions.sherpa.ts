@@ -12,6 +12,7 @@ const SHERPA_ASSET_FILES = [
 const SHERPA_DATA_ASSET = 'sherpa-onnx-wasm-main-vad-asr.data';
 
 type SherpaStatusHandler = (status: { message: string; progress?: number }) => void;
+const SHERPA_RUNTIME_INIT_TIMEOUT_MS = 20000;
 
 interface SherpaWindow extends Window {
   Module?: SherpaModule
@@ -299,11 +300,22 @@ async function ensureSherpaRuntime(onStatus?: SherpaStatusHandler) {
       };
 
       await new Promise<void>((resolve, reject) => {
-        module.onRuntimeInitialized = () => resolve();
+        const timeoutHandle = window.setTimeout(() => {
+          reject(new Error(`SenseVoice runtime initialization timed out after ${Math.round(SHERPA_RUNTIME_INIT_TIMEOUT_MS / 1000)}s`));
+        }, SHERPA_RUNTIME_INIT_TIMEOUT_MS);
+
+        module.onRuntimeInitialized = () => {
+          window.clearTimeout(timeoutHandle);
+          resolve();
+        };
+
         loadScript(
           assetUrls.get('sherpa-onnx-wasm-main-vad-asr.js') ?? getSherpaAssetPath('sherpa-onnx-wasm-main-vad-asr.js'),
           'sherpa-onnx-wasm-main-vad-asr.js',
-        ).catch(reject);
+        ).catch((error) => {
+          window.clearTimeout(timeoutHandle);
+          reject(error);
+        });
       });
 
       if (!runtimeWindow.OfflineRecognizer || !runtimeWindow.createVad || !runtimeWindow.CircularBuffer) {
