@@ -640,9 +640,10 @@ async function createTranscriber(
     device: runtime.device,
     dtype: runtime.dtype,
     progress_callback(progressInfo: Record<string, any>) {
-      if (progressInfo.status === 'progress' && typeof progressInfo.progress === 'number') {
-        aiProgress.value = Math.round(progressInfo.progress);
-        aiStatus.value = t('tools.meeting-captions.status.downloadingModel', { progress: Math.round(progressInfo.progress) });
+      if (progressInfo.status === 'progress_total' && typeof progressInfo.progress === 'number') {
+        const nextProgress = Math.max(aiProgress.value, Math.round(progressInfo.progress));
+        aiProgress.value = nextProgress;
+        aiStatus.value = t('tools.meeting-captions.status.downloadingModel', { progress: nextProgress });
       }
     },
   });
