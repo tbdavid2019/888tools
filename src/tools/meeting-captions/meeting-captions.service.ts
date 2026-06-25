@@ -29,22 +29,22 @@ export interface MeetingSessionsState {
   version: 1
 };
 
-export interface MeetingCaptionsRuntime { device: 'webgpu'; dtype: 'fp16' }
+export interface MeetingCaptionsRuntime { device: 'webgpu' | 'wasm'; dtype: 'fp32' | 'q8' }
 
 const STORAGE_VERSION = 1;
 
 export const MEETING_CAPTIONS_STORAGE_KEY = 'meeting-captions:sessions';
-export const MEETING_CAPTIONS_DEFAULT_MODEL_ID = 'onnx-community/whisper-medium_timestamped';
+export const MEETING_CAPTIONS_DEFAULT_MODEL_ID = 'onnx-community/whisper-small';
 export const MEETING_CAPTIONS_MODEL_IDS = [
   MEETING_CAPTIONS_DEFAULT_MODEL_ID,
 ] as const;
 
-export function getMeetingCaptionsRuntime(hasWebGpu: boolean): MeetingCaptionsRuntime | null {
-  if (!hasWebGpu) {
-    return null;
+export function getMeetingCaptionsRuntime(hasWebGpu: boolean): MeetingCaptionsRuntime {
+  if (hasWebGpu) {
+    return { device: 'webgpu', dtype: 'fp32' };
   }
 
-  return { device: 'webgpu', dtype: 'fp16' };
+  return { device: 'wasm', dtype: 'q8' };
 }
 
 export function createMeetingSessionsState(): MeetingSessionsState {
@@ -187,7 +187,7 @@ export function calculateAudioRms(samples: Float32Array): number {
   return Math.sqrt(sumSquares / samples.length);
 }
 
-export function hasAudibleSpeech(samples: Float32Array, threshold = 0.004): boolean {
+export function hasAudibleSpeech(samples: Float32Array, threshold = 0.0025): boolean {
   return calculateAudioRms(samples) >= threshold;
 }
 

@@ -580,9 +580,12 @@ tools:
       korean: 韓文
       auto: 中英混合 / 自動
     models:
+      small:
+        label: Small - 即時穩定
+        hint: 即時字幕預設。先用 WebGPU，失敗時退回 WASM，優先讓字幕穩定出來。
       medium:
-        label: Medium - 現場會議
-        hint: 預設模型，只支援 WebGPU，使用 fp16 降低瀏覽器記憶體壓力。
+        label: Medium - 實驗模式
+        hint: 保留給後續實驗，目前未在即時模式啟用。
     fields:
       language: 語言
       whisperModel: Whisper 模型
@@ -613,6 +616,7 @@ tools:
       noSpeechDetected: 未偵測到清楚語音，略過此片段
       pausedCaptionsSaved: 已暫停，字幕已保留
       listening: 聽寫中...
+      webgpuFallback: WebGPU 載入失敗，改用 WASM...
       preloadingRuntime: 預載 {model}（{runtime}）...
       preloadedRuntime: "{model} 已預載（{runtime}）"
       downloadingModel: 載入模型檔案 {progress}%
@@ -642,7 +646,6 @@ tools:
       transcriptionFailedWithReason: "轉寫失敗：{reason}"
       modelLoadFailed: 模型載入失敗
       modelLoadFailedWithReason: "模型載入失敗：{reason}"
-      webgpuRequired: 此工具現在只支援 WebGPU。請使用支援 WebGPU 的 Chrome 或 Edge。
       uploadTranscriptionFailed: 音檔轉寫失敗
       uploadTranscriptionFailedWithReason: "音檔轉寫失敗：{reason}"
     sections:

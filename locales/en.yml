@@ -584,9 +584,12 @@ tools:
       korean: Korean
       auto: Mixed Chinese/English / Auto
     models:
+      small:
+        label: Small - stable live
+        hint: Default for live captions. Prefer WebGPU, but fall back to WASM to keep captions flowing.
       medium:
-        label: Medium - live meetings
-        hint: Default WebGPU-only model. Uses fp16 to reduce browser memory pressure.
+        label: Medium - experimental
+        hint: Kept for later experiments. Not used in the live path right now.
     fields:
       language: Language
       whisperModel: Whisper model
@@ -617,6 +620,7 @@ tools:
       noSpeechDetected: No clear speech detected, skipping this segment
       pausedCaptionsSaved: Paused, captions preserved
       listening: Listening...
+      webgpuFallback: WebGPU failed, falling back to WASM...
       preloadingRuntime: Preloading {model} ({runtime})...
       preloadedRuntime: "{model} preloaded ({runtime})"
       downloadingModel: Loading model files {progress}%
@@ -646,7 +650,6 @@ tools:
       transcriptionFailedWithReason: "Transcription failed: {reason}"
       modelLoadFailed: Model load failed
       modelLoadFailedWithReason: "Model load failed: {reason}"
-      webgpuRequired: This tool now requires WebGPU. Use a WebGPU-capable Chrome or Edge browser.
       uploadTranscriptionFailed: Uploaded audio transcription failed
       uploadTranscriptionFailedWithReason: "Uploaded audio transcription failed: {reason}"
     sections:

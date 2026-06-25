@@ -99,15 +99,15 @@ describe('meeting-captions.service', () => {
   });
 
   it('only exposes meeting-grade WebGPU models', () => {
-    expect(MEETING_CAPTIONS_DEFAULT_MODEL_ID).toBe('onnx-community/whisper-medium_timestamped');
+    expect(MEETING_CAPTIONS_DEFAULT_MODEL_ID).toBe('onnx-community/whisper-small');
     expect(MEETING_CAPTIONS_MODEL_IDS).toEqual([
-      'onnx-community/whisper-medium_timestamped',
+      'onnx-community/whisper-small',
     ]);
   });
 
-  it('requires WebGPU fp16 runtime for meeting captions', () => {
-    expect(getMeetingCaptionsRuntime(true)).toEqual({ device: 'webgpu', dtype: 'fp16' });
-    expect(getMeetingCaptionsRuntime(false)).toBeNull();
+  it('prefers WebGPU but falls back to WASM for meeting captions', () => {
+    expect(getMeetingCaptionsRuntime(true)).toEqual({ device: 'webgpu', dtype: 'fp32' });
+    expect(getMeetingCaptionsRuntime(false)).toEqual({ device: 'wasm', dtype: 'q8' });
   });
 
   it('detects low energy audio before running transcription', () => {

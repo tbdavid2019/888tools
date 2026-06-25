@@ -66,7 +66,7 @@ const downloadAudioOnStop = ref(true);
 const sessionsState = ref<MeetingSessionsState>(loadInitialState());
 const aiStatus = ref(t('tools.meeting-captions.status.modelNotLoaded'));
 const aiProgress = ref(0);
-const modelRuntime = ref<'webgpu' | null>(null);
+const modelRuntime = ref<'webgpu' | 'wasm' | null>(null);
 const recordingState = ref<'idle' | 'recording' | 'paused'>('idle');
 const levelBars = ref<number[]>(Array.from({ length: 20 }, () => 0.08));
 const liveElapsedMs = ref(0);
@@ -86,9 +86,9 @@ const languageOptions = computed(() => [
 
 const modelOptions = computed<WhisperModelOption[]>(() => [
   {
-    label: t('tools.meeting-captions.models.medium.label'),
+    label: t('tools.meeting-captions.models.small.label'),
     value: MEETING_CAPTIONS_DEFAULT_MODEL_ID,
-    hint: t('tools.meeting-captions.models.medium.hint'),
+    hint: t('tools.meeting-captions.models.small.hint'),
   },
 ]);
 
@@ -411,7 +411,7 @@ async function processLatestWindow() {
   try {
     const transcriber = await loadTranscriber();
     const latestEndMs = pcmChunks[pcmChunks.length - 1].endMs;
-    const windowStartMs = Math.max(0, latestEndMs - 28000);
+    const windowStartMs = Math.max(0, latestEndMs - 12000);
     const windowChunks = pcmChunks.filter(chunk => chunk.endMs > windowStartMs);
     const audioData = buildTranscriptionAudio(windowChunks, 16000);
     const offsetSeconds = windowChunks[0]?.startMs ? windowChunks[0].startMs / 1000 : 0;
@@ -612,7 +612,7 @@ function startTranscriptionTimer() {
   stopTranscriptionTimer();
   transcriptionTimerHandle = window.setInterval(() => {
     queueTranscription().catch(console.error);
-  }, 4000);
+  }, 3000);
 }
 
 function stopTranscriptionTimer() {
@@ -626,8 +626,19 @@ async function loadTranscriber(): Promise<Transcriber> {
   if (!transcriberPromise) {
     transcriberPromise = (async () => {
       const { pipeline } = await import('@huggingface/transformers');
-      const runtime = await getPreferredRuntime();
-      return createTranscriber(pipeline, runtime);
+      const preferredRuntime = await getPreferredRuntime();
+
+      try {
+        return await createTranscriber(pipeline, preferredRuntime);
+      }
+      catch (error) {
+        if (preferredRuntime.device !== 'webgpu') {
+          throw error;
+        }
+
+        aiStatus.value = t('tools.meeting-captions.status.webgpuFallback');
+        return createTranscriber(pipeline, getMeetingCaptionsRuntime(false));
+      }
     })().catch((error) => {
       transcriberPromise = null;
       aiStatus.value = error instanceof Error
@@ -645,7 +656,10 @@ async function createTranscriber(
   runtime: MeetingCaptionsRuntime,
 ): Promise<Transcriber> {
   modelRuntime.value = runtime.device;
-  aiStatus.value = t('tools.meeting-captions.status.preloadingRuntime', { model: selectedModel.value.label, runtime: 'WebGPU' });
+  aiStatus.value = t('tools.meeting-captions.status.preloadingRuntime', {
+    model: selectedModel.value.label,
+    runtime: runtime.device === 'webgpu' ? 'WebGPU' : 'WASM',
+  });
 
   const pipe = await pipeline('automatic-speech-recognition', selectedModel.value.value, {
     device: runtime.device,
@@ -660,7 +674,10 @@ async function createTranscriber(
   });
 
   aiProgress.value = 100;
-  aiStatus.value = t('tools.meeting-captions.status.preloadedRuntime', { model: selectedModel.value.label, runtime: 'WebGPU' });
+  aiStatus.value = t('tools.meeting-captions.status.preloadedRuntime', {
+    model: selectedModel.value.label,
+    runtime: runtime.device === 'webgpu' ? 'WebGPU' : 'WASM',
+  });
   return pipe as unknown as Transcriber;
 }
 
@@ -675,23 +692,15 @@ async function getPreferredRuntime(): Promise<MeetingCaptionsRuntime> {
     try {
       const adapter = await webGpuNavigator.gpu.requestAdapter();
       if (adapter) {
-        const runtime = getMeetingCaptionsRuntime(true);
-        if (runtime) {
-          return runtime;
-        }
+        return getMeetingCaptionsRuntime(true);
       }
     }
     catch {
-      // Surface the same WebGPU-required error below.
+      // Fall back to WASM below.
     }
   }
 
-  const runtime = getMeetingCaptionsRuntime(false);
-  if (runtime) {
-    return runtime;
-  }
-
-  throw new Error(t('tools.meeting-captions.errors.webgpuRequired'));
+  return getMeetingCaptionsRuntime(false);
 }
 
 function buildTranscriptionAudio(chunks: PcmChunk[], targetSampleRate: number): Float32Array {
@@ -1048,7 +1057,7 @@ onBeforeUnmount(() => {
               <span>{{ new Date(activeSession?.createdAt ?? Date.now()).toLocaleString('zh-TW') }}</span>
               <span>{{ liveClock }}</span>
               <span>{{ selectedModel.label }}</span>
-              <span>{{ modelRuntime === 'webgpu' ? 'WebGPU' : t('tools.meeting-captions.status.modelNotLoaded') }}</span>
+              <span>{{ modelRuntime === 'webgpu' ? 'WebGPU' : modelRuntime === 'wasm' ? 'WASM' : t('tools.meeting-captions.status.modelNotLoaded') }}</span>
             </div>
           </div>
 
