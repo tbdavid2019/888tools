@@ -50,13 +50,14 @@
 | 40  | `AI 歌詞播放器` 更新為最新工具：保留本地 Whisper 歌詞辨識/對齊、LRC 編輯與匯出能力，並納入首頁「最新工具」區方便快速進入（https://tool.david888.com/lyric-player ） |
 | 41  | `P2P 點對點傳檔` 更新為最新工具：透過 WebRTC 直接傳送檔案，無伺服器中轉限制且端對端加密，並納入首頁「最新工具」區（https://tool.david888.com/p2p-file-transfer ） |
 | 42  | `線上時鐘` 更新為最新工具：支援網路校時、翻頁/模擬時鐘與全螢幕顯示，並納入首頁「最新工具」區（https://tool.david888.com/online-clock ） |
-| 43  | `即時會議字幕` 改為 WebGPU-only 現場會議模式，只保留 Medium 與 Large v3 Turbo；預設中英混合/自動，並新增 WAV、MP3、M4A/AAC 音檔上傳轉寫（https://tool.david888.com/meeting-captions ） |
+| 43  | `即時會議字幕` 改為 WebGPU-only 現場會議模式，只保留公開可讀的 Medium timestamped 模型；預設中英混合/自動，並新增 WAV、MP3、M4A/AAC 音檔上傳轉寫（https://tool.david888.com/meeting-captions ） |
 
 ## Changelog
 
 ### 2026-06-25
 
-- 即時會議字幕：移除 Tiny/Base/Small 與 WASM fallback，只保留 WebGPU + Medium、WebGPU + Large v3 Turbo，避免低品質模型/量化模式產生不可用結果
+- 即時會議字幕：移除 Tiny/Base/Small 與 WASM fallback，只保留 WebGPU + Medium timestamped，避免低品質模型/量化模式產生不可用結果
+- 即時會議字幕：改用公開可讀的 `onnx-community/whisper-medium_timestamped`，避免 `onnx-community/whisper-medium` 回傳 Hugging Face 401；Large v3 Turbo 暫時移除，避免瀏覽器 WebGPU 載入大型模型造成 macOS 記憶體壓力過高
 - 即時會議字幕：預設語言改為「中英混合 / 自動」，保留手動選中文、英文、日文、韓文
 - 即時會議字幕：新增音檔上傳轉寫，支援瀏覽器可解碼的 WAV、MP3、M4A/AAC，會建立新的會議逐字稿並顯示分段進度
 - 即時會議字幕：介面改成上方「現場字幕」、下方「會議逐字稿」，讓即時觀看與會後整理用途分開

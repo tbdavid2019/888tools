@@ -96,15 +96,14 @@ describe('meeting-captions.service', () => {
   });
 
   it('only exposes meeting-grade WebGPU models', () => {
-    expect(MEETING_CAPTIONS_DEFAULT_MODEL_ID).toBe('onnx-community/whisper-medium');
+    expect(MEETING_CAPTIONS_DEFAULT_MODEL_ID).toBe('onnx-community/whisper-medium_timestamped');
     expect(MEETING_CAPTIONS_MODEL_IDS).toEqual([
-      'onnx-community/whisper-medium',
-      'onnx-community/whisper-large-v3-turbo',
+      'onnx-community/whisper-medium_timestamped',
     ]);
   });
 
-  it('requires WebGPU fp32 runtime for meeting captions', () => {
-    expect(getMeetingCaptionsRuntime(true)).toEqual({ device: 'webgpu', dtype: 'fp32' });
+  it('requires WebGPU fp16 runtime for meeting captions', () => {
+    expect(getMeetingCaptionsRuntime(true)).toEqual({ device: 'webgpu', dtype: 'fp16' });
     expect(getMeetingCaptionsRuntime(false)).toBeNull();
   });
 });

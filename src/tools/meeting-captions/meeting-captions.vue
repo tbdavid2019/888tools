@@ -86,13 +86,8 @@ const languageOptions = computed(() => [
 const modelOptions = computed<WhisperModelOption[]>(() => [
   {
     label: t('tools.meeting-captions.models.medium.label'),
-    value: 'onnx-community/whisper-medium',
+    value: MEETING_CAPTIONS_DEFAULT_MODEL_ID,
     hint: t('tools.meeting-captions.models.medium.hint'),
-  },
-  {
-    label: t('tools.meeting-captions.models.largeTurbo.label'),
-    value: 'onnx-community/whisper-large-v3-turbo',
-    hint: t('tools.meeting-captions.models.largeTurbo.hint'),
   },
 ]);
 

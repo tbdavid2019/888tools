@@ -586,10 +586,7 @@ tools:
     models:
       medium:
         label: Medium - live meetings
-        hint: Default WebGPU-only model. More accurate than Small and suitable for live captions.
-      largeTurbo:
-        label: Large v3 Turbo - high quality
-        hint: Higher accuracy with more delay. Best for important meetings or uploaded audio.
+        hint: Default WebGPU-only model. Uses fp16 to reduce browser memory pressure.
     fields:
       language: Language
       whisperModel: Whisper model

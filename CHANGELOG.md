@@ -5,13 +5,15 @@ All notable changes to this project will be documented in this file. See [standa
 ## Version 2026.06.25
 
 ### Features
-- **meeting-captions**: 收斂為 WebGPU-only 現場會議模式，移除 Tiny/Base/Small 與 WASM fallback，只保留 Medium 與 Large v3 Turbo 兩個可用模型。
+- **meeting-captions**: 收斂為 WebGPU-only 現場會議模式，移除 Tiny/Base/Small 與 WASM fallback，只保留公開可讀的 Medium timestamped 模型。
 - **meeting-captions**: 預設語言改為「中英混合 / 自動」，避免中英夾雜會議被固定中文 prompt 影響英文術語辨識。
 - **meeting-captions**: 新增上傳音檔轉寫入口，支援瀏覽器可解碼的 WAV、MP3、M4A/AAC，會建立新的會議逐字稿並分段更新進度。
 - **meeting-captions**: 調整介面資訊架構，將上方區塊標示為「現場字幕」，下方輸出區改為「會議逐字稿」，降低即時字幕與完整逐字稿的辨識混淆。
 
 ### Bug Fixes
 - **meeting-captions**: 沒有 WebGPU 時直接提示使用支援 WebGPU 的 Chrome/Edge，不再退回低準確度 WASM/q8 模式。
+- **meeting-captions**: 避免使用 `onnx-community/whisper-medium` 造成 Hugging Face 401，改用公開可讀的 `onnx-community/whisper-medium_timestamped`。
+- **meeting-captions**: 移除 Large v3 Turbo 選項，避免在瀏覽器 WebGPU 載入大型模型時造成 macOS 記憶體壓力過高。
 
 ## Version 2026.06.23
 

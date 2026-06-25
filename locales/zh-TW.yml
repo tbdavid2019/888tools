@@ -582,10 +582,7 @@ tools:
     models:
       medium:
         label: Medium - 現場會議
-        hint: 預設模型，只支援 WebGPU。比 Small 準，適合現場字幕。
-      largeTurbo:
-        label: Large v3 Turbo - 高品質
-        hint: 準確度更高但延遲更明顯，只建議重要會議或上傳音檔使用。
+        hint: 預設模型，只支援 WebGPU，使用 fp16 降低瀏覽器記憶體壓力。
     fields:
       language: 語言
       whisperModel: Whisper 模型
