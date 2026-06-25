@@ -76,6 +76,9 @@ const downloadAudioOnStop = ref(true);
 const sessionsState = ref<MeetingSessionsState>(loadInitialState());
 const aiStatus = ref(t('tools.meeting-captions.status.modelNotLoaded'));
 const aiProgress = ref(0);
+const modelPreloadStatus = ref(aiStatus.value);
+const modelPreloadProgress = ref(0);
+const isModelPreloading = ref(false);
 const modelRuntime = ref<'webgpu' | 'wasm' | null>(null);
 const isWhisperReady = ref(false);
 const isSenseVoiceReady = ref(false);
@@ -156,6 +159,12 @@ const previousLines = computed(() => activeSession.value?.lines.slice(-8, -1) ??
 const selectedModel = computed(() => modelOptions.value.find(option => option.value === selectedModelId.value) ?? modelOptions.value[0]);
 const usesSenseVoice = computed(() => isSenseVoiceModel(selectedModelId.value));
 const isSelectedEngineReady = computed(() => usesSenseVoice.value ? isSenseVoiceReady.value : isWhisperReady.value);
+const showModelPreload = computed(() => {
+  return recordingState.value === 'idle'
+    && !isProcessingUpload.value
+    && isModelPreloading.value
+    && !isSelectedEngineReady.value;
+});
 const isMobileBrowser = computed(() => {
   if (typeof navigator === 'undefined') {
     return false;
@@ -193,6 +202,52 @@ function createFreshSession() {
   sessionsState.value = upsertSession(sessionsState.value, session, { setActive: true });
   liveElapsedMs.value = 0;
   persistState();
+}
+
+function resetModelPreloadState() {
+  isModelPreloading.value = false;
+  modelPreloadProgress.value = 0;
+  modelPreloadStatus.value = aiStatus.value;
+}
+
+function startModelPreload(status: string) {
+  isModelPreloading.value = true;
+  modelPreloadProgress.value = 0;
+  modelPreloadStatus.value = status;
+  aiProgress.value = 0;
+  aiStatus.value = status;
+}
+
+function updateModelPreloadState(message: string, progress?: number) {
+  isModelPreloading.value = true;
+  modelPreloadStatus.value = message;
+  aiStatus.value = message;
+
+  let nextProgress = modelPreloadProgress.value;
+
+  if (typeof progress === 'number') {
+    nextProgress = Math.max(nextProgress, Math.round(progress));
+  }
+  else if (message.includes('Checking local browser model cache')) {
+    nextProgress = Math.max(nextProgress, 3);
+  }
+  else if (message.includes('Using cached SenseVoice assets') || message.includes('SenseVoice assets cached')) {
+    nextProgress = Math.max(nextProgress, 90);
+  }
+  else if (message.includes('Initializing SenseVoice runtime')) {
+    nextProgress = Math.max(nextProgress, 97);
+  }
+
+  modelPreloadProgress.value = Math.min(100, nextProgress);
+  aiProgress.value = modelPreloadProgress.value;
+}
+
+function finishModelPreload(status: string) {
+  isModelPreloading.value = false;
+  modelPreloadProgress.value = 100;
+  modelPreloadStatus.value = status;
+  aiProgress.value = 100;
+  aiStatus.value = status;
 }
 
 function openSession(sessionId: string) {
@@ -267,6 +322,7 @@ async function clearModelCache() {
     modelRuntime.value = null;
     aiProgress.value = 0;
     aiStatus.value = t('tools.meeting-captions.status.modelNotLoaded');
+    resetModelPreloadState();
     message.success(t('tools.meeting-captions.messages.modelCacheCleared', { count: clearedCount }));
   }
   catch (error) {
@@ -301,6 +357,7 @@ async function clearAllSiteCachesNow() {
     modelRuntime.value = null;
     aiProgress.value = 0;
     aiStatus.value = t('tools.meeting-captions.status.modelNotLoaded');
+    resetModelPreloadState();
     message.success(t('tools.meeting-captions.messages.allCachesCleared', { count: clearedCount }));
   }
   catch (error) {
@@ -525,6 +582,7 @@ function handleModelChange() {
   isSenseVoiceReady.value = false;
   aiProgress.value = 0;
   aiStatus.value = t('tools.meeting-captions.status.preparePreload', { model: selectedModel.value.label });
+  resetModelPreloadState();
   existingSenseVoicePromise?.then(engine => engine.free()).catch(() => undefined);
   preloadSelectedEngine().catch(console.error);
 }
@@ -867,12 +925,13 @@ function stopTranscriptionTimer() {
 }
 
 async function preloadSelectedEngine() {
+  startModelPreload(t('tools.meeting-captions.status.preloading', { model: selectedModel.value.label }));
+
   if (isSelectedEngineReady.value) {
-    aiProgress.value = 100;
-    aiStatus.value = t('tools.meeting-captions.status.preloadedRuntime', {
+    finishModelPreload(t('tools.meeting-captions.status.preloadedRuntime', {
       model: selectedModel.value.label,
       runtime: usesSenseVoice.value ? 'WASM' : (modelRuntime.value === 'webgpu' ? 'WebGPU' : 'WASM'),
-    });
+    }));
     return;
   }
 
@@ -939,15 +998,13 @@ async function loadSenseVoiceEngine() {
   if (!senseVoiceEnginePromise) {
     modelRuntime.value = 'wasm';
     senseVoiceEnginePromise = SenseVoiceEngine.create((status) => {
-      aiStatus.value = status.message;
-      if (typeof status.progress === 'number') {
-        aiProgress.value = Math.max(aiProgress.value, status.progress);
-      }
+      updateModelPreloadState(status.message, status.progress);
     }).catch((error) => {
       senseVoiceEnginePromise = null;
       senseVoiceEngine = null;
       isSenseVoiceReady.value = false;
       modelRuntime.value = null;
+      isModelPreloading.value = false;
       aiStatus.value = error instanceof Error
         ? t('tools.meeting-captions.errors.modelLoadFailedWithReason', { reason: error.message })
         : t('tools.meeting-captions.errors.modelLoadFailed');
@@ -957,11 +1014,10 @@ async function loadSenseVoiceEngine() {
 
   senseVoiceEngine = await senseVoiceEnginePromise;
   isSenseVoiceReady.value = true;
-  aiProgress.value = 100;
-  aiStatus.value = t('tools.meeting-captions.status.preloadedRuntime', {
+  finishModelPreload(t('tools.meeting-captions.status.preloadedRuntime', {
     model: selectedModel.value.label,
     runtime: 'WASM',
-  });
+  }));
   return senseVoiceEngine;
 }
 
@@ -970,29 +1026,29 @@ async function createTranscriber(
   runtime: MeetingCaptionsRuntime,
 ): Promise<Transcriber> {
   modelRuntime.value = runtime.device;
-  aiStatus.value = t('tools.meeting-captions.status.preloadingRuntime', {
+  updateModelPreloadState(t('tools.meeting-captions.status.preloadingRuntime', {
     model: selectedModel.value.label,
     runtime: runtime.device === 'webgpu' ? 'WebGPU' : 'WASM',
-  });
+  }), 3);
 
   const pipe = await pipeline('automatic-speech-recognition', selectedModel.value.value, {
     device: runtime.device,
     dtype: runtime.dtype,
     progress_callback(progressInfo: Record<string, any>) {
       if (progressInfo.status === 'progress_total' && typeof progressInfo.progress === 'number') {
-        const nextProgress = Math.max(aiProgress.value, Math.round(progressInfo.progress));
-        aiProgress.value = nextProgress;
-        aiStatus.value = t('tools.meeting-captions.status.downloadingModel', { progress: nextProgress });
+        updateModelPreloadState(
+          t('tools.meeting-captions.status.downloadingModel', { progress: Math.round(progressInfo.progress) }),
+          progressInfo.progress,
+        );
       }
     },
   });
 
-  aiProgress.value = 100;
   isWhisperReady.value = true;
-  aiStatus.value = t('tools.meeting-captions.status.preloadedRuntime', {
+  finishModelPreload(t('tools.meeting-captions.status.preloadedRuntime', {
     model: selectedModel.value.label,
     runtime: runtime.device === 'webgpu' ? 'WebGPU' : 'WASM',
-  });
+  }));
   return pipe as unknown as Transcriber;
 }
 
@@ -1468,7 +1524,22 @@ onBeforeUnmount(() => {
           </div>
 
           <div v-else class="stage-empty">
-            {{ recordingState === 'idle' ? aiStatus : t('tools.meeting-captions.status.startedListening', { status: aiStatus }) }}
+            <template v-if="showModelPreload">
+              <div class="preload-progress">
+                <div class="preload-progress-value">
+                  {{ modelPreloadProgress }}%
+                </div>
+                <div class="preload-progress-bar" aria-hidden="true">
+                  <span class="preload-progress-fill" :style="{ width: `${modelPreloadProgress}%` }" />
+                </div>
+                <div class="preload-progress-status">
+                  {{ modelPreloadStatus }}
+                </div>
+              </div>
+            </template>
+            <template v-else>
+              {{ recordingState === 'idle' ? aiStatus : t('tools.meeting-captions.status.startedListening', { status: aiStatus }) }}
+            </template>
           </div>
 
           <div v-if="recordingState !== 'idle'" class="listening-row">
@@ -1903,6 +1974,42 @@ onBeforeUnmount(() => {
 
 .stage-empty {
   max-width: 520px;
+  line-height: 1.7;
+}
+
+.preload-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: min(520px, 100%);
+}
+
+.preload-progress-value {
+  color: rgb(249 115 22);
+  font-size: 36px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.preload-progress-bar {
+  width: 100%;
+  height: 12px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgb(231 229 228);
+}
+
+.preload-progress-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgb(249 115 22), rgb(251 146 60));
+  transition: width 0.2s ease;
+}
+
+.preload-progress-status {
+  color: rgb(120 113 108);
+  font-size: 14px;
   line-height: 1.7;
 }
 
