@@ -1,4 +1,5 @@
 export type SupportedLanguage = 'chinese' | 'english' | 'japanese' | 'korean' | 'auto';
+export type MeetingCaptionsModelId = 'sherpa-onnx/sensevoice-small' | 'onnx-community/whisper-small';
 
 export interface WhisperChunk {
   time: number
@@ -34,10 +35,21 @@ export interface MeetingCaptionsRuntime { device: 'webgpu' | 'wasm'; dtype: 'fp3
 const STORAGE_VERSION = 1;
 
 export const MEETING_CAPTIONS_STORAGE_KEY = 'meeting-captions:sessions';
-export const MEETING_CAPTIONS_DEFAULT_MODEL_ID = 'onnx-community/whisper-small';
+export const MEETING_CAPTIONS_SENSEVOICE_MODEL_ID = 'sherpa-onnx/sensevoice-small';
+export const MEETING_CAPTIONS_WHISPER_MODEL_ID = 'onnx-community/whisper-small';
+export const MEETING_CAPTIONS_DEFAULT_MODEL_ID = MEETING_CAPTIONS_SENSEVOICE_MODEL_ID;
 export const MEETING_CAPTIONS_MODEL_IDS = [
-  MEETING_CAPTIONS_DEFAULT_MODEL_ID,
+  MEETING_CAPTIONS_SENSEVOICE_MODEL_ID,
+  MEETING_CAPTIONS_WHISPER_MODEL_ID,
 ] as const;
+
+export function isSenseVoiceModel(modelId: string): modelId is typeof MEETING_CAPTIONS_SENSEVOICE_MODEL_ID {
+  return modelId === MEETING_CAPTIONS_SENSEVOICE_MODEL_ID;
+}
+
+export function isWhisperModel(modelId: string): modelId is typeof MEETING_CAPTIONS_WHISPER_MODEL_ID {
+  return modelId === MEETING_CAPTIONS_WHISPER_MODEL_ID;
+}
 
 export function getMeetingCaptionsRuntime(hasWebGpu: boolean): MeetingCaptionsRuntime {
   if (hasWebGpu) {

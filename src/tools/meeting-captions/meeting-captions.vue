@@ -16,6 +16,7 @@ import {
   Upload,
 } from '@vicons/tabler';
 import type {
+  MeetingCaptionsModelId,
   MeetingCaptionsRuntime,
   MeetingSession,
   MeetingSessionsState,
@@ -24,19 +25,23 @@ import type {
 } from './meeting-captions.service';
 import {
   MEETING_CAPTIONS_DEFAULT_MODEL_ID,
+  MEETING_CAPTIONS_SENSEVOICE_MODEL_ID,
   MEETING_CAPTIONS_STORAGE_KEY,
+  MEETING_CAPTIONS_WHISPER_MODEL_ID,
   createMeetingSession,
   createMeetingSessionsState,
   formatClock,
   formatTimestamp,
   getMeetingCaptionsRuntime,
   hasAudibleSpeech,
+  isSenseVoiceModel,
   readMeetingSessionsState,
   serializeMeetingSessionsState,
   sessionToPlainText,
   updateSessionTranscript,
   upsertSession,
 } from './meeting-captions.service';
+import { SenseVoiceEngine, clearAllBrowserCaches, clearSenseVoiceModelCache } from './meeting-captions.sherpa';
 import { convertOpenCC } from '@/services/opencc.service';
 
 type Transcriber = (audio: Float32Array, options: Record<string, unknown>) => Promise<{
@@ -44,9 +49,14 @@ type Transcriber = (audio: Float32Array, options: Record<string, unknown>) => Pr
   chunks?: Array<{ text?: string; timestamp?: [number?, number?] }>
 }>;
 
-interface WhisperModelOption {
+const TRANSFORMERS_CACHE_KEYS = [
+  'meeting-captions-transformers-cache',
+  'transformers-cache',
+] as const;
+
+interface SpeechModelOption {
   label: string
-  value: string
+  value: MeetingCaptionsModelId
   hint: string
 }
 
@@ -61,12 +71,14 @@ const message = useMessage();
 const { t } = useI18n();
 
 const selectedLanguage = ref<SupportedLanguage>('auto');
-const selectedModelId = ref(MEETING_CAPTIONS_DEFAULT_MODEL_ID);
+const selectedModelId = ref<MeetingCaptionsModelId>(MEETING_CAPTIONS_DEFAULT_MODEL_ID);
 const downloadAudioOnStop = ref(true);
 const sessionsState = ref<MeetingSessionsState>(loadInitialState());
 const aiStatus = ref(t('tools.meeting-captions.status.modelNotLoaded'));
 const aiProgress = ref(0);
 const modelRuntime = ref<'webgpu' | 'wasm' | null>(null);
+const isWhisperReady = ref(false);
+const isSenseVoiceReady = ref(false);
 const recordingState = ref<'idle' | 'recording' | 'paused'>('idle');
 const levelBars = ref<number[]>(Array.from({ length: 20 }, () => 0.08));
 const liveElapsedMs = ref(0);
@@ -75,6 +87,8 @@ const uploadInput = ref<HTMLInputElement | null>(null);
 const uploadFileName = ref('');
 const uploadProgress = ref(0);
 const isProcessingUpload = ref(false);
+const isClearingModelCache = ref(false);
+const isClearingAllCaches = ref(false);
 
 const languageOptions = computed(() => [
   { label: t('tools.meeting-captions.language.auto'), value: 'auto' },
@@ -84,20 +98,29 @@ const languageOptions = computed(() => [
   { label: t('tools.meeting-captions.language.korean'), value: 'korean' },
 ]);
 
-const modelOptions = computed<WhisperModelOption[]>(() => [
+const modelOptions = computed<SpeechModelOption[]>(() => [
+  {
+    label: t('tools.meeting-captions.models.sensevoice.label'),
+    value: MEETING_CAPTIONS_SENSEVOICE_MODEL_ID,
+    hint: t('tools.meeting-captions.models.sensevoice.hint'),
+  },
   {
     label: t('tools.meeting-captions.models.small.label'),
-    value: MEETING_CAPTIONS_DEFAULT_MODEL_ID,
+    value: MEETING_CAPTIONS_WHISPER_MODEL_ID,
     hint: t('tools.meeting-captions.models.small.hint'),
   },
 ]);
 
 let transcriberPromise: Promise<Transcriber> | null = null;
+let senseVoiceEnginePromise: Promise<SenseVoiceEngine> | null = null;
+let senseVoiceEngine: SenseVoiceEngine | null = null;
 let mediaStream: MediaStream | null = null;
 let pcmChunks: PcmChunk[] = [];
 let recordingChunks: PcmChunk[] = [];
 let processing = false;
 let hasQueuedProcessing = false;
+let processingSenseVoiceSegments = false;
+const pendingSenseVoiceSegments: SenseVoicePendingSegment[] = [];
 let sessionStartPerf = 0;
 let timerHandle: number | null = null;
 let transcriptionTimerHandle: number | null = null;
@@ -107,6 +130,11 @@ let analyserFrame: number | null = null;
 let captureSource: MediaStreamAudioSourceNode | null = null;
 let captureProcessor: ScriptProcessorNode | null = null;
 let captureSilenceGain: GainNode | null = null;
+
+interface SenseVoicePendingSegment {
+  samples: Float32Array
+  startSeconds: number
+}
 
 const activeSession = computed<MeetingSession | null>(() => {
   return sessionsState.value.sessions.find(session => session.id === sessionsState.value.activeSessionId) ?? null;
@@ -126,6 +154,15 @@ const transcriptPreview = computed(() => activeSession.value ? sessionToPlainTex
 const latestLine = computed(() => activeSession.value?.lines.at(-1) ?? null);
 const previousLines = computed(() => activeSession.value?.lines.slice(-8, -1) ?? []);
 const selectedModel = computed(() => modelOptions.value.find(option => option.value === selectedModelId.value) ?? modelOptions.value[0]);
+const usesSenseVoice = computed(() => isSenseVoiceModel(selectedModelId.value));
+const isSelectedEngineReady = computed(() => usesSenseVoice.value ? isSenseVoiceReady.value : isWhisperReady.value);
+const isMobileBrowser = computed(() => {
+  if (typeof navigator === 'undefined') {
+    return false;
+  }
+
+  return /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent);
+});
 
 function loadInitialState() {
   if (typeof window === 'undefined') {
@@ -204,6 +241,75 @@ function clearHistory() {
   liveElapsedMs.value = 0;
   persistState();
   message.success(t('tools.meeting-captions.messages.historyCleared'));
+}
+
+async function clearModelCache() {
+  if (recordingState.value !== 'idle' || isProcessingUpload.value || isClearingModelCache.value || isClearingAllCaches.value) {
+    return;
+  }
+
+  const confirmed = window.confirm(t('tools.meeting-captions.prompts.clearModelCache'));
+  if (!confirmed) {
+    return;
+  }
+
+  isClearingModelCache.value = true;
+
+  try {
+    await senseVoiceEnginePromise?.then(engine => engine.free()).catch(() => undefined);
+    await clearSenseVoiceModelCache();
+    const clearedCount = await clearWhisperModelCache();
+    transcriberPromise = null;
+    senseVoiceEnginePromise = null;
+    senseVoiceEngine = null;
+    isWhisperReady.value = false;
+    isSenseVoiceReady.value = false;
+    modelRuntime.value = null;
+    aiProgress.value = 0;
+    aiStatus.value = t('tools.meeting-captions.status.modelNotLoaded');
+    message.success(t('tools.meeting-captions.messages.modelCacheCleared', { count: clearedCount }));
+  }
+  catch (error) {
+    console.error(error);
+    message.error(t('tools.meeting-captions.errors.clearModelCacheFailed'));
+  }
+  finally {
+    isClearingModelCache.value = false;
+  }
+}
+
+async function clearAllSiteCachesNow() {
+  if (recordingState.value !== 'idle' || isProcessingUpload.value || isClearingAllCaches.value || isClearingModelCache.value) {
+    return;
+  }
+
+  const confirmed = window.confirm(t('tools.meeting-captions.prompts.clearAllCaches'));
+  if (!confirmed) {
+    return;
+  }
+
+  isClearingAllCaches.value = true;
+
+  try {
+    await senseVoiceEnginePromise?.then(engine => engine.free()).catch(() => undefined);
+    const clearedCount = await clearAllBrowserCaches();
+    transcriberPromise = null;
+    senseVoiceEnginePromise = null;
+    senseVoiceEngine = null;
+    isWhisperReady.value = false;
+    isSenseVoiceReady.value = false;
+    modelRuntime.value = null;
+    aiProgress.value = 0;
+    aiStatus.value = t('tools.meeting-captions.status.modelNotLoaded');
+    message.success(t('tools.meeting-captions.messages.allCachesCleared', { count: clearedCount }));
+  }
+  catch (error) {
+    console.error(error);
+    message.error(t('tools.meeting-captions.errors.clearAllCachesFailed'));
+  }
+  finally {
+    isClearingAllCaches.value = false;
+  }
 }
 
 function exportCurrentSession() {
@@ -295,6 +401,13 @@ async function startSession() {
   }
 
   try {
+    if (usesSenseVoice.value && !isSenseVoiceReady.value) {
+      aiStatus.value = t('tools.meeting-captions.status.preloading', { model: selectedModel.value.label });
+      const engine = await loadSenseVoiceEngine();
+      engine.resetStreamingState();
+      pendingSenseVoiceSegments.length = 0;
+    }
+
     mediaStream = await navigator.mediaDevices.getUserMedia({
       audio: {
         echoCancellation: true,
@@ -313,10 +426,17 @@ async function startSession() {
       await analyserContext.resume();
     }
 
+    if (usesSenseVoice.value && senseVoiceEngine) {
+      senseVoiceEngine.resetStreamingState();
+      pendingSenseVoiceSegments.length = 0;
+    }
+
     recordingState.value = 'recording';
     aiStatus.value = t('tools.meeting-captions.status.waitingFirstTranscript');
     startTimer();
-    startTranscriptionTimer();
+    if (!usesSenseVoice.value) {
+      startTranscriptionTimer();
+    }
 
     replaceActiveSession({
       ...(activeSession.value as MeetingSession),
@@ -339,8 +459,13 @@ function pauseSession() {
   liveElapsedMs.value = getElapsedMs();
   recordingState.value = 'paused';
   stopTimer();
-  stopTranscriptionTimer();
-  processLatestWindow().catch(console.error);
+  if (usesSenseVoice.value) {
+    flushSenseVoiceSegments().catch(console.error);
+  }
+  else {
+    stopTranscriptionTimer();
+    processLatestWindow().catch(console.error);
+  }
 }
 
 function resumeSession() {
@@ -351,7 +476,9 @@ function resumeSession() {
   sessionStartPerf = performance.now() - liveElapsedMs.value;
   recordingState.value = 'recording';
   startTimer();
-  startTranscriptionTimer();
+  if (!usesSenseVoice.value) {
+    startTranscriptionTimer();
+  }
 }
 
 async function stopSession() {
@@ -364,7 +491,12 @@ async function stopSession() {
   stopTranscriptionTimer();
   recordingState.value = 'idle';
 
-  await processLatestWindow();
+  if (usesSenseVoice.value) {
+    await flushSenseVoiceSegments();
+  }
+  else {
+    await processLatestWindow();
+  }
   if (downloadAudioOnStop.value) {
     downloadCurrentAudio();
   }
@@ -384,14 +516,24 @@ function handleModelChange() {
     return;
   }
 
+  const existingSenseVoicePromise = senseVoiceEnginePromise;
   transcriberPromise = null;
+  senseVoiceEnginePromise = null;
+  senseVoiceEngine = null;
   modelRuntime.value = null;
+  isWhisperReady.value = false;
+  isSenseVoiceReady.value = false;
   aiProgress.value = 0;
   aiStatus.value = t('tools.meeting-captions.status.preparePreload', { model: selectedModel.value.label });
-  loadTranscriber().catch(console.error);
+  existingSenseVoicePromise?.then(engine => engine.free()).catch(() => undefined);
+  preloadSelectedEngine().catch(console.error);
 }
 
 async function queueTranscription() {
+  if (usesSenseVoice.value) {
+    return;
+  }
+
   if (processing) {
     hasQueuedProcessing = true;
     return;
@@ -409,7 +551,7 @@ async function processLatestWindow() {
   pendingTranscription.value = true;
 
   try {
-    const transcriber = await loadTranscriber();
+    const transcriber = await loadWhisperTranscriber();
     const latestEndMs = pcmChunks[pcmChunks.length - 1].endMs;
     const windowStartMs = Math.max(0, latestEndMs - 12000);
     const windowChunks = pcmChunks.filter(chunk => chunk.endMs > windowStartMs);
@@ -464,6 +606,74 @@ async function processLatestWindow() {
       hasQueuedProcessing = false;
       await processLatestWindow();
     }
+  }
+}
+
+async function flushSenseVoiceSegments() {
+  const engine = await loadSenseVoiceEngine();
+  const debugBeforeFlush = engine.getDebugState();
+  for (const chunk of engine.flushSegments()) {
+    pendingSenseVoiceSegments.push({
+      samples: chunk.samples,
+      startSeconds: chunk.startSeconds,
+    });
+  }
+  await processSenseVoiceSegmentQueue();
+
+  const debugAfterFlush = engine.getDebugState();
+  if (debugAfterFlush.totalSegmentsEmitted === debugBeforeFlush.totalSegmentsEmitted) {
+    const bufferedSeconds = (debugAfterFlush.totalSamplesAccepted / 16000).toFixed(1);
+    aiStatus.value = `${t('tools.meeting-captions.status.noSpeechDetected')} (${bufferedSeconds}s audio, 0 segments)`;
+  }
+
+  engine.resetStreamingState();
+}
+
+async function appendSenseVoiceChunk(chunk: SenseVoicePendingSegment) {
+  const engine = await loadSenseVoiceEngine();
+  const result = engine.transcribe(chunk.samples, selectedLanguage.value);
+  const text = normalizeTranscriptText(result.text);
+  if (!text || !activeSession.value) {
+    return;
+  }
+
+  replaceActiveSession(updateSessionTranscript(activeSession.value, [{
+    time: Number(chunk.startSeconds.toFixed(2)),
+    endTime: Number((chunk.startSeconds + (chunk.samples.length / 16000)).toFixed(2)),
+    text,
+  }], {
+    durationMs: liveElapsedMs.value,
+    now: new Date(),
+  }));
+
+  aiStatus.value = recordingState.value === 'paused'
+    ? t('tools.meeting-captions.status.pausedCaptionsSaved')
+    : t('tools.meeting-captions.status.listening');
+  aiProgress.value = 100;
+}
+
+async function processSenseVoiceSegmentQueue() {
+  if (processingSenseVoiceSegments) {
+    return;
+  }
+
+  processingSenseVoiceSegments = true;
+  pendingTranscription.value = true;
+
+  try {
+    while (pendingSenseVoiceSegments.length > 0) {
+      const chunk = pendingSenseVoiceSegments.shift();
+      if (!chunk) {
+        continue;
+      }
+
+      aiStatus.value = t('tools.meeting-captions.status.transcribing');
+      await appendSenseVoiceChunk(chunk);
+    }
+  }
+  finally {
+    processingSenseVoiceSegments = false;
+    pendingTranscription.value = false;
   }
 }
 
@@ -544,7 +754,12 @@ async function transcribeUploadedAudio(audioData: Float32Array) {
     return;
   }
 
-  const transcriber = await loadTranscriber();
+  if (usesSenseVoice.value) {
+    await transcribeUploadedAudioWithSenseVoice(audioData);
+    return;
+  }
+
+  const transcriber = await loadWhisperTranscriber();
   const sampleRate = 16000;
   const chunkSeconds = 28;
   const overlapSeconds = 4;
@@ -594,6 +809,35 @@ async function transcribeUploadedAudio(audioData: Float32Array) {
   }
 }
 
+async function transcribeUploadedAudioWithSenseVoice(audioData: Float32Array) {
+  const engine = await loadSenseVoiceEngine();
+  engine.resetStreamingState();
+
+  const chunkSize = 4096;
+  const totalChunks = Math.max(1, Math.ceil(audioData.length / chunkSize));
+
+  for (let offset = 0; offset < audioData.length; offset += chunkSize) {
+    const slice = audioData.slice(offset, Math.min(offset + chunkSize, audioData.length));
+    const chunks = engine.consumeSamples(slice);
+    uploadProgress.value = Math.round((Math.min(offset + chunkSize, audioData.length) / audioData.length) * 100);
+    aiProgress.value = uploadProgress.value;
+    aiStatus.value = t('tools.meeting-captions.status.transcribingUpload', {
+      current: Math.min(totalChunks, Math.floor(offset / chunkSize) + 1),
+      total: totalChunks,
+    });
+
+    for (const chunk of chunks) {
+      await appendSenseVoiceChunk(chunk);
+    }
+  }
+
+  for (const chunk of engine.flushSegments()) {
+    await appendSenseVoiceChunk(chunk);
+  }
+
+  engine.resetStreamingState();
+}
+
 function startTimer() {
   stopTimer();
   timerHandle = window.setInterval(() => {
@@ -622,10 +866,29 @@ function stopTranscriptionTimer() {
   }
 }
 
-async function loadTranscriber(): Promise<Transcriber> {
+async function preloadSelectedEngine() {
+  if (isSelectedEngineReady.value) {
+    aiProgress.value = 100;
+    aiStatus.value = t('tools.meeting-captions.status.preloadedRuntime', {
+      model: selectedModel.value.label,
+      runtime: usesSenseVoice.value ? 'WASM' : (modelRuntime.value === 'webgpu' ? 'WebGPU' : 'WASM'),
+    });
+    return;
+  }
+
+  if (usesSenseVoice.value) {
+    await loadSenseVoiceEngine();
+    return;
+  }
+
+  await loadWhisperTranscriber();
+}
+
+async function loadWhisperTranscriber(): Promise<Transcriber> {
   if (!transcriberPromise) {
     transcriberPromise = (async () => {
-      const { pipeline } = await import('@huggingface/transformers');
+      const { env, pipeline } = await import('@huggingface/transformers');
+      configureTransformersBrowserCache(env);
       const preferredRuntime = await getPreferredRuntime();
 
       try {
@@ -641,6 +904,7 @@ async function loadTranscriber(): Promise<Transcriber> {
       }
     })().catch((error) => {
       transcriberPromise = null;
+      isWhisperReady.value = false;
       aiStatus.value = error instanceof Error
         ? t('tools.meeting-captions.errors.modelLoadFailedWithReason', { reason: error.message })
         : t('tools.meeting-captions.errors.modelLoadFailed');
@@ -649,6 +913,56 @@ async function loadTranscriber(): Promise<Transcriber> {
   }
 
   return transcriberPromise;
+}
+
+function configureTransformersBrowserCache(env: Record<string, unknown>) {
+  env.useBrowserCache = true;
+  env.cacheKey = TRANSFORMERS_CACHE_KEYS[0];
+}
+
+async function clearWhisperModelCache() {
+  if (typeof window === 'undefined' || !('caches' in window)) {
+    return 0;
+  }
+
+  let deleted = 0;
+  for (const key of TRANSFORMERS_CACHE_KEYS) {
+    if (await caches.delete(key)) {
+      deleted += 1;
+    }
+  }
+
+  return deleted;
+}
+
+async function loadSenseVoiceEngine() {
+  if (!senseVoiceEnginePromise) {
+    modelRuntime.value = 'wasm';
+    senseVoiceEnginePromise = SenseVoiceEngine.create((status) => {
+      aiStatus.value = status.message;
+      if (typeof status.progress === 'number') {
+        aiProgress.value = Math.max(aiProgress.value, status.progress);
+      }
+    }).catch((error) => {
+      senseVoiceEnginePromise = null;
+      senseVoiceEngine = null;
+      isSenseVoiceReady.value = false;
+      modelRuntime.value = null;
+      aiStatus.value = error instanceof Error
+        ? t('tools.meeting-captions.errors.modelLoadFailedWithReason', { reason: error.message })
+        : t('tools.meeting-captions.errors.modelLoadFailed');
+      throw error;
+    });
+  }
+
+  senseVoiceEngine = await senseVoiceEnginePromise;
+  isSenseVoiceReady.value = true;
+  aiProgress.value = 100;
+  aiStatus.value = t('tools.meeting-captions.status.preloadedRuntime', {
+    model: selectedModel.value.label,
+    runtime: 'WASM',
+  });
+  return senseVoiceEngine;
 }
 
 async function createTranscriber(
@@ -674,6 +988,7 @@ async function createTranscriber(
   });
 
   aiProgress.value = 100;
+  isWhisperReady.value = true;
   aiStatus.value = t('tools.meeting-captions.status.preloadedRuntime', {
     model: selectedModel.value.label,
     runtime: runtime.device === 'webgpu' ? 'WebGPU' : 'WASM',
@@ -738,7 +1053,9 @@ function buildTranscriptionAudio(chunks: PcmChunk[], targetSampleRate: number): 
 }
 
 function setupAudioPipeline(stream: MediaStream) {
-  analyserContext = new AudioContext();
+  analyserContext = usesSenseVoice.value
+    ? new AudioContext({ sampleRate: 16000 })
+    : new AudioContext();
   const source = analyserContext.createMediaStreamSource(stream);
   captureSource = source;
   analyserNode = analyserContext.createAnalyser();
@@ -776,8 +1093,35 @@ function setupAudioPipeline(stream: MediaStream) {
       endMs,
     });
 
-    const retentionStartMs = Math.max(0, endMs - 60000);
-    pcmChunks = pcmChunks.filter(chunk => chunk.endMs >= retentionStartMs);
+    if (usesSenseVoice.value) {
+      if (!senseVoiceEngine) {
+        return;
+      }
+
+      const resampled = analyserContext.sampleRate === 16000
+        ? samples
+        : buildTranscriptionAudio([{
+          samples,
+          sampleRate: analyserContext.sampleRate,
+          startMs,
+          endMs,
+        }], 16000);
+
+      for (const chunk of senseVoiceEngine.consumeSamples(resampled)) {
+        pendingSenseVoiceSegments.push({
+          samples: chunk.samples,
+          startSeconds: chunk.startSeconds,
+        });
+      }
+
+      if (pendingSenseVoiceSegments.length > 0) {
+        processSenseVoiceSegmentQueue().catch(console.error);
+      }
+    }
+    else {
+      const retentionStartMs = Math.max(0, endMs - 60000);
+      pcmChunks = pcmChunks.filter(chunk => chunk.endMs >= retentionStartMs);
+    }
   };
 
   const buffer = new Uint8Array(analyserNode.frequencyBinCount);
@@ -902,6 +1246,8 @@ function cleanupMedia() {
   levelBars.value = Array.from({ length: 20 }, () => 0.08);
   pcmChunks = [];
   recordingChunks = [];
+  pendingSenseVoiceSegments.length = 0;
+  senseVoiceEngine?.resetStreamingState();
 
   for (const track of mediaStream?.getTracks() ?? []) {
     track.stop();
@@ -910,12 +1256,12 @@ function cleanupMedia() {
 }
 
 onMounted(() => {
-  aiStatus.value = t('tools.meeting-captions.status.preloading', { model: selectedModel.value.label });
-  loadTranscriber().catch(console.error);
+  preloadSelectedEngine().catch(console.error);
 });
 
 onBeforeUnmount(() => {
   cleanupMedia();
+  senseVoiceEnginePromise?.then(engine => engine.free()).catch(() => undefined);
 });
 </script>
 
@@ -960,6 +1306,40 @@ onBeforeUnmount(() => {
         />
         <p class="field-hint">
           {{ selectedModel.hint }}
+        </p>
+        <div class="cache-tools">
+          <span class="cache-note">
+            {{ t('tools.meeting-captions.statusPanel.modelCacheBrowser') }}
+          </span>
+          <div class="cache-actions">
+            <n-button
+              text
+              size="tiny"
+              :disabled="recordingState !== 'idle' || isProcessingUpload || isClearingModelCache || isClearingAllCaches"
+              :loading="isClearingModelCache"
+              @click="clearModelCache"
+            >
+              {{ t('tools.meeting-captions.actions.clearModelCache') }}
+            </n-button>
+            <n-button
+              text
+              size="tiny"
+              :disabled="recordingState !== 'idle' || isProcessingUpload || isClearingModelCache || isClearingAllCaches"
+              :loading="isClearingAllCaches"
+              @click="clearAllSiteCachesNow"
+            >
+              {{ t('tools.meeting-captions.actions.clearAllCaches') }}
+            </n-button>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="isMobileBrowser" class="language-card mobile-warning-card">
+        <div class="field-label compact">
+          {{ t('tools.meeting-captions.fields.mobileWarningTitle') }}
+        </div>
+        <p class="field-hint">
+          {{ t('tools.meeting-captions.fields.mobileWarningHint') }}
         </p>
       </div>
 
@@ -1184,7 +1564,7 @@ onBeforeUnmount(() => {
             </div>
             <div class="status-item">
               <span class="status-label">{{ t('tools.meeting-captions.statusPanel.storage') }}</span>
-              <span>localStorage</span>
+              <span>localStorage + Cache Storage</span>
             </div>
             <div class="status-item">
               <span class="status-label">{{ t('tools.meeting-captions.statusPanel.history') }}</span>
@@ -1285,6 +1665,30 @@ onBeforeUnmount(() => {
   color: rgb(120 113 108);
   font-size: 12px;
   line-height: 1.5;
+}
+
+.cache-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.cache-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cache-note {
+  color: rgb(146 142 136);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.mobile-warning-card {
+  border-style: dashed;
 }
 
 .language-card :deep(.n-base-selection),

@@ -98,9 +98,10 @@ describe('meeting-captions.service', () => {
     expect(buildSessionTitle(new Date('2026-06-23T07:02:00.000Z'))).toContain('2026');
   });
 
-  it('only exposes meeting-grade WebGPU models', () => {
-    expect(MEETING_CAPTIONS_DEFAULT_MODEL_ID).toBe('onnx-community/whisper-small');
+  it('exposes SenseVoice first and keeps Whisper as fallback', () => {
+    expect(MEETING_CAPTIONS_DEFAULT_MODEL_ID).toBe('sherpa-onnx/sensevoice-small');
     expect(MEETING_CAPTIONS_MODEL_IDS).toEqual([
+      'sherpa-onnx/sensevoice-small',
       'onnx-community/whisper-small',
     ]);
   });

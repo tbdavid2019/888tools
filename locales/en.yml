@@ -571,7 +571,7 @@ tools:
 
   meeting-captions:
     title: Live Meeting Captions
-    description: Near real-time microphone transcription with a local Whisper model, plus pause, history, and localStorage persistence.
+    description: Near real-time microphone transcription with a local speech model, plus pause, history, and localStorage persistence.
     history:
       eyebrow: History
       title: Sessions
@@ -584,19 +584,24 @@ tools:
       korean: Korean
       auto: Mixed Chinese/English / Auto
     models:
+      sensevoice:
+        label: SenseVoice Small - Chinese-first experimental
+        hint: sherpa-onnx WASM + Silero VAD path. Better for mixed Chinese/English meetings, but requires local runtime assets first.
       small:
-        label: Small - stable live
-        hint: Default for live captions. Prefer WebGPU, but fall back to WASM to keep captions flowing.
+        label: Whisper Small - legacy fallback
+        hint: Kept as the legacy browser fallback. Chinese meeting accuracy is usually worse than SenseVoice.
       medium:
         label: Medium - experimental
         hint: Kept for later experiments. Not used in the live path right now.
     fields:
       language: Language
-      whisperModel: Whisper model
+      whisperModel: Local speech model
       uploadAudio: Upload audio
       uploadAudioHint: Supports browser-decodable WAV, MP3, M4A/AAC files. Creates a new meeting transcript.
       downloadOnStop: Download recording on stop
       downloadOnStopHint: Currently exports WAV. MP3 needs an extra encoder.
+      mobileWarningTitle: Mobile note
+      mobileWarningHint: Mobile browsers are better suited for uploaded audio. Long live capture may stop when backgrounded, locked, or under memory pressure.
     actions:
       new: New
       clearHistory: Clear history
@@ -608,15 +613,17 @@ tools:
       saveNow: Save now
       uploadAudio: Select audio to transcribe
       transcribingUpload: Transcribing upload
+      clearModelCache: Clear model
+      clearAllCaches: Clear all
     recordingState:
       idle: Idle
       recording: Recording
       paused: Paused
     status:
-      modelNotLoaded: Whisper not loaded
+      modelNotLoaded: Model not loaded
       waitingFirstTranscript: Recording audio, waiting for the first transcript...
       preparePreload: Preparing to preload {model}
-      transcribing: Local Whisper is transcribing...
+      transcribing: Local model is transcribing...
       noSpeechDetected: No clear speech detected, skipping this segment
       pausedCaptionsSaved: Paused, captions preserved
       listening: Listening...
@@ -636,6 +643,8 @@ tools:
     prompts:
       renameSession: Enter a new meeting name
       clearHistory: Clear all meeting history? This deletes transcript records from localStorage.
+      clearModelCache: Clear model-related caches? SenseVoice and Whisper will be downloaded again next time.
+      clearAllCaches: Clear this site's entire Cache Storage? Other same-site caches will also be removed.
     messages:
       cannotSwitchWhileRecording: Cannot switch history while recording
       sessionRenamed: Meeting name updated
@@ -643,6 +652,8 @@ tools:
       transcriptCopied: Transcript copied
       noAudioToDownload: No downloadable audio was recorded
       wavDownloaded: WAV recording downloaded
+      modelCacheCleared: Cleared {count} model caches. Model files will be downloaded again next time.
+      allCachesCleared: Cleared {count} Cache Storage entries for this site.
     errors:
       microphoneAccess: Cannot access microphone
       startFailed: "Failed to start recording: {reason}"
@@ -652,6 +663,8 @@ tools:
       modelLoadFailedWithReason: "Model load failed: {reason}"
       uploadTranscriptionFailed: Uploaded audio transcription failed
       uploadTranscriptionFailedWithReason: "Uploaded audio transcription failed: {reason}"
+      clearModelCacheFailed: Failed to clear model cache
+      clearAllCachesFailed: Failed to clear all Cache Storage
     sections:
       liveCaptions: Live captions
       transcript: Meeting transcript
@@ -669,6 +682,7 @@ tools:
       history: History
       sessionCount: "{count} sessions"
       pauseDisplay: Pause display
+      modelCacheBrowser: Model stays in this browser
 
   mic-camera-tester:
     title: Mic & Camera Tester

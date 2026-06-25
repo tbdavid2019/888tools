@@ -567,7 +567,7 @@ tools:
 
   meeting-captions:
     title: 即時會議字幕
-    description: 使用本地 Whisper 模型做麥克風近即時聽寫，支援暫停、歷史回看與 localStorage 保存。
+    description: 使用本地語音模型做麥克風近即時聽寫，支援暫停、歷史回看與 localStorage 保存。
     history:
       eyebrow: History
       title: Session
@@ -580,19 +580,24 @@ tools:
       korean: 韓文
       auto: 中英混合 / 自動
     models:
+      sensevoice:
+        label: SenseVoice Small - 中文優先實驗
+        hint: sherpa-onnx 的 WASM + Silero VAD 路線。更適合中英混合會議，但要先下載本地 runtime 資產。
       small:
-        label: Small - 即時穩定
-        hint: 即時字幕預設。先用 WebGPU，失敗時退回 WASM，優先讓字幕穩定出來。
+        label: Whisper Small - 舊版 fallback
+        hint: 保留作為舊版 browser fallback。中文會議效果通常不如 SenseVoice。
       medium:
         label: Medium - 實驗模式
         hint: 保留給後續實驗，目前未在即時模式啟用。
     fields:
       language: 語言
-      whisperModel: Whisper 模型
+      whisperModel: 本地語音模型
       uploadAudio: 上傳音檔
       uploadAudioHint: 支援瀏覽器可解碼的 WAV、MP3、M4A/AAC。會建立新的會議逐字稿。
       downloadOnStop: 停止時下載錄音
       downloadOnStopHint: 目前輸出 WAV；MP3 需要額外編碼器。
+      mobileWarningTitle: 手機提醒
+      mobileWarningHint: 手機瀏覽器較適合上傳音檔。長時間即時錄音可能因切背景、鎖屏或記憶體限制而中斷。
     actions:
       new: New
       clearHistory: 清除 history
@@ -604,15 +609,17 @@ tools:
       saveNow: 立即儲存
       uploadAudio: 選擇音檔轉寫
       transcribingUpload: 音檔轉寫中
+      clearModelCache: 清模型
+      clearAllCaches: 全清
     recordingState:
       idle: 待機
       recording: 錄音中
       paused: 已暫停
     status:
-      modelNotLoaded: Whisper 未載入
+      modelNotLoaded: 模型未載入
       waitingFirstTranscript: 收音中，等待第一段轉寫...
       preparePreload: 準備預載 {model}
-      transcribing: 本地 Whisper 轉寫中...
+      transcribing: 本地模型轉寫中...
       noSpeechDetected: 未偵測到清楚語音，略過此片段
       pausedCaptionsSaved: 已暫停，字幕已保留
       listening: 聽寫中...
@@ -632,6 +639,8 @@ tools:
     prompts:
       renameSession: 輸入新的會議名稱
       clearHistory: 確定清除所有會議歷史？這會刪除 localStorage 內的逐字稿紀錄。
+      clearModelCache: 確定清除模型相關 cache 嗎？SenseVoice 和 Whisper 會在下次重新下載。
+      clearAllCaches: 確定清除這個網站的全部 Cache Storage 嗎？其他同站快取也會一起刪除。
     messages:
       cannotSwitchWhileRecording: 錄音中無法切換歷史紀錄
       sessionRenamed: 會議名稱已更新
@@ -639,6 +648,8 @@ tools:
       transcriptCopied: 逐字稿已複製
       noAudioToDownload: 沒有錄到可下載的音訊
       wavDownloaded: 已下載 WAV 錄音檔
+      modelCacheCleared: 已清除 {count} 個模型 cache，下次載入模型會重新下載。
+      allCachesCleared: 已清除這個網站的 {count} 個 Cache Storage。
     errors:
       microphoneAccess: 無法存取麥克風
       startFailed: "啟動錄音失敗：{reason}"
@@ -648,6 +659,8 @@ tools:
       modelLoadFailedWithReason: "模型載入失敗：{reason}"
       uploadTranscriptionFailed: 音檔轉寫失敗
       uploadTranscriptionFailedWithReason: "音檔轉寫失敗：{reason}"
+      clearModelCacheFailed: 清除模型 cache 失敗
+      clearAllCachesFailed: 清除全部 Cache Storage 失敗
     sections:
       liveCaptions: 現場字幕
       transcript: 會議逐字稿
@@ -665,6 +678,7 @@ tools:
       history: 歷史
       sessionCount: "{count} sessions"
       pauseDisplay: 暫停顯示
+      modelCacheBrowser: 模型會留在這個 browser
 
   mic-camera-tester:
     title: 麥克風與攝影機測試

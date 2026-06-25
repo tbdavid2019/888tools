@@ -12,6 +12,9 @@ node_modules
 dist
 dist-ssr
 coverage
+public/models/meeting-captions-sensevoice/sherpa-onnx-wasm-main-vad-asr.data
+public/models/meeting-captions-sensevoice/sherpa-onnx-wasm-main-vad-asr.js
+public/models/meeting-captions-sensevoice/sherpa-onnx-wasm-main-vad-asr.wasm
 *.local
 
 /cypress/videos/
