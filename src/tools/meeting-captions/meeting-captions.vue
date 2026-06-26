@@ -6,7 +6,6 @@ import {
   DeviceFloppy,
   Download,
   Language,
-  Microphone,
   Pencil,
   PlayerPause,
   PlayerPlay,
@@ -37,7 +36,6 @@ import {
   updateSessionTranscript,
   upsertSession,
 } from './meeting-captions.service';
-import { clearAllBrowserCaches } from './meeting-captions.sherpa';
 import { convertOpenCC } from '@/services/opencc.service';
 
 type Transcriber = (audio: Float32Array, options: Record<string, unknown>) => Promise<{
@@ -80,8 +78,6 @@ const uploadInput = ref<HTMLInputElement | null>(null);
 const uploadFileName = ref('');
 const uploadProgress = ref(0);
 const isProcessingUpload = ref(false);
-const isClearingModelCache = ref(false);
-const isClearingAllCaches = ref(false);
 
 const languageOptions = computed(() => [
   { label: t('tools.meeting-captions.language.auto'), value: 'auto' },
@@ -272,68 +268,6 @@ function clearHistory() {
   liveElapsedMs.value = 0;
   persistState();
   message.success(t('tools.meeting-captions.messages.historyCleared'));
-}
-
-async function clearModelCache() {
-  if (recordingState.value !== 'idle' || isProcessingUpload.value || isClearingModelCache.value || isClearingAllCaches.value) {
-    return;
-  }
-
-  const confirmed = window.confirm(t('tools.meeting-captions.prompts.clearModelCache'));
-  if (!confirmed) {
-    return;
-  }
-
-  isClearingModelCache.value = true;
-
-  try {
-    const clearedCount = await clearWhisperModelCache();
-    transcriberPromise = null;
-    isWhisperReady.value = false;
-    modelRuntime.value = null;
-    aiProgress.value = 0;
-    aiStatus.value = t('tools.meeting-captions.status.modelNotLoaded');
-    resetModelPreloadState();
-    message.success(t('tools.meeting-captions.messages.modelCacheCleared', { count: clearedCount }));
-  }
-  catch (error) {
-    console.error(error);
-    message.error(t('tools.meeting-captions.errors.clearModelCacheFailed'));
-  }
-  finally {
-    isClearingModelCache.value = false;
-  }
-}
-
-async function clearAllSiteCachesNow() {
-  if (recordingState.value !== 'idle' || isProcessingUpload.value || isClearingAllCaches.value || isClearingModelCache.value) {
-    return;
-  }
-
-  const confirmed = window.confirm(t('tools.meeting-captions.prompts.clearAllCaches'));
-  if (!confirmed) {
-    return;
-  }
-
-  isClearingAllCaches.value = true;
-
-  try {
-    const clearedCount = await clearAllBrowserCaches();
-    transcriberPromise = null;
-    isWhisperReady.value = false;
-    modelRuntime.value = null;
-    aiProgress.value = 0;
-    aiStatus.value = t('tools.meeting-captions.status.modelNotLoaded');
-    resetModelPreloadState();
-    message.success(t('tools.meeting-captions.messages.allCachesCleared', { count: clearedCount }));
-  }
-  catch (error) {
-    console.error(error);
-    message.error(t('tools.meeting-captions.errors.clearAllCachesFailed'));
-  }
-  finally {
-    isClearingAllCaches.value = false;
-  }
 }
 
 function exportCurrentSession() {
@@ -1109,44 +1043,6 @@ onBeforeUnmount(() => {
         <n-select v-model:value="outputMode" :options="outputModeOptions" :disabled="recordingState !== 'idle' || isProcessingUpload" />
       </div>
 
-      <div class="language-card">
-        <div class="field-label">
-          <n-icon :component="Microphone" />
-          {{ t('tools.meeting-captions.fields.whisperModel') }}
-        </div>
-        <div class="static-model-chip">
-          {{ selectedModel.label }}
-        </div>
-        <p class="field-hint">
-          {{ selectedModel.hint }}
-        </p>
-        <div class="cache-tools">
-          <span class="cache-note">
-            {{ t('tools.meeting-captions.statusPanel.modelCacheBrowser') }}
-          </span>
-          <div class="cache-actions">
-            <n-button
-              text
-              size="tiny"
-              :disabled="recordingState !== 'idle' || isProcessingUpload || isClearingModelCache || isClearingAllCaches"
-              :loading="isClearingModelCache"
-              @click="clearModelCache"
-            >
-              {{ t('tools.meeting-captions.actions.clearModelCache') }}
-            </n-button>
-            <n-button
-              text
-              size="tiny"
-              :disabled="recordingState !== 'idle' || isProcessingUpload || isClearingModelCache || isClearingAllCaches"
-              :loading="isClearingAllCaches"
-              @click="clearAllSiteCachesNow"
-            >
-              {{ t('tools.meeting-captions.actions.clearAllCaches') }}
-            </n-button>
-          </div>
-        </div>
-      </div>
-
       <div v-if="isMobileBrowser" class="language-card mobile-warning-card">
         <div class="field-label compact">
           {{ t('tools.meeting-captions.fields.mobileWarningTitle') }}
@@ -1493,38 +1389,6 @@ onBeforeUnmount(() => {
   color: rgb(120 113 108);
   font-size: 12px;
   line-height: 1.5;
-}
-
-.cache-tools {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.cache-actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.cache-note {
-  color: rgb(146 142 136);
-  font-size: 11px;
-  line-height: 1.4;
-}
-
-.static-model-chip {
-  display: flex;
-  align-items: center;
-  min-height: 42px;
-  padding: 0 14px;
-  border: 1px solid rgb(168 162 158);
-  border-radius: 999px;
-  background: rgb(255 255 250);
-  color: rgb(28 25 23);
-  font-weight: 700;
 }
 
 .mobile-warning-card {
