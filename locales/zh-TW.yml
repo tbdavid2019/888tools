@@ -579,6 +579,9 @@ tools:
       japanese: 日文
       korean: 韓文
       auto: 中英混合 / 自動
+    outputMode:
+      transcribe: 原文逐字
+      translate: 翻譯成英文
     models:
       sensevoice:
         label: SenseVoice Small - 中文優先實驗
@@ -591,6 +594,7 @@ tools:
         hint: 保留給後續實驗，目前未在即時模式啟用。
     fields:
       language: 語言
+      outputMode: 輸出模式
       whisperModel: 本地語音模型
       uploadAudio: 上傳音檔
       uploadAudioHint: 支援瀏覽器可解碼的 WAV、MP3、M4A/AAC。會建立新的會議逐字稿。

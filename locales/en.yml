@@ -583,6 +583,9 @@ tools:
       japanese: Japanese
       korean: Korean
       auto: Mixed Chinese/English / Auto
+    outputMode:
+      transcribe: Original transcript
+      translate: Translate to English
     models:
       sensevoice:
         label: SenseVoice Small - Chinese-first experimental
@@ -595,6 +598,7 @@ tools:
         hint: Kept for later experiments. Not used in the live path right now.
     fields:
       language: Language
+      outputMode: Output mode
       whisperModel: Local speech model
       uploadAudio: Upload audio
       uploadAudioHint: Supports browser-decodable WAV, MP3, M4A/AAC files. Creates a new meeting transcript.

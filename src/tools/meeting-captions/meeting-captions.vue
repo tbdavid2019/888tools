@@ -44,6 +44,7 @@ type Transcriber = (audio: Float32Array, options: Record<string, unknown>) => Pr
   text?: string
   chunks?: Array<{ text?: string; timestamp?: [number?, number?] }>
 }>;
+type TranscriptOutputMode = 'transcribe' | 'translate';
 
 const TRANSFORMERS_CACHE_KEYS = [
   'meeting-captions-transformers-cache',
@@ -61,6 +62,7 @@ const message = useMessage();
 const { t } = useI18n();
 
 const selectedLanguage = ref<SupportedLanguage>('auto');
+const outputMode = ref<TranscriptOutputMode>('transcribe');
 const downloadAudioOnStop = ref(true);
 const sessionsState = ref<MeetingSessionsState>(loadInitialState());
 const aiStatus = ref(t('tools.meeting-captions.status.modelNotLoaded'));
@@ -87,6 +89,11 @@ const languageOptions = computed(() => [
   { label: t('tools.meeting-captions.language.english'), value: 'english' },
   { label: t('tools.meeting-captions.language.japanese'), value: 'japanese' },
   { label: t('tools.meeting-captions.language.korean'), value: 'korean' },
+]);
+
+const outputModeOptions = computed(() => [
+  { label: t('tools.meeting-captions.outputMode.transcribe'), value: 'transcribe' },
+  { label: t('tools.meeting-captions.outputMode.translate'), value: 'translate' },
 ]);
 
 let transcriberPromise: Promise<Transcriber> | null = null;
@@ -536,7 +543,7 @@ async function processLatestWindow() {
 
     const options: Record<string, unknown> = {
       return_timestamps: true,
-      task: 'transcribe',
+      task: outputMode.value,
     };
 
     if (selectedLanguage.value !== 'auto') {
@@ -611,6 +618,10 @@ function normalizeResultChunks(
 }
 
 function normalizeTranscriptText(text: string) {
+  if (outputMode.value === 'translate') {
+    return text.trim();
+  }
+
   if (selectedLanguage.value === 'chinese' || selectedLanguage.value === 'auto') {
     return convertOpenCC(text.trim(), 's2twp');
   }
@@ -672,7 +683,7 @@ async function transcribeUploadedAudio(audioData: Float32Array) {
     const offsetSeconds = position / sampleRate;
     const options: Record<string, unknown> = {
       return_timestamps: true,
-      task: 'transcribe',
+      task: outputMode.value,
     };
 
     if (selectedLanguage.value !== 'auto') {
@@ -1092,6 +1103,10 @@ onBeforeUnmount(() => {
           {{ t('tools.meeting-captions.fields.language') }}
         </div>
         <n-select v-model:value="selectedLanguage" :options="languageOptions" :disabled="recordingState !== 'idle' || isProcessingUpload" />
+        <div class="field-label compact mt-3">
+          {{ t('tools.meeting-captions.fields.outputMode') }}
+        </div>
+        <n-select v-model:value="outputMode" :options="outputModeOptions" :disabled="recordingState !== 'idle' || isProcessingUpload" />
       </div>
 
       <div class="language-card">
