@@ -584,8 +584,8 @@ tools:
         label: SenseVoice Small - 中文優先實驗
         hint: sherpa-onnx 的 WASM + Silero VAD 路線。更適合中英混合會議，但要先下載本地 runtime 資產。
       small:
-        label: Whisper Small - 舊版 fallback
-        hint: 保留作為舊版 browser fallback。中文會議效果通常不如 SenseVoice。
+        label: Whisper Small
+        hint: 目前固定使用的本地模型。優先走 WebGPU，失敗時退回 WASM。
       medium:
         label: Medium - 實驗模式
         hint: 保留給後續實驗，目前未在即時模式啟用。
@@ -639,7 +639,7 @@ tools:
     prompts:
       renameSession: 輸入新的會議名稱
       clearHistory: 確定清除所有會議歷史？這會刪除 localStorage 內的逐字稿紀錄。
-      clearModelCache: 確定清除模型相關 cache 嗎？SenseVoice 和 Whisper 會在下次重新下載。
+      clearModelCache: 確定清除 Whisper 模型相關 cache 嗎？下次會重新下載。
       clearAllCaches: 確定清除這個網站的全部 Cache Storage 嗎？其他同站快取也會一起刪除。
     messages:
       cannotSwitchWhileRecording: 錄音中無法切換歷史紀錄

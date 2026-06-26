@@ -588,8 +588,8 @@ tools:
         label: SenseVoice Small - Chinese-first experimental
         hint: sherpa-onnx WASM + Silero VAD path. Better for mixed Chinese/English meetings, but requires local runtime assets first.
       small:
-        label: Whisper Small - legacy fallback
-        hint: Kept as the legacy browser fallback. Chinese meeting accuracy is usually worse than SenseVoice.
+        label: Whisper Small
+        hint: The only bundled local model now. Prefer WebGPU and fall back to WASM when needed.
       medium:
         label: Medium - experimental
         hint: Kept for later experiments. Not used in the live path right now.
@@ -643,7 +643,7 @@ tools:
     prompts:
       renameSession: Enter a new meeting name
       clearHistory: Clear all meeting history? This deletes transcript records from localStorage.
-      clearModelCache: Clear model-related caches? SenseVoice and Whisper will be downloaded again next time.
+      clearModelCache: Clear Whisper model caches? The model will be downloaded again next time.
       clearAllCaches: Clear this site's entire Cache Storage? Other same-site caches will also be removed.
     messages:
       cannotSwitchWhileRecording: Cannot switch history while recording

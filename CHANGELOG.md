@@ -5,16 +5,15 @@ All notable changes to this project will be documented in this file. See [standa
 ## Version 2026.06.25
 
 ### Features
-- **meeting-captions**: 新增 sherpa-onnx `SenseVoice Small + Silero VAD` browser 實驗路線，優先處理中英混合會議，改走官方 WASM/CPU 離線 runtime。
+- **meeting-captions**: `meeting-captions` 現在只保留單一 `Whisper Small` browser 路線，移除 `SenseVoice Small` 主流程與模型切換 UI。
 - **meeting-captions**: 預設語言改為「中英混合 / 自動」，避免中英夾雜會議被固定中文 prompt 影響英文術語辨識。
 - **meeting-captions**: 新增上傳音檔轉寫入口，支援瀏覽器可解碼的 WAV、MP3、M4A/AAC，會建立新的會議逐字稿並分段更新進度。
 - **meeting-captions**: 調整介面資訊架構，將上方區塊標示為「現場字幕」，下方輸出區改為「會議逐字稿」，降低即時字幕與完整逐字稿的辨識混淆。
-- **meeting-captions**: 新增 `scripts/download-meeting-captions-sensevoice-assets.sh`，可把官方 SenseVoice browser runtime 下載到本地專案，維持離線執行。
-- **meeting-captions**: 新增 browser `Cache Storage` 持久快取，SenseVoice runtime 與 Whisper Small 首次下載後都會留在本機瀏覽器；頁面提供低調的 `清模型` 與 `全清` 按鈕，並補上手機瀏覽器使用提醒。
+- **meeting-captions**: 保留 browser `Cache Storage` 持久快取，Whisper Small 首次下載後會留在本機瀏覽器；頁面維持低調的 `清模型` 與 `全清` 按鈕，並補上手機瀏覽器使用提醒。
 
 ### Bug Fixes
 - **meeting-captions**: 保留 `Whisper Small` 作為舊版 fallback，不再把 WebGPU-only Whisper 當成主方案。
-- **meeting-captions**: 將模型文案改為泛用的本地語音模型，避免 SenseVoice / Whisper 混用時 UI 誤導。
+- **meeting-captions**: 將模型文案收斂成單一 `Whisper Small`，避免 UI 暗示還能切換其他 browser 模型。
 - **app**: 移除啟動時自動 `caches.delete()` 的行為，避免每次進站都把模型 cache 清掉。
 
 ## Version 2026.06.23

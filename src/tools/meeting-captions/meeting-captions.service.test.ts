@@ -98,12 +98,9 @@ describe('meeting-captions.service', () => {
     expect(buildSessionTitle(new Date('2026-06-23T07:02:00.000Z'))).toContain('2026');
   });
 
-  it('exposes SenseVoice first and keeps Whisper as fallback', () => {
-    expect(MEETING_CAPTIONS_DEFAULT_MODEL_ID).toBe('sherpa-onnx/sensevoice-small');
-    expect(MEETING_CAPTIONS_MODEL_IDS).toEqual([
-      'sherpa-onnx/sensevoice-small',
-      'onnx-community/whisper-small',
-    ]);
+  it('uses Whisper Small as the only bundled model', () => {
+    expect(MEETING_CAPTIONS_DEFAULT_MODEL_ID).toBe('onnx-community/whisper-small');
+    expect(MEETING_CAPTIONS_MODEL_IDS).toEqual(['onnx-community/whisper-small']);
   });
 
   it('prefers WebGPU but falls back to WASM for meeting captions', () => {

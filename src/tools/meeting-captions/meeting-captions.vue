@@ -16,7 +16,6 @@ import {
   Upload,
 } from '@vicons/tabler';
 import type {
-  MeetingCaptionsModelId,
   MeetingCaptionsRuntime,
   MeetingSession,
   MeetingSessionsState,
@@ -25,23 +24,20 @@ import type {
 } from './meeting-captions.service';
 import {
   MEETING_CAPTIONS_DEFAULT_MODEL_ID,
-  MEETING_CAPTIONS_SENSEVOICE_MODEL_ID,
   MEETING_CAPTIONS_STORAGE_KEY,
-  MEETING_CAPTIONS_WHISPER_MODEL_ID,
   createMeetingSession,
   createMeetingSessionsState,
   formatClock,
   formatTimestamp,
   getMeetingCaptionsRuntime,
   hasAudibleSpeech,
-  isSenseVoiceModel,
   readMeetingSessionsState,
   serializeMeetingSessionsState,
   sessionToPlainText,
   updateSessionTranscript,
   upsertSession,
 } from './meeting-captions.service';
-import { SenseVoiceEngine, clearAllBrowserCaches, clearSenseVoiceModelCache } from './meeting-captions.sherpa';
+import { clearAllBrowserCaches } from './meeting-captions.sherpa';
 import { convertOpenCC } from '@/services/opencc.service';
 
 type Transcriber = (audio: Float32Array, options: Record<string, unknown>) => Promise<{
@@ -54,12 +50,6 @@ const TRANSFORMERS_CACHE_KEYS = [
   'transformers-cache',
 ] as const;
 
-interface SpeechModelOption {
-  label: string
-  value: MeetingCaptionsModelId
-  hint: string
-}
-
 interface PcmChunk {
   samples: Float32Array
   sampleRate: number
@@ -71,7 +61,6 @@ const message = useMessage();
 const { t } = useI18n();
 
 const selectedLanguage = ref<SupportedLanguage>('auto');
-const selectedModelId = ref<MeetingCaptionsModelId>(MEETING_CAPTIONS_DEFAULT_MODEL_ID);
 const downloadAudioOnStop = ref(true);
 const sessionsState = ref<MeetingSessionsState>(loadInitialState());
 const aiStatus = ref(t('tools.meeting-captions.status.modelNotLoaded'));
@@ -81,7 +70,6 @@ const modelPreloadProgress = ref(0);
 const isModelPreloading = ref(false);
 const modelRuntime = ref<'webgpu' | 'wasm' | null>(null);
 const isWhisperReady = ref(false);
-const isSenseVoiceReady = ref(false);
 const recordingState = ref<'idle' | 'recording' | 'paused'>('idle');
 const levelBars = ref<number[]>(Array.from({ length: 20 }, () => 0.08));
 const liveElapsedMs = ref(0);
@@ -101,29 +89,12 @@ const languageOptions = computed(() => [
   { label: t('tools.meeting-captions.language.korean'), value: 'korean' },
 ]);
 
-const modelOptions = computed<SpeechModelOption[]>(() => [
-  {
-    label: t('tools.meeting-captions.models.sensevoice.label'),
-    value: MEETING_CAPTIONS_SENSEVOICE_MODEL_ID,
-    hint: t('tools.meeting-captions.models.sensevoice.hint'),
-  },
-  {
-    label: t('tools.meeting-captions.models.small.label'),
-    value: MEETING_CAPTIONS_WHISPER_MODEL_ID,
-    hint: t('tools.meeting-captions.models.small.hint'),
-  },
-]);
-
 let transcriberPromise: Promise<Transcriber> | null = null;
-let senseVoiceEnginePromise: Promise<SenseVoiceEngine> | null = null;
-let senseVoiceEngine: SenseVoiceEngine | null = null;
 let mediaStream: MediaStream | null = null;
 let pcmChunks: PcmChunk[] = [];
 let recordingChunks: PcmChunk[] = [];
 let processing = false;
 let hasQueuedProcessing = false;
-let processingSenseVoiceSegments = false;
-const pendingSenseVoiceSegments: SenseVoicePendingSegment[] = [];
 let sessionStartPerf = 0;
 let timerHandle: number | null = null;
 let transcriptionTimerHandle: number | null = null;
@@ -133,11 +104,6 @@ let analyserFrame: number | null = null;
 let captureSource: MediaStreamAudioSourceNode | null = null;
 let captureProcessor: ScriptProcessorNode | null = null;
 let captureSilenceGain: GainNode | null = null;
-
-interface SenseVoicePendingSegment {
-  samples: Float32Array
-  startSeconds: number
-}
 
 const activeSession = computed<MeetingSession | null>(() => {
   return sessionsState.value.sessions.find(session => session.id === sessionsState.value.activeSessionId) ?? null;
@@ -156,9 +122,12 @@ const canUploadAudio = computed(() => recordingState.value === 'idle' && !isProc
 const transcriptPreview = computed(() => activeSession.value ? sessionToPlainText(activeSession.value) : '');
 const latestLine = computed(() => activeSession.value?.lines.at(-1) ?? null);
 const previousLines = computed(() => activeSession.value?.lines.slice(-8, -1) ?? []);
-const selectedModel = computed(() => modelOptions.value.find(option => option.value === selectedModelId.value) ?? modelOptions.value[0]);
-const usesSenseVoice = computed(() => isSenseVoiceModel(selectedModelId.value));
-const isSelectedEngineReady = computed(() => usesSenseVoice.value ? isSenseVoiceReady.value : isWhisperReady.value);
+const selectedModel = computed(() => ({
+  label: t('tools.meeting-captions.models.small.label'),
+  value: MEETING_CAPTIONS_DEFAULT_MODEL_ID,
+  hint: t('tools.meeting-captions.models.small.hint'),
+}));
+const isSelectedEngineReady = computed(() => isWhisperReady.value);
 const showModelPreload = computed(() => {
   return recordingState.value === 'idle'
     && !isProcessingUpload.value
@@ -231,10 +200,10 @@ function updateModelPreloadState(message: string, progress?: number) {
   else if (message.includes('Checking local browser model cache')) {
     nextProgress = Math.max(nextProgress, 3);
   }
-  else if (message.includes('Using cached SenseVoice assets') || message.includes('SenseVoice assets cached')) {
+  else if (message.includes('Using cached') || message.includes('cached in this browser')) {
     nextProgress = Math.max(nextProgress, 90);
   }
-  else if (message.includes('Initializing SenseVoice runtime')) {
+  else if (message.includes('Initializing') || message.includes('preloading')) {
     nextProgress = Math.max(nextProgress, 97);
   }
 
@@ -311,14 +280,9 @@ async function clearModelCache() {
   isClearingModelCache.value = true;
 
   try {
-    await senseVoiceEnginePromise?.then(engine => engine.free()).catch(() => undefined);
-    await clearSenseVoiceModelCache();
     const clearedCount = await clearWhisperModelCache();
     transcriberPromise = null;
-    senseVoiceEnginePromise = null;
-    senseVoiceEngine = null;
     isWhisperReady.value = false;
-    isSenseVoiceReady.value = false;
     modelRuntime.value = null;
     aiProgress.value = 0;
     aiStatus.value = t('tools.meeting-captions.status.modelNotLoaded');
@@ -347,13 +311,9 @@ async function clearAllSiteCachesNow() {
   isClearingAllCaches.value = true;
 
   try {
-    await senseVoiceEnginePromise?.then(engine => engine.free()).catch(() => undefined);
     const clearedCount = await clearAllBrowserCaches();
     transcriberPromise = null;
-    senseVoiceEnginePromise = null;
-    senseVoiceEngine = null;
     isWhisperReady.value = false;
-    isSenseVoiceReady.value = false;
     modelRuntime.value = null;
     aiProgress.value = 0;
     aiStatus.value = t('tools.meeting-captions.status.modelNotLoaded');
@@ -477,53 +437,18 @@ async function startSession() {
     }
 
     recordingState.value = 'recording';
-    aiStatus.value = usesSenseVoice.value && !isSenseVoiceReady.value
-      ? '已開始收音，正在初始化 SenseVoice 模型...'
-      : t('tools.meeting-captions.status.waitingFirstTranscript');
+    aiStatus.value = t('tools.meeting-captions.status.waitingFirstTranscript');
     startTimer();
-    if (!usesSenseVoice.value) {
-      startTranscriptionTimer();
-    }
+    startTranscriptionTimer();
 
     replaceActiveSession({
       ...(activeSession.value as MeetingSession),
       language: selectedLanguage.value,
       updatedAt: new Date().toISOString(),
     });
-
-    if (usesSenseVoice.value) {
-      pendingSenseVoiceSegments.length = 0;
-
-      if (senseVoiceEngine) {
-        senseVoiceEngine.resetStreamingState();
-      }
-      else {
-        void loadSenseVoiceEngine()
-          .then((engine) => {
-            if (recordingState.value !== 'recording') {
-              return;
-            }
-
-            engine.resetStreamingState();
-            pendingSenseVoiceSegments.length = 0;
-            aiStatus.value = t('tools.meeting-captions.status.waitingFirstTranscript');
-          })
-          .catch((error) => {
-            console.error(error);
-            isSenseVoiceReady.value = false;
-            aiStatus.value = error instanceof Error
-              ? error.message
-              : t('tools.meeting-captions.errors.modelLoadFailed');
-            message.error(aiStatus.value);
-          });
-      }
-    }
   }
   catch (error) {
     cleanupMedia();
-    if (usesSenseVoice.value) {
-      isSenseVoiceReady.value = false;
-    }
     const reason = error instanceof Error ? error.message : t('tools.meeting-captions.errors.microphoneAccess');
     aiStatus.value = reason;
     message.error(t('tools.meeting-captions.errors.startFailed', { reason }));
@@ -538,13 +463,8 @@ function pauseSession() {
   liveElapsedMs.value = getElapsedMs();
   recordingState.value = 'paused';
   stopTimer();
-  if (usesSenseVoice.value) {
-    flushSenseVoiceSegments().catch(console.error);
-  }
-  else {
-    stopTranscriptionTimer();
-    processLatestWindow().catch(console.error);
-  }
+  stopTranscriptionTimer();
+  processLatestWindow().catch(console.error);
 }
 
 function resumeSession() {
@@ -555,9 +475,7 @@ function resumeSession() {
   sessionStartPerf = performance.now() - liveElapsedMs.value;
   recordingState.value = 'recording';
   startTimer();
-  if (!usesSenseVoice.value) {
-    startTranscriptionTimer();
-  }
+  startTranscriptionTimer();
 }
 
 async function stopSession() {
@@ -569,13 +487,7 @@ async function stopSession() {
   stopTimer();
   stopTranscriptionTimer();
   recordingState.value = 'idle';
-
-  if (usesSenseVoice.value) {
-    await flushSenseVoiceSegments();
-  }
-  else {
-    await processLatestWindow();
-  }
+  await processLatestWindow();
   if (downloadAudioOnStop.value) {
     downloadCurrentAudio();
   }
@@ -590,30 +502,7 @@ async function stopSession() {
   }
 }
 
-function handleModelChange() {
-  if (recordingState.value !== 'idle' || isProcessingUpload.value) {
-    return;
-  }
-
-  const existingSenseVoicePromise = senseVoiceEnginePromise;
-  transcriberPromise = null;
-  senseVoiceEnginePromise = null;
-  senseVoiceEngine = null;
-  modelRuntime.value = null;
-  isWhisperReady.value = false;
-  isSenseVoiceReady.value = false;
-  aiProgress.value = 0;
-  aiStatus.value = t('tools.meeting-captions.status.preparePreload', { model: selectedModel.value.label });
-  resetModelPreloadState();
-  existingSenseVoicePromise?.then(engine => engine.free()).catch(() => undefined);
-  preloadSelectedEngine().catch(console.error);
-}
-
 async function queueTranscription() {
-  if (usesSenseVoice.value) {
-    return;
-  }
-
   if (processing) {
     hasQueuedProcessing = true;
     return;
@@ -686,74 +575,6 @@ async function processLatestWindow() {
       hasQueuedProcessing = false;
       await processLatestWindow();
     }
-  }
-}
-
-async function flushSenseVoiceSegments() {
-  const engine = await loadSenseVoiceEngine();
-  const debugBeforeFlush = engine.getDebugState();
-  for (const chunk of engine.flushSegments()) {
-    pendingSenseVoiceSegments.push({
-      samples: chunk.samples,
-      startSeconds: chunk.startSeconds,
-    });
-  }
-  await processSenseVoiceSegmentQueue();
-
-  const debugAfterFlush = engine.getDebugState();
-  if (debugAfterFlush.totalSegmentsEmitted === debugBeforeFlush.totalSegmentsEmitted) {
-    const bufferedSeconds = (debugAfterFlush.totalSamplesAccepted / 16000).toFixed(1);
-    aiStatus.value = `${t('tools.meeting-captions.status.noSpeechDetected')} (${bufferedSeconds}s audio, 0 segments)`;
-  }
-
-  engine.resetStreamingState();
-}
-
-async function appendSenseVoiceChunk(chunk: SenseVoicePendingSegment) {
-  const engine = await loadSenseVoiceEngine();
-  const result = engine.transcribe(chunk.samples, selectedLanguage.value);
-  const text = normalizeTranscriptText(result.text);
-  if (!text || !activeSession.value) {
-    return;
-  }
-
-  replaceActiveSession(updateSessionTranscript(activeSession.value, [{
-    time: Number(chunk.startSeconds.toFixed(2)),
-    endTime: Number((chunk.startSeconds + (chunk.samples.length / 16000)).toFixed(2)),
-    text,
-  }], {
-    durationMs: liveElapsedMs.value,
-    now: new Date(),
-  }));
-
-  aiStatus.value = recordingState.value === 'paused'
-    ? t('tools.meeting-captions.status.pausedCaptionsSaved')
-    : t('tools.meeting-captions.status.listening');
-  aiProgress.value = 100;
-}
-
-async function processSenseVoiceSegmentQueue() {
-  if (processingSenseVoiceSegments) {
-    return;
-  }
-
-  processingSenseVoiceSegments = true;
-  pendingTranscription.value = true;
-
-  try {
-    while (pendingSenseVoiceSegments.length > 0) {
-      const chunk = pendingSenseVoiceSegments.shift();
-      if (!chunk) {
-        continue;
-      }
-
-      aiStatus.value = t('tools.meeting-captions.status.transcribing');
-      await appendSenseVoiceChunk(chunk);
-    }
-  }
-  finally {
-    processingSenseVoiceSegments = false;
-    pendingTranscription.value = false;
   }
 }
 
@@ -834,11 +655,6 @@ async function transcribeUploadedAudio(audioData: Float32Array) {
     return;
   }
 
-  if (usesSenseVoice.value) {
-    await transcribeUploadedAudioWithSenseVoice(audioData);
-    return;
-  }
-
   const transcriber = await loadWhisperTranscriber();
   const sampleRate = 16000;
   const chunkSeconds = 28;
@@ -889,35 +705,6 @@ async function transcribeUploadedAudio(audioData: Float32Array) {
   }
 }
 
-async function transcribeUploadedAudioWithSenseVoice(audioData: Float32Array) {
-  const engine = await loadSenseVoiceEngine();
-  engine.resetStreamingState();
-
-  const chunkSize = 4096;
-  const totalChunks = Math.max(1, Math.ceil(audioData.length / chunkSize));
-
-  for (let offset = 0; offset < audioData.length; offset += chunkSize) {
-    const slice = audioData.slice(offset, Math.min(offset + chunkSize, audioData.length));
-    const chunks = engine.consumeSamples(slice);
-    uploadProgress.value = Math.round((Math.min(offset + chunkSize, audioData.length) / audioData.length) * 100);
-    aiProgress.value = uploadProgress.value;
-    aiStatus.value = t('tools.meeting-captions.status.transcribingUpload', {
-      current: Math.min(totalChunks, Math.floor(offset / chunkSize) + 1),
-      total: totalChunks,
-    });
-
-    for (const chunk of chunks) {
-      await appendSenseVoiceChunk(chunk);
-    }
-  }
-
-  for (const chunk of engine.flushSegments()) {
-    await appendSenseVoiceChunk(chunk);
-  }
-
-  engine.resetStreamingState();
-}
-
 function startTimer() {
   stopTimer();
   timerHandle = window.setInterval(() => {
@@ -952,13 +739,8 @@ async function preloadSelectedEngine() {
   if (isSelectedEngineReady.value) {
     finishModelPreload(t('tools.meeting-captions.status.preloadedRuntime', {
       model: selectedModel.value.label,
-      runtime: usesSenseVoice.value ? 'WASM' : (modelRuntime.value === 'webgpu' ? 'WebGPU' : 'WASM'),
+      runtime: modelRuntime.value === 'webgpu' ? 'WebGPU' : 'WASM',
     }));
-    return;
-  }
-
-  if (usesSenseVoice.value) {
-    await loadSenseVoiceEngine();
     return;
   }
 
@@ -1014,33 +796,6 @@ async function clearWhisperModelCache() {
   }
 
   return deleted;
-}
-
-async function loadSenseVoiceEngine() {
-  if (!senseVoiceEnginePromise) {
-    modelRuntime.value = 'wasm';
-    senseVoiceEnginePromise = SenseVoiceEngine.create((status) => {
-      updateModelPreloadState(status.message, status.progress);
-    }).catch((error) => {
-      senseVoiceEnginePromise = null;
-      senseVoiceEngine = null;
-      isSenseVoiceReady.value = false;
-      modelRuntime.value = null;
-      isModelPreloading.value = false;
-      aiStatus.value = error instanceof Error
-        ? t('tools.meeting-captions.errors.modelLoadFailedWithReason', { reason: error.message })
-        : t('tools.meeting-captions.errors.modelLoadFailed');
-      throw error;
-    });
-  }
-
-  senseVoiceEngine = await senseVoiceEnginePromise;
-  isSenseVoiceReady.value = true;
-  finishModelPreload(t('tools.meeting-captions.status.preloadedRuntime', {
-    model: selectedModel.value.label,
-    runtime: 'WASM',
-  }));
-  return senseVoiceEngine;
 }
 
 async function createTranscriber(
@@ -1131,9 +886,7 @@ function buildTranscriptionAudio(chunks: PcmChunk[], targetSampleRate: number): 
 }
 
 function setupAudioPipeline(stream: MediaStream) {
-  analyserContext = usesSenseVoice.value
-    ? new AudioContext({ sampleRate: 16000 })
-    : new AudioContext();
+  analyserContext = new AudioContext();
   const source = analyserContext.createMediaStreamSource(stream);
   captureSource = source;
   analyserNode = analyserContext.createAnalyser();
@@ -1171,35 +924,8 @@ function setupAudioPipeline(stream: MediaStream) {
       endMs,
     });
 
-    if (usesSenseVoice.value) {
-      if (!senseVoiceEngine) {
-        return;
-      }
-
-      const resampled = analyserContext.sampleRate === 16000
-        ? samples
-        : buildTranscriptionAudio([{
-          samples,
-          sampleRate: analyserContext.sampleRate,
-          startMs,
-          endMs,
-        }], 16000);
-
-      for (const chunk of senseVoiceEngine.consumeSamples(resampled)) {
-        pendingSenseVoiceSegments.push({
-          samples: chunk.samples,
-          startSeconds: chunk.startSeconds,
-        });
-      }
-
-      if (pendingSenseVoiceSegments.length > 0) {
-        processSenseVoiceSegmentQueue().catch(console.error);
-      }
-    }
-    else {
-      const retentionStartMs = Math.max(0, endMs - 60000);
-      pcmChunks = pcmChunks.filter(chunk => chunk.endMs >= retentionStartMs);
-    }
+    const retentionStartMs = Math.max(0, endMs - 60000);
+    pcmChunks = pcmChunks.filter(chunk => chunk.endMs >= retentionStartMs);
   };
 
   const buffer = new Uint8Array(analyserNode.frequencyBinCount);
@@ -1324,8 +1050,6 @@ function cleanupMedia() {
   levelBars.value = Array.from({ length: 20 }, () => 0.08);
   pcmChunks = [];
   recordingChunks = [];
-  pendingSenseVoiceSegments.length = 0;
-  senseVoiceEngine?.resetStreamingState();
 
   for (const track of mediaStream?.getTracks() ?? []) {
     track.stop();
@@ -1339,7 +1063,6 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   cleanupMedia();
-  senseVoiceEnginePromise?.then(engine => engine.free()).catch(() => undefined);
 });
 </script>
 
@@ -1376,12 +1099,9 @@ onBeforeUnmount(() => {
           <n-icon :component="Microphone" />
           {{ t('tools.meeting-captions.fields.whisperModel') }}
         </div>
-        <n-select
-          v-model:value="selectedModelId"
-          :options="modelOptions"
-          :disabled="recordingState !== 'idle' || isProcessingUpload"
-          @update:value="handleModelChange"
-        />
+        <div class="static-model-chip">
+          {{ selectedModel.label }}
+        </div>
         <p class="field-hint">
           {{ selectedModel.hint }}
         </p>
@@ -1778,6 +1498,18 @@ onBeforeUnmount(() => {
   color: rgb(146 142 136);
   font-size: 11px;
   line-height: 1.4;
+}
+
+.static-model-chip {
+  display: flex;
+  align-items: center;
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid rgb(168 162 158);
+  border-radius: 999px;
+  background: rgb(255 255 250);
+  color: rgb(28 25 23);
+  font-weight: 700;
 }
 
 .mobile-warning-card {
