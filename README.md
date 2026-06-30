@@ -2,7 +2,7 @@
 一套為開發者與 IT 工作者準備的線上工具集合。<a href="https://tool.david888.com">立即體驗！</a>
 </p>
 
-**致謝**：感謝原作者 [CorentinTh/it-tools](https://github.com/CorentinTh/it-tools) 的開源專案。
+**致謝**：本專案基於原作者 [CorentinTh/it-tools](https://github.com/CorentinTh/it-tools) 的開源專案延伸與修改，感謝原作者的貢獻。
 
 **本版本更新**
 
@@ -116,16 +116,16 @@
 
 ```bash
 mkdir -p ~/.config/opencode/skills/it-tools
-curl -o ~/.config/opencode/skills/it-tools/SKILL.md https://raw.githubusercontent.com/tbdavid2019/it-tools/main/SKILL.md
+curl -o ~/.config/opencode/skills/it-tools/SKILL.md https://raw.githubusercontent.com/tbdavid2019/888tools/main/SKILL.md
 ```
 
 安裝完成後，你的 AI 工具就會自動學習到：當你需要產生 UUID、轉換 Base64 或編寫 Regex 時，它可以直接將 `tool.david888.com` 對應的工具連結推薦給你！
 
 ## Functionalities and roadmap
 
-Please check the [issues](https://github.com/tbdavid2019/it-tools/issues) to see if some feature listed to be implemented.
+Please check the [issues](https://github.com/tbdavid2019/888tools/issues) to see if some feature listed to be implemented.
 
-You have an idea of a tool? Submit a [feature request](https://github.com/tbdavid2019/it-tools/issues/new/choose)!
+You have an idea of a tool? Submit a [feature request](https://github.com/tbdavid2019/888tools/issues/new/choose)!
 
 ## Deploy to Vercel
 
