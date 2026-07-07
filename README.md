@@ -4,6 +4,22 @@
 
 **致謝**：本專案基於原作者 [CorentinTh/it-tools](https://github.com/CorentinTh/it-tools) 的開源專案延伸與修改，感謝原作者的貢獻。
 
+## Agent Discovery / SEO
+
+本站目前已補上供搜尋引擎與 AI Agent 探索用的靜態發現檔：
+
+- `/sitemap.xml`：由 build 階段自動根據首頁、About 與工具 routes 生成，不需手動維護 URL 清單。
+- `/robots.txt`：由 build 階段自動生成，包含 `Sitemap:` 與 `Content-Signal:`。
+- `/.well-known/api-catalog`：以 `application/linkset+json` 輸出 API catalog。
+- 首頁回應 header：透過 Vercel 設定輸出 `Link: </.well-known/api-catalog>; rel="api-catalog"`。
+
+這些檔案的 source-of-truth 在 [site.config.js](./site.config.js) 與 [scripts/generate-discovery.mjs](./scripts/generate-discovery.mjs)。
+
+注意：
+
+- 站內大多數頁面是互動式前端工具，不是 RFC 9727 定義的 HTTP API，因此不應直接塞進 API catalog。
+- 目前 `api-catalog` 預設會輸出空的 `linkset`。等未來真的有可程式呼叫的 API、OpenAPI spec、文件頁與 health endpoint，再到 `site.config.js` 補 entry 即可。
+
 **本版本更新**
 
 | #   | 更新內容                                                                                                                                                                                      |
@@ -132,8 +148,9 @@ You have an idea of a tool? Submit a [feature request](https://github.com/tbdavi
 1. 將程式碼推上 GitHub/GitLab（`dist` 繼續保留在 `.gitignore`）。
 2. 在 Vercel 匯入專案，Framework 選「Vite」。
 3. 安裝指令：`pnpm install --frozen-lockfile`（可用預設）；Build 指令：`pnpm build`；Output Directory：`dist`。
-4. 需要環境變數的話，於 Vercel 專案設定補上後重新部署。
-5. 首次部署完成後即可透過 Vercel 提供的網址存取。
+4. 如需覆寫 canonical origin，可設定 `VITE_SITE_ORIGIN`；預設為 `https://tool.david888.com`。
+5. 需要其他環境變數的話，於 Vercel 專案設定補上後重新部署。
+6. 首次部署完成後即可透過 Vercel 提供的網址存取。
 
 ## 本地測試
 

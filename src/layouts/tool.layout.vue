@@ -9,6 +9,7 @@ import type { Tool } from '@/tools/tools.types';
 import { useToolStore } from '@/tools/tools.store';
 import { useStyleStore } from '@/stores/style.store';
 import { kanagawaDarkPalette, kanagawaLightPalette } from '@/theme/palette';
+import { config } from '@/config';
 
 const route = useRoute();
 const toolStore = useToolStore();
@@ -24,6 +25,12 @@ const layoutBackgroundColor = computed(() => {
 
 const head = computed<HeadObject>(() => ({
   title: `${route.meta.name} - Tool.David888.com`,
+  link: [
+    {
+      rel: 'canonical',
+      href: `${config.app.siteOrigin}${route.path}`,
+    },
+  ],
   meta: [
     {
       name: 'description',
@@ -32,6 +39,10 @@ const head = computed<HeadObject>(() => ({
     {
       name: 'keywords',
       content: ((route.meta.keywords ?? []) as string[]).join(','),
+    },
+    {
+      property: 'og:url',
+      content: `${config.app.siteOrigin}${route.path}`,
     },
   ],
 }));

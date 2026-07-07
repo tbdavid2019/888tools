@@ -1,4 +1,5 @@
 import { figue } from 'figue';
+import { siteConfig } from '../site.config.js';
 
 export const config = figue({
   app: {
@@ -19,6 +20,12 @@ export const config = figue({
       format: 'string',
       default: '/',
       env: 'BASE_URL',
+    },
+    siteOrigin: {
+      doc: 'Application canonical site origin',
+      format: 'string',
+      default: siteConfig.origin,
+      env: 'VITE_SITE_ORIGIN',
     },
     env: {
       doc: 'Application current env',

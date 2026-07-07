@@ -13,6 +13,20 @@ const toolStore = useToolStore();
 const styleStore = useStyleStore();
 
 useHead({ title: 'Tool.David888.com - Creative tools for text, media, and everyday work' });
+useHead({
+  link: [
+    {
+      rel: 'canonical',
+      href: `${config.app.siteOrigin}/`,
+    },
+  ],
+  meta: [
+    {
+      property: 'og:url',
+      content: `${config.app.siteOrigin}/`,
+    },
+  ],
+});
 const { t } = useI18n();
 
 const favoriteTools = computed(() => toolStore.favoriteTools);

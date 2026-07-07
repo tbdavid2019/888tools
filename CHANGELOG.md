@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
  
+## Version 2026.07.07
+
+### Features
+- **discovery**: 新增 build-time discovery 生成流程，於 `pnpm build` 自動產生 `/sitemap.xml`、`/.well-known/api-catalog` 與 `/robots.txt`。
+- **seo**: 將站點 canonical source-of-truth 統一為 `https://tool.david888.com`，首頁、About 頁與各工具頁皆改為輸出一致的 canonical 與 `og:url`。
+- **headers**: 在 Vercel 首頁回應新增 `Link: </.well-known/api-catalog>; rel="api-catalog"`，並對 `/.well-known/api-catalog` 明確輸出 `application/linkset+json`。
+
+### Chores
+- **docs**: 補充 README 的 Agent Discovery / SEO 說明，記錄 sitemap、robots.txt、Content-Signal 與 API catalog 的生成與維護方式。
+
 ## Version 2026.06.25
 
 ### Features

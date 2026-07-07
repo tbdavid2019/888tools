@@ -15,12 +15,22 @@ import { VitePWA } from 'vite-plugin-pwa';
 import markdown from 'vite-plugin-vue-markdown';
 import svgLoader from 'vite-svg-loader';
 import { configDefaults } from 'vitest/config';
+import { resolveSiteConfig } from './site.config.js';
 
 const baseUrl = process.env.BASE_URL ?? '/';
+const { origin: siteOrigin } = resolveSiteConfig(process.env);
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
+    {
+      name: 'site-origin-html',
+      transformIndexHtml(html) {
+        return html
+          .replaceAll('__SITE_ORIGIN__', siteOrigin)
+          .replaceAll('__SITE_OG_URL__', `${siteOrigin}/`);
+      },
+    },
     VueI18n({
       runtimeOnly: true,
       jitCompilation: true,
