@@ -2,9 +2,11 @@
 import { useRafFn } from '@vueuse/core';
 
 import { formatMs } from './chronometer.service';
+import { useAppTheme } from '@/ui/theme/themes';
 
 const isRunning = ref(false);
 const counter = ref(0);
+const appTheme = useAppTheme();
 
 let previousRafDate = Date.now();
 const { pause: pauseRaf, resume: resumeRaf } = useRafFn(
@@ -53,8 +55,10 @@ function pause() {
 <style lang="less" scoped>
 .duration {
   text-align: center;
-  font-size: 40px;
+  font-size: 44px;
+  font-weight: 700;
   font-family: monospace;
   margin: 20px 0;
+  color: v-bind('appTheme.text.baseColor');
 }
 </style>

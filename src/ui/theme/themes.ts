@@ -14,10 +14,10 @@ export const { themes: appThemes, useTheme: useAppTheme } = defineThemes({
       colorPressed: 'rgba(139, 105, 20, 0.18)',
     },
     primary: {
-      color: kanagawaLightPalette.button,
-      colorHover: kanagawaLightPalette.buttonHover,
-      colorPressed: kanagawaLightPalette.buttonPressed,
-      colorFaded: '#2C528220',
+      color: '#223249',
+      colorHover: '#2f4a66',
+      colorPressed: '#1b2838',
+      colorFaded: 'rgba(126, 156, 216, 0.28)',
     },
     warning: {
       color: kanagawaLightPalette.accent,
