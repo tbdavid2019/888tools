@@ -60,6 +60,20 @@ export const config = figue({
       default: false,
     },
   },
+  ga: {
+    measurementId: {
+      doc: 'Google Analytics 4 measurement ID',
+      format: 'string',
+      default: 'G-73FLRKFM5F',
+      env: 'VITE_GA_MEASUREMENT_ID',
+    },
+    isEnabled: {
+      doc: 'Enable or disable Google Analytics 4 tracking',
+      format: 'boolean',
+      default: true,
+      env: 'VITE_GA_ENABLED',
+    },
+  },
   showBanner: {
     doc: 'Show the banner',
     format: 'boolean',
