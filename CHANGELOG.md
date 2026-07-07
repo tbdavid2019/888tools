@@ -8,9 +8,13 @@ All notable changes to this project will be documented in this file. See [standa
 - **discovery**: 新增 build-time discovery 生成流程，於 `pnpm build` 自動產生 `/sitemap.xml`、`/.well-known/api-catalog` 與 `/robots.txt`。
 - **seo**: 將站點 canonical source-of-truth 統一為 `https://tool.david888.com`，首頁、About 頁與各工具頁皆改為輸出一致的 canonical 與 `og:url`。
 - **headers**: 在 Vercel 首頁回應新增 `Link: </.well-known/api-catalog>; rel="api-catalog"`，並對 `/.well-known/api-catalog` 明確輸出 `application/linkset+json`。
+- **sidebar/ui**: 側邊欄改為兩態固定模式，支援「完整展開」與「窄欄 icon 模式」，不再完全隱藏；窄欄模式會保留工具 icon 導覽與最小設定入口。
+- **home/ui**: 縮小左上品牌區塊、重整側欄資訊密度，並放大全站與首頁工具卡的標題/說明字級，改善掃讀與可讀性。
+- **repo**: 全站 GitHub 倉庫與 issue 入口統一改為 `https://github.com/tbdavid2019/888tools`，同步更新首頁、導覽列、command palette、`package.json` 與多語系文案。
 
 ### Chores
 - **docs**: 補充 README 的 Agent Discovery / SEO 說明，記錄 sitemap、robots.txt、Content-Signal 與 API catalog 的生成與維護方式。
+- **docs**: 補充 README 與 CHANGELOG，記錄首頁側欄兩態模式、字級調整與倉庫路徑更新。
 
 ## Version 2026.06.25
 

@@ -2,8 +2,7 @@
 import { useStyleStore } from '@/stores/style.store';
 
 const styleStore = useStyleStore();
-const { isMenuCollapsed, isSmallScreen } = toRefs(styleStore);
-const siderPosition = computed(() => (isSmallScreen.value ? 'absolute' : 'static'));
+const { isMenuCollapsed } = toRefs(styleStore);
 </script>
 
 <template>
@@ -11,37 +10,25 @@ const siderPosition = computed(() => (isSmallScreen.value ? 'absolute' : 'static
     <n-layout-sider
       bordered
       collapse-mode="width"
-      :collapsed-width="0"
-      :width="240"
+      :collapsed-width="74"
+      :width="268"
       :collapsed="isMenuCollapsed"
       :show-trigger="false"
       :native-scrollbar="false"
-      :position="siderPosition"
+      content-style="height: 100%;"
     >
       <slot name="sider" />
     </n-layout-sider>
     <n-layout class="content">
       <slot name="content" />
-      <div v-show="isSmallScreen && !isMenuCollapsed" class="overlay" @click="isMenuCollapsed = true" />
     </n-layout>
   </n-layout>
 </template>
 
 <style lang="less" scoped>
-.overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: #00000080;
-  cursor: pointer;
-}
-
 .content {
-  // background-color: #f1f5f9;
   ::v-deep(.n-layout-scroll-container) {
-    padding: 26px;
+    padding: clamp(18px, 2vw, 28px);
   }
 }
 

@@ -4,6 +4,19 @@
 
 **致謝**：本專案基於原作者 [CorentinTh/it-tools](https://github.com/CorentinTh/it-tools) 的開源專案延伸與修改，感謝原作者的貢獻。
 
+## 首頁 / 側欄 UX
+
+目前首頁左側導覽已調整為兩態固定模式：
+
+- 展開模式：顯示品牌區、分類名稱、完整工具名稱，以及顯示設定。
+- 窄欄 icon 模式：保留工具 icon 導覽與最小設定入口，不再把側欄完全隱藏。
+
+另外也同步做了幾項可用性調整：
+
+- 左上品牌區縮小，避免佔據過多垂直空間。
+- 首頁工具卡標題與說明字級放大，提升快速掃讀的效率。
+- GitHub 倉庫入口全面統一為 `https://github.com/tbdavid2019/888tools`。
+
 ## Agent Discovery / SEO
 
 本站目前已補上供搜尋引擎與 AI Agent 探索用的靜態發現檔：
@@ -68,6 +81,8 @@
 | 42  | `線上時鐘` 更新為最新工具：支援網路校時、翻頁/模擬時鐘與全螢幕顯示，並納入首頁「最新工具」區（https://tool.david888.com/online-clock ） |
 | 43  | `即時會議字幕` 目前收斂為單一 `Whisper Small` browser 路線，支援 WAV、MP3、M4A/AAC 音檔上傳轉寫，並保留即時麥克風聽寫（https://tool.david888.com/meeting-captions ） |
 | 44  | `即時會議字幕` 補上 browser `Cache Storage` 持久快取，Whisper Small 首次下載後會保留在本機瀏覽器，不再因進站時的全域 cache 清除而被重抓；頁面亦提供低調的 `清模型 / 全清` 按鈕與手機使用提醒（https://tool.david888.com/meeting-captions ） |
+| 45  | 側欄改為兩態固定模式：支援完整展開與窄欄 icon 模式，不再完全隱藏；窄欄下保留工具 icon 導覽與最小設定入口 |
+| 46  | 首頁資訊密度優化：縮小左上品牌區，放大工具卡標題與說明字級，並將全站 GitHub 倉庫入口統一到 `https://github.com/tbdavid2019/888tools` |
 
 ## Changelog
 

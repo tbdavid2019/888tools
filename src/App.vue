@@ -70,6 +70,8 @@ body {
   padding: 0;
   background-color: transparent !important;
   font-family: 'Maple Mono', 'JetBrains Mono', 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+  font-size: 16.5px;
+  line-height: 1.55;
 }
 
 html {
@@ -78,6 +80,7 @@ html {
   padding: 0;
   background-color: transparent !important;
   font-family: 'Maple Mono', 'JetBrains Mono', 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+  font-size: 16.5px;
 }
 
 #app,

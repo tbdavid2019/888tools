@@ -38,13 +38,13 @@ about:
 
     ## 技術
 
-    IT-Tools 採用 Vue.js（Vue 3）和 Naive UI 元件庫開發，並由 Vercel 託管和持續部署。某些工具使用了第三方開源庫，您可以在倉庫的 [package.json](https://github.com/tbdavid2019/it-tools/blob/main/package.json) 檔案中找到完整的列表。
+    IT-Tools 採用 Vue.js（Vue 3）和 Naive UI 元件庫開發，並由 Vercel 託管和持續部署。某些工具使用了第三方開源庫，您可以在倉庫的 [package.json](https://github.com/tbdavid2019/888tools/blob/main/package.json) 檔案中找到完整的列表。
 
     ## 發現了 Bug？缺少工具？
 
-    如果目前這裡沒有您需要的工具，並且您認為它可能有用，歡迎在 GitHub 倉庫的 [issues](https://github.com/tbdavid2019/it-tools/issues/new/choose) 中提交新增功能的請求。
+    如果目前這裡沒有您需要的工具，並且您認為它可能有用，歡迎在 GitHub 倉庫的 [issues](https://github.com/tbdavid2019/888tools/issues/new/choose) 中提交新增功能的請求。
 
-    如果您發現了 Bug，或者某些功能未能按預期運作，請在 GitHub 倉庫的 [issues](https://github.com/tbdavid2019/it-tools/issues/new/choose) 中提交錯誤報告。
+    如果您發現了 Bug，或者某些功能未能按預期運作，請在 GitHub 倉庫的 [issues](https://github.com/tbdavid2019/888tools/issues/new/choose) 中提交錯誤報告。
 
 404:
   notFound: '404 頁面不存在'

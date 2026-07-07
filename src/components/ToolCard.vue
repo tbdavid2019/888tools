@@ -10,7 +10,7 @@ const theme = useThemeVars();
 
 <template>
   <router-link :to="tool.path" class="decoration-none">
-    <c-card class="h-full transition transition-duration-0.5s !border-2px !hover:border-primary">
+    <c-card class="tool-card h-full transition transition-duration-0.5s !border-2px !hover:border-primary">
       <div flex items-center justify-between>
         <n-icon class="text-neutral-400 dark:text-neutral-600" size="40" :component="tool.icon" />
 
@@ -29,7 +29,7 @@ const theme = useThemeVars();
         </div>
       </div>
 
-      <div class="tool-title truncat my-5px text-lg">
+      <div class="tool-title truncat my-8px">
         {{ tool.name }}
       </div>
 
@@ -41,12 +41,35 @@ const theme = useThemeVars();
 </template>
 
 <style scoped lang="less">
+.tool-card {
+  min-height: 246px;
+}
+
 .tool-title {
   color: v-bind('theme.textColor1');
   font-weight: 600;
+  font-size: 1.85rem;
+  line-height: 1.2;
 }
 
 .tool-description {
   color: v-bind('theme.textColor2');
+  font-size: 1.02rem;
+  line-height: 1.7;
+}
+
+@media (max-width: 900px) {
+  .tool-card {
+    min-height: 220px;
+  }
+
+  .tool-title {
+    font-size: 1.5rem;
+  }
+
+  .tool-description {
+    font-size: 0.98rem;
+    line-height: 1.6;
+  }
 }
 </style>

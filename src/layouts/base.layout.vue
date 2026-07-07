@@ -2,7 +2,7 @@
 import { NIcon } from 'naive-ui';
 
 import { RouterLink } from 'vue-router';
-import { Home2, Menu2 } from '@vicons/tabler';
+import { Home2, LayoutSidebarLeftCollapse, LayoutSidebarLeftExpand, Menu2 } from '@vicons/tabler';
 
 import { storeToRefs } from 'pinia';
 import HeroGradient from '../assets/hero-gradient.svg?component';
@@ -42,23 +42,42 @@ const allToolsCount = computed(() => {
 </script>
 
 <template>
-  <MenuLayout class="menu-layout" :class="{ isSmallScreen: styleStore.isSmallScreen }">
+  <MenuLayout class="menu-layout" :class="{ isSmallScreen: styleStore.isSmallScreen, isCollapsed: styleStore.isMenuCollapsed }">
     <template #sider>
-      <RouterLink to="/" class="hero-wrapper">
-        <HeroGradient class="gradient" />
-        <div class="text-wrapper">
-          <div class="title">
-            888 Tool
+      <div class="sider-header">
+        <RouterLink to="/" class="hero-wrapper" :class="{ collapsed: styleStore.isMenuCollapsed }">
+          <HeroGradient class="gradient" />
+          <div class="text-wrapper">
+            <div v-if="!styleStore.isMenuCollapsed" class="eyebrow">
+              Workspace
+            </div>
+            <div class="title">
+              {{ styleStore.isMenuCollapsed ? '888' : '888 Tool' }}
+            </div>
+            <div v-if="!styleStore.isMenuCollapsed" class="subtitle">
+              {{ $t('home.subtitle') }}
+            </div>
           </div>
-          <div class="divider" />
-          <div class="subtitle">
-            {{ $t('home.subtitle') }}
-          </div>
-        </div>
-      </RouterLink>
+        </RouterLink>
 
-      <div class="sider-content">
-        <div v-if="styleStore.isSmallScreen" flex flex-col items-center>
+        <c-tooltip
+          :tooltip="styleStore.isMenuCollapsed ? $t('home.toggleMenu') : $t('home.toggleMenu')"
+          position="right"
+        >
+          <c-button
+            class="sider-toggle"
+            circle
+            variant="text"
+            :aria-label="$t('home.toggleMenu')"
+            @click="styleStore.isMenuCollapsed = !styleStore.isMenuCollapsed"
+          >
+            <NIcon size="20" :component="styleStore.isMenuCollapsed ? LayoutSidebarLeftExpand : LayoutSidebarLeftCollapse" />
+          </c-button>
+        </c-tooltip>
+      </div>
+
+      <div class="sider-content" :class="{ collapsed: styleStore.isMenuCollapsed }">
+        <div v-if="styleStore.isSmallScreen && !styleStore.isMenuCollapsed" flex flex-col items-center>
           <locale-selector w="90%" />
 
           <div flex justify-center>
@@ -68,7 +87,7 @@ const allToolsCount = computed(() => {
 
         <CollapsibleToolMenu :tools-by-category="tools" />
 
-        <div class="tool-count">
+        <div v-if="!styleStore.isMenuCollapsed" class="tool-count">
           {{ $t('home.availableApps', { count: allToolsCount }) }}
         </div>
 
@@ -145,8 +164,11 @@ const allToolsCount = computed(() => {
 }
 
 .sider-content {
-  padding-top: 160px;
-  padding-bottom: 200px;
+  padding: 126px 14px 28px;
+
+  &.collapsed {
+    padding: 122px 8px 20px;
+  }
 }
 
 .navbar-wrapper {
@@ -166,57 +188,110 @@ const allToolsCount = computed(() => {
 .hero-wrapper {
   position: absolute;
   display: block;
-  left: 0;
-  width: 100%;
+  left: 14px;
+  right: 14px;
   z-index: 10;
   overflow: hidden;
+  border-radius: 22px;
+  min-height: 98px;
+
+  &.collapsed {
+    left: 8px;
+    right: 8px;
+    min-height: 92px;
+
+    .gradient {
+      margin-top: -136px;
+      transform: scale(1.16);
+    }
+
+    .text-wrapper {
+      align-items: center;
+      text-align: center;
+      padding: 14px 6px 12px;
+    }
+
+    .title {
+      font-size: 18px;
+      letter-spacing: 0.08em;
+    }
+  }
 
   .gradient {
-    margin-top: -65px;
+    margin-top: -112px;
+    transform: scale(1.08);
   }
 
   .text-wrapper {
     position: absolute;
-    left: 0;
-    width: 100%;
-    text-align: center;
-    top: 16px;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    padding: 16px 18px 14px;
     color: #fffaf0;
     text-shadow: 0 2px 10px rgba(61, 52, 33, 0.28);
 
-    .title {
-      font-size: clamp(16px, 1.5vw, 21px);
+    .eyebrow {
+      font-size: 10px;
       font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgba(255, 249, 242, 0.8);
+    }
+
+    .title {
+      font-size: clamp(18px, 1.6vw, 24px);
+      font-weight: 800;
       color: #fffdf7;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.03em;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      padding: 0 12px;
-    }
-
-    .divider {
-      width: 42px;
-      height: 2px;
-      border-radius: 4px;
-      background-color: rgba(255, 249, 242, 0.92);
-      margin: 0 auto 5px;
     }
 
     .subtitle {
-      font-size: 12px;
-      line-height: 1.35;
-      color: rgba(255, 249, 242, 0.96);
-      padding: 0 16px;
+      max-width: 18ch;
+      font-size: 13px;
+      line-height: 1.45;
+      color: rgba(255, 249, 242, 0.94);
     }
   }
 }
 
 .tool-count {
-  margin-top: 20px;
+  margin-top: 18px;
   text-align: center;
-  font-size: 12px;
+  font-size: 13px;
   color: v-bind('activePalette.textMuted');
-  padding-bottom: 20px;
+  padding: 8px 8px 18px;
+}
+
+.sider-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  min-height: 116px;
+}
+
+.sider-toggle {
+  position: absolute;
+  top: 14px;
+  right: 18px;
+  z-index: 30;
+  color: rgba(255, 249, 242, 0.94);
+  background: rgba(20, 28, 30, 0.18);
+  backdrop-filter: blur(8px);
+}
+
+@media (max-width: 900px) {
+  .sider-content {
+    padding-top: 136px;
+
+    &.collapsed {
+      padding-top: 126px;
+    }
+  }
 }
 </style>
