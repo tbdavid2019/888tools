@@ -21,15 +21,15 @@ export const { themes: appThemes, useTheme: useAppTheme } = defineThemes({
     },
     warning: {
       color: kanagawaLightPalette.accent,
-      colorHover: '#dfbe57',
-      colorPressed: '#b99624',
-      colorFaded: '#D4AF3726',
+      colorHover: '#51682b',
+      colorPressed: '#435622',
+      colorFaded: 'rgba(95, 122, 51, 0.22)',
     },
     success: {
       color: kanagawaLightPalette.accent,
-      colorHover: '#dfbe57',
-      colorPressed: '#b99624',
-      colorFaded: '#D4AF3726',
+      colorHover: '#51682b',
+      colorPressed: '#435622',
+      colorFaded: 'rgba(95, 122, 51, 0.22)',
     },
     error: {
       color: '#d03050',

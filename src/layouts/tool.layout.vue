@@ -20,7 +20,8 @@ const layoutBackgroundColor = computed(() => {
   if (!styleStore.isBingWallpaperEnabled) {
     return 'transparent';
   }
-  return `rgba(${activePalette.value.glassBackgroundRgb}, ${styleStore.cardOpacity})`;
+  const opacity = styleStore.isDarkTheme ? styleStore.cardOpacity : Math.max(styleStore.cardOpacity, 0.9);
+  return `rgba(${activePalette.value.glassBackgroundRgb}, ${opacity})`;
 });
 
 const head = computed<HeadObject>(() => ({

@@ -7,7 +7,7 @@ export const { useTheme } = defineThemes({
     borderColor: kanagawaDarkPalette.border,
   },
   light: {
-    backgroundColor: 'rgba(220, 215, 186, 0.82)',
-    borderColor: kanagawaLightPalette.border,
+    backgroundColor: 'rgba(236, 232, 212, 0.94)',
+    borderColor: 'rgba(31, 31, 40, 0.16)',
   },
 });

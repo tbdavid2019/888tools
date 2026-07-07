@@ -23,14 +23,14 @@ export const kanagawaLightPalette = {
   heading: '#1F1F28',    // Sumi Ink 1
   text: '#2A2A37',       // Sumi Ink 3
   textMuted: '#54546D',  // Sumi Ink 6
-  button: '#7E9CD8',     // Crystal Blue
-  buttonHover: '#7FB4CA', // Spring Water
+  button: '#4B67A1',     // deeper blue for light mode contrast
+  buttonHover: '#39598D',
   buttonPressed: '#223249', // Wave Blue 2
-  accent: '#98BB6C',     // Spring Green
-  accentSoft: '#6A9589', // Wave Aqua 1
-  border: '#A3A3A3',     // Neutral border
-  overlayBorder: 'rgba(31, 31, 40, 0.1)',
-  shadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
+  accent: '#5F7A33',
+  accentSoft: '#A8BE84',
+  border: '#8D8A7A',
+  overlayBorder: 'rgba(31, 31, 40, 0.18)',
+  shadow: '0 12px 28px rgba(31, 31, 40, 0.12)',
   glassBackgroundRgb: '220, 215, 186',
 } as const;
 

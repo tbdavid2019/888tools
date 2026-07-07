@@ -10,9 +10,10 @@ const { title } = toRefs(props);
 
 const theme = useTheme();
 const styleStore = useStyleStore();
+const effectiveOpacity = computed(() => (styleStore.isDarkTheme ? styleStore.cardOpacity : Math.max(styleStore.cardOpacity, 0.92)));
 
 const backgroundColor = computed(() => {
-  const opacity = styleStore.cardOpacity;
+  const opacity = effectiveOpacity.value;
   const color = theme.value.backgroundColor;
   // Replace the alpha value in rgba() string
   return color.replace(/[\d.]+\)$/, `${opacity})`);

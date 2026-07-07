@@ -12,6 +12,8 @@ const route = useRoute();
 const styleStore = useStyleStore();
 const activePalette = computed(() => (styleStore.isDarkTheme ? kanagawaDarkPalette : kanagawaLightPalette));
 const isMenuCollapsed = computed(() => styleStore.isMenuCollapsed);
+const selectedItemTextColor = computed(() => (styleStore.isDarkTheme ? activePalette.value.button : activePalette.value.buttonPressed));
+const selectedItemBackground = computed(() => (styleStore.isDarkTheme ? 'rgba(126, 156, 216, 0.18)' : 'rgba(75, 103, 161, 0.18)'));
 
 const makeLabel = (tool: Tool) => () => h(RouterLink, { to: tool.path }, { default: () => tool.name });
 const makeIcon = (tool: Tool) => () => h(MenuIconItem, { tool });
@@ -149,6 +151,24 @@ watch(
     ::v-deep(.n-menu-item-content) {
       min-height: 38px;
     }
+
+    ::v-deep(.n-menu-item-content--selected) {
+      color: v-bind('selectedItemTextColor');
+      font-weight: 700;
+    }
+
+    ::v-deep(.n-menu-item-content--selected::before) {
+      background-color: v-bind('selectedItemBackground') !important;
+    }
+
+    ::v-deep(.n-menu-item-content--selected .n-menu-item-content-header) {
+      color: v-bind('selectedItemTextColor') !important;
+      font-weight: 700;
+    }
+
+    ::v-deep(.n-menu-item-content--selected .n-menu-item-content__icon) {
+      color: v-bind('selectedItemTextColor') !important;
+    }
   }
 
   .toggle-bar {
@@ -186,6 +206,14 @@ watch(
 
   ::v-deep(.n-menu-item-content__icon) {
     margin-right: 0;
+  }
+
+  ::v-deep(.n-menu-item-content--selected::before) {
+    background-color: v-bind('selectedItemBackground') !important;
+  }
+
+  ::v-deep(.n-menu-item-content--selected .n-menu-item-content__icon) {
+    color: v-bind('selectedItemTextColor') !important;
   }
 }
 

@@ -40,6 +40,19 @@ export const lightThemeOverrides: GlobalThemeOverrides = {
 
   Menu: {
     itemHeight: '38px',
+    itemColorActive: 'rgba(75, 103, 161, 0.18)',
+    itemColorActiveHover: 'rgba(75, 103, 161, 0.22)',
+    itemColorActiveCollapsed: 'rgba(75, 103, 161, 0.18)',
+    itemTextColor: kanagawaLightPalette.text,
+    itemTextColorHover: kanagawaLightPalette.heading,
+    itemTextColorActive: kanagawaLightPalette.buttonPressed,
+    itemTextColorActiveHover: kanagawaLightPalette.buttonPressed,
+    itemTextColorChildActive: kanagawaLightPalette.buttonPressed,
+    itemTextColorChildActiveHover: kanagawaLightPalette.buttonPressed,
+    itemIconColor: kanagawaLightPalette.textMuted,
+    itemIconColorHover: kanagawaLightPalette.heading,
+    itemIconColorActive: kanagawaLightPalette.button,
+    itemIconColorActiveHover: kanagawaLightPalette.button,
   },
 
   Layout: {
@@ -54,7 +67,7 @@ export const lightThemeOverrides: GlobalThemeOverrides = {
   },
 
   Button: {
-    textColorTextPrimary: kanagawaLightPalette.button,
+    textColorTextPrimary: kanagawaLightPalette.buttonPressed,
     textColorTextPrimaryHover: kanagawaLightPalette.buttonHover,
     textColorTextPrimaryPressed: kanagawaLightPalette.buttonPressed,
   },
