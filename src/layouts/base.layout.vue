@@ -2,10 +2,9 @@
 import { NIcon } from 'naive-ui';
 
 import { RouterLink } from 'vue-router';
-import { Home2, LayoutSidebarLeftCollapse, LayoutSidebarLeftExpand, Menu2 } from '@vicons/tabler';
+import { Home2, LayoutSidebarLeftCollapse, LayoutSidebarLeftExpand } from '@vicons/tabler';
 
 import { storeToRefs } from 'pinia';
-import HeroGradient from '../assets/hero-gradient.svg?component';
 import MenuLayout from '../components/MenuLayout.vue';
 import NavbarButtons from '../components/NavbarButtons.vue';
 import AppearanceSettings from '../components/AppearanceSettings.vue';
@@ -46,7 +45,6 @@ const allToolsCount = computed(() => {
     <template #sider>
       <div class="sider-header">
         <RouterLink to="/" class="hero-wrapper" :class="{ collapsed: styleStore.isMenuCollapsed }">
-          <HeroGradient class="gradient" />
           <div class="text-wrapper">
             <div v-if="!styleStore.isMenuCollapsed" class="eyebrow">
               Workspace
@@ -97,15 +95,6 @@ const allToolsCount = computed(() => {
 
     <template #content>
       <div flex items-center justify-center gap-2 class="navbar-wrapper">
-        <c-button
-          circle
-          variant="text"
-          :aria-label="$t('home.toggleMenu')"
-          @click="styleStore.isMenuCollapsed = !styleStore.isMenuCollapsed"
-        >
-          <NIcon size="25" :component="Menu2" />
-        </c-button>
-
         <c-tooltip :tooltip="$t('home.home')" position="bottom">
           <c-button to="/" circle variant="text" :aria-label="$t('home.home')">
             <NIcon size="25" :component="Home2" />
@@ -164,10 +153,10 @@ const allToolsCount = computed(() => {
 }
 
 .sider-content {
-  padding: 126px 14px 28px;
+  padding: 112px 14px 28px;
 
   &.collapsed {
-    padding: 122px 8px 20px;
+    padding: 104px 8px 20px;
   }
 }
 
@@ -188,50 +177,37 @@ const allToolsCount = computed(() => {
 .hero-wrapper {
   position: absolute;
   display: block;
-  left: 14px;
-  right: 14px;
+  left: 16px;
+  right: 32px;
+  top: 14px;
   z-index: 10;
-  overflow: hidden;
-  border-radius: 22px;
-  min-height: 98px;
+  min-height: 72px;
+  text-decoration: none;
 
   &.collapsed {
     left: 8px;
-    right: 8px;
-    min-height: 92px;
-
-    .gradient {
-      margin-top: -136px;
-      transform: scale(1.16);
-    }
+    right: 28px;
+    min-height: 64px;
 
     .text-wrapper {
       align-items: center;
       text-align: center;
-      padding: 14px 6px 12px;
+      padding: 2px 4px;
     }
 
     .title {
-      font-size: 18px;
+      font-size: 16px;
       letter-spacing: 0.08em;
     }
   }
 
-  .gradient {
-    margin-top: -112px;
-    transform: scale(1.08);
-  }
-
   .text-wrapper {
-    position: absolute;
-    inset: 0;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    gap: 4px;
-    padding: 16px 18px 14px;
+    gap: 2px;
+    padding: 2px 0;
     color: #fffaf0;
-    text-shadow: 0 2px 10px rgba(61, 52, 33, 0.28);
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.22);
 
     .eyebrow {
       font-size: 10px;
@@ -242,7 +218,7 @@ const allToolsCount = computed(() => {
     }
 
     .title {
-      font-size: clamp(18px, 1.6vw, 24px);
+      font-size: clamp(17px, 1.35vw, 22px);
       font-weight: 800;
       color: #fffdf7;
       letter-spacing: 0.03em;
@@ -252,9 +228,9 @@ const allToolsCount = computed(() => {
     }
 
     .subtitle {
-      max-width: 18ch;
-      font-size: 13px;
-      line-height: 1.45;
+      max-width: 16ch;
+      font-size: 12px;
+      line-height: 1.4;
       color: rgba(255, 249, 242, 0.94);
     }
   }
@@ -272,25 +248,27 @@ const allToolsCount = computed(() => {
   position: sticky;
   top: 0;
   z-index: 20;
-  min-height: 116px;
+  min-height: 94px;
 }
 
 .sider-toggle {
   position: absolute;
-  top: 14px;
-  right: 18px;
+  top: 22px;
+  right: -14px;
   z-index: 30;
   color: rgba(255, 249, 242, 0.94);
-  background: rgba(20, 28, 30, 0.18);
+  background: rgba(20, 28, 30, 0.78);
   backdrop-filter: blur(8px);
+  border: 1px solid v-bind('activePalette.overlayBorder');
+  box-shadow: v-bind('activePalette.shadow');
 }
 
 @media (max-width: 900px) {
   .sider-content {
-    padding-top: 136px;
+    padding-top: 116px;
 
     &.collapsed {
-      padding-top: 126px;
+      padding-top: 108px;
     }
   }
 }
