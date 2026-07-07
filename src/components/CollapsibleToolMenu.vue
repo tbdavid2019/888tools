@@ -54,6 +54,27 @@ const collapsedMenuOptions = computed(() =>
     })),
   ),
 );
+
+const activeCategoryName = computed(() =>
+  toolsByCategory.value.find(category =>
+    category.components.some(tool => tool.path === route.path),
+  )?.name,
+);
+
+watch(
+  [() => route.path, toolsByCategory, activeCategoryName],
+  ([, categories, activeName]) => {
+    if (!activeName) {
+      return;
+    }
+
+    collapsedCategories.value = categories.reduce<Record<string, boolean>>((acc, category) => {
+      acc[category.name] = category.name !== activeName;
+      return acc;
+    }, {});
+  },
+  { immediate: true, deep: true },
+);
 </script>
 
 <template>
