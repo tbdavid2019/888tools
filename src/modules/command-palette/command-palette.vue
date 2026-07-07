@@ -4,6 +4,10 @@ import _ from 'lodash';
 import { useCommandPaletteStore } from './command-palette.store';
 import type { PaletteOption } from './command-palette.types';
 
+const props = withDefaults(defineProps<{ compact?: boolean }>(), {
+  compact: false,
+});
+
 const isModalOpen = ref(false);
 const inputRef = ref();
 const router = useRouter();
@@ -111,8 +115,14 @@ function activateOption(option: PaletteOption) {
 </script>
 
 <template>
-  <div flex-1>
-    <c-button w-full important:justify-start @click="isModalOpen = true">
+  <div :class="props.compact ? 'compact-shell' : 'w-full flex-1'">
+    <c-tooltip v-if="props.compact" :tooltip="$t('search.label')" position="right">
+      <c-button circle @click="isModalOpen = true">
+        <icon-mdi-search />
+      </c-button>
+    </c-tooltip>
+
+    <c-button v-else w-full important:justify-start @click="isModalOpen = true">
       <span flex items-center gap-3 op-40>
 
         <icon-mdi-search />
@@ -138,6 +148,11 @@ function activateOption(option: PaletteOption) {
 </template>
 
 <style scoped lang="less">
+.compact-shell {
+  display: flex;
+  justify-content: center;
+}
+
 .c-input-text {
   font-size: 18px;
 

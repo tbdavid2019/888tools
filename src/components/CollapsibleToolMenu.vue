@@ -115,7 +115,7 @@ const collapsedMenuOptions = computed(() =>
     margin-bottom: 5px;
 
     ::v-deep(.n-menu-item-content-header) {
-      font-size: 16px;
+      font-size: 17px;
       line-height: 1.55;
       font-weight: 550;
     }
@@ -179,7 +179,7 @@ const collapsedMenuOptions = computed(() =>
 
 .menu-category-label {
   margin-left: 10px;
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 650;
   letter-spacing: 0.02em;
 }

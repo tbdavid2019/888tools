@@ -53,8 +53,6 @@ const i18nKey = computed<string>(() => route.path.trim().replace('/', ''));
 const toolTitle = computed<string>(() => t(`tools.${i18nKey.value}.title`, String(route.meta.name)));
 const toolDescription = computed<string>(() => t(`tools.${i18nKey.value}.description`, String(route.meta.description)));
 
-const currentTool = computed(() => toolStore.tools.find(tool => tool.path === route.path));
-const category = computed(() => currentTool.value?.category);
 const contentMaxWidth = computed(() => '1180px');
 const contentFlexBasis = computed(() => '520px');
 </script>
@@ -85,19 +83,6 @@ const contentFlexBasis = computed(() => '520px');
       <slot />
     </div>
 
-    <div v-if="category" class="tool-breadcrumb" :class="{ 'glass-effect': styleStore.isBingWallpaperEnabled }">
-      <router-link to="/" class="breadcrumb-link">
-        <n-text depth="3">
-          {{ category }}
-        </n-text>
-      </router-link>
-      <n-text depth="3" class="breadcrumb-separator">
-        >
-      </n-text>
-      <n-text depth="1">
-        {{ toolTitle }}
-      </n-text>
-    </div>
   </BaseLayout>
 </template>
 
@@ -175,41 +160,6 @@ const contentFlexBasis = computed(() => '520px');
   }
 }
 
-.tool-breadcrumb {
-  margin-top: 64px;
-  padding: 20px 32px;
-  text-align: center;
-  font-size: 14px;
-  border-top: 1px solid rgba(128, 128, 128, 0.1);
-  border-radius: 24px;
-  width: fit-content;
-  margin-left: auto;
-  margin-right: auto;
-
-  &.glass-effect {
-    background-color: v-bind('layoutBackgroundColor');
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    box-shadow: v-bind('activePalette.shadow');
-    border-top: none;
-    border: 1px solid v-bind('activePalette.overlayBorder');
-  }
-
-  .breadcrumb-link {
-    text-decoration: none;
-    transition: opacity 0.2s;
-
-    &:hover {
-      opacity: 0.7;
-    }
-  }
-
-  .breadcrumb-separator {
-    margin: 0 12px;
-    opacity: 0.4;
-  }
-}
-
 @media (max-width: 700px) {
   .tool-content {
     gap: 12px;
@@ -238,10 +188,5 @@ const contentFlexBasis = computed(() => '520px');
     }
   }
 
-  .tool-breadcrumb {
-    margin-top: 32px;
-    padding: 14px 18px;
-    max-width: 100%;
-  }
 }
 </style>

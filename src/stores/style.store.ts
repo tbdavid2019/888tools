@@ -5,9 +5,28 @@ export const useStyleStore = defineStore('style', () => {
   const isDarkTheme = useDark({ initialValue: 'light' });
   const toggleDark = useToggle(isDarkTheme);
   const isSmallScreen = useMediaQuery('(max-width: 900px)');
-  const isMenuCollapsed = useStorage('isMenuCollapsed', isSmallScreen.value);
+  const desktopMenuCollapsed = useStorage('desktopMenuCollapsed', false);
+  const mobileMenuCollapsed = ref(true);
   const isBingWallpaperEnabled = useStorage('isBingWallpaperEnabled', true);
   const cardOpacity = useStorage('cardOpacity', 0.8);
+
+  const isMenuCollapsed = computed({
+    get: () => (isSmallScreen.value ? mobileMenuCollapsed.value : desktopMenuCollapsed.value),
+    set: (value: boolean) => {
+      if (isSmallScreen.value) {
+        mobileMenuCollapsed.value = value;
+        return;
+      }
+
+      desktopMenuCollapsed.value = value;
+    },
+  });
+
+  watch(isSmallScreen, (smallScreen) => {
+    if (smallScreen) {
+      mobileMenuCollapsed.value = true;
+    }
+  });
 
   return {
     isDarkTheme,
