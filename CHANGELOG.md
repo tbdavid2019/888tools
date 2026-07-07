@@ -10,11 +10,17 @@ All notable changes to this project will be documented in this file. See [standa
 - **headers**: 在 Vercel 首頁回應新增 `Link: </.well-known/api-catalog>; rel="api-catalog"`，並對 `/.well-known/api-catalog` 明確輸出 `application/linkset+json`。
 - **sidebar/ui**: 側邊欄改為兩態固定模式，支援「完整展開」與「窄欄 icon 模式」，不再完全隱藏；窄欄模式會保留工具 icon 導覽與最小設定入口。
 - **home/ui**: 縮小左上品牌區塊、重整側欄資訊密度，並放大全站與首頁工具卡的標題/說明字級，改善掃讀與可讀性。
+- **navigation/rwd**: 手機版導覽改為預設收合的 drawer，將搜尋移到上方工具列，並把 breadcrumb 移到內容區上方且補上首頁 icon。
 - **repo**: 全站 GitHub 倉庫與 issue 入口統一改為 `https://github.com/tbdavid2019/888tools`，同步更新首頁、導覽列、command palette、`package.json` 與多語系文案。
+
+### Bug Fixes
+- **mobile/sidebar**: 修正手機版側欄 overlay 蓋住樹狀選單，導致 `測量`、`加密` 等分類無法正常展開的問題。
+- **mobile/search**: 修正手機檢視下搜尋入口被側欄版面擠壓、難以操作的問題。
+- **breadcrumb**: 放大 breadcrumb 字級並調整排列，避免工具頁上方導覽資訊過小。
 
 ### Chores
 - **docs**: 補充 README 的 Agent Discovery / SEO 說明，記錄 sitemap、robots.txt、Content-Signal 與 API catalog 的生成與維護方式。
-- **docs**: 補充 README 與 CHANGELOG，記錄首頁側欄兩態模式、字級調整與倉庫路徑更新。
+- **docs**: 補充 README 與 CHANGELOG，記錄首頁側欄兩態模式、mobile drawer / breadcrumb 調整、字級優化與倉庫路徑更新。
 
 ## Version 2026.06.25
 
