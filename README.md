@@ -27,14 +27,16 @@
 
 ## Agent Discovery / SEO
 
-本站目前已補上供搜尋引擎與 AI Agent 探索用的靜態發現檔：
+本站目前已做了一系列搜尋引擎與 AI Agent 的優化，並補上了探索用的靜態發現檔：
 
+- **靜態預渲染 (SSG / Prerendering)**：為解決單頁應用 (SPA / CSR) 對搜尋引擎爬蟲抓取不友善、SEO 分數低的問題，打包階段會使用 Playwright 模擬 Chromium 瀏覽器（繁體中文語系/台北時區）預渲染全站所有 114 個工具路由頁面，並生成獨立的靜態 `index.html`。
+- **結構化資料 (JSON-LD)**：預渲染網頁時會自動在 `<head>` 中注入 structured data。首頁會注入 `WebSite` 與 `ItemList`；各工具頁會注入專屬的 `SoftwareApplication` 描述；About 頁會注入 `AboutPage` 描述，用以支援豐富網頁摘要 (Rich Snippets)。
 - `/sitemap.xml`：由 build 階段自動根據首頁、About 與工具 routes 生成，不需手動維護 URL 清單。
 - `/robots.txt`：由 build 階段自動生成，包含 `Sitemap:` 與 `Content-Signal:`。
 - `/.well-known/api-catalog`：以 `application/linkset+json` 輸出 API catalog。
 - 首頁回應 header：透過 Vercel 設定輸出 `Link: </.well-known/api-catalog>; rel="api-catalog"`。
 
-這些檔案的 source-of-truth 在 [site.config.js](./site.config.js) 與 [scripts/generate-discovery.mjs](./scripts/generate-discovery.mjs)。
+這些檔案與預渲染流程的實作在 [site.config.js](./site.config.js)、[scripts/generate-discovery.mjs](./scripts/generate-discovery.mjs) 與 [scripts/prerender.mjs](./scripts/prerender.mjs)。
 
 注意：
 
@@ -94,6 +96,12 @@
 | 47  | RWD 導覽修正：手機版側欄改為預設收合的 drawer，搜尋移到上方工具列，breadcrumb 改到內容上方並放大字級，修正 mobile overlay 擋住 tree 導致分類無法展開的問題 |
 
 ## Changelog
+
+### 2026-07-09
+
+- SEO & 預渲染優化：為解決 CSR (Client-Side Rendering) 導致搜尋引擎爬蟲抓取不到網頁內容、SEO 分數低 (40/100) 的問題，實現了基於 Playwright 的靜態頁面預渲染 (SSG) 機制。
+- 結構化資料：自動在預渲染後的頁面中注入 page-specific 的 JSON-LD 結構化資料（首頁注入 `WebSite` 與 `ItemList`；各工具頁注入 `SoftwareApplication`；關於頁注入 `AboutPage`），為站點帶來富摘要搜尋結果支援。
+- 打包自動化：將預渲染流程整合至 `pnpm build` 命令中，每次 build 都會自動模擬 Chromium 瀏覽器（繁體中文語系/台北時區）預渲染全部 114 個路由頁面，產出高 SEO 友善度的 HTML。
 
 ### 2026-06-25
 
