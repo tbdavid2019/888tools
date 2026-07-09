@@ -48,7 +48,6 @@ interface MessageItem {
 const uiState = ref<UIState>('setup');
 const role = ref<'host' | 'guest'>('host');
 const myUsername = ref('');
-const partnerName = ref('');
 const peerId = ref('');
 const targetPeerId = ref('');
 const password = ref('');
@@ -58,7 +57,8 @@ const messageInput = ref('');
 const fileInput = ref<HTMLInputElement | null>(null);
 
 const peer = ref<Peer | null>(null);
-const connection = ref<DataConnection | null>(null);
+const connections = ref<DataConnection[]>([]);
+const partnerNames = ref<Record<string, string>>({}); // peerId -> nickname
 const derivedKey = ref<CryptoKey | null>(null);
 const chatContainer = ref<HTMLElement | null>(null);
 
@@ -72,7 +72,7 @@ function getRandomNickname() {
   const isZh = route.name?.toString().includes('zh') || navigator.language.startsWith('zh');
   
   if (isZh) {
-    const adjs = ['快樂的', '幸運的', '聰明的', '勇敢的', '俏皮的', '活潑的', '溫暖的', '元氣的', '淘氣的', '呆萌的', '帥氣的', '開朗的', '元氣滿滿的', '冒險的'];
+    const adjs = ['快樂的', '幸運的', '聰明的', '勇敢的', '俏皮的', '活潑的', '溫慢的', '元氣的', '淘氣的', '呆萌的', '帥氣的', '開朗的', '元氣滿滿的', '冒險的'];
     const nouns = ['西瓜', '糙米', '紅豆', '燕麥', '芒果', '馬鈴薯', '芝麻', '綠豆', '草莓', '小麥', '花生', '玉米', '地瓜', '藍莓', '櫻桃', '水蜜桃', '小米', '薏仁', '荔枝', '鳳梨', '香蕉', '蘋果'];
     const adj = adjs[Math.floor(Math.random() * adjs.length)];
     const noun = nouns[Math.floor(Math.random() * nouns.length)];
@@ -138,10 +138,18 @@ const partnerBubbleFailedStyle = computed(() => {
   };
 });
 
-// Clipboard helpers
+// List of connected partners
+const partnersListString = computed(() => {
+  const names = Object.values(partnerNames.value);
+  if (names.length === 0) return '無';
+  return names.join(', ');
+});
+
+// Clipboard helpers (Invite URL always points to the Host to support mesh entry)
 const shareUrl = computed(() => {
-  if (!peerId.value) return '';
-  return `${window.location.origin}${route.path}?connect=${peerId.value}`;
+  const hostId = role.value === 'host' ? peerId.value : targetPeerId.value;
+  if (!hostId) return '';
+  return `${window.location.origin}${route.path}?connect=${hostId}`;
 });
 const { copy: copyId, copied: copiedId } = useClipboard({ source: peerId });
 const { copy: copyShareUrl, copied: copiedShareUrl } = useClipboard({ source: shareUrl });
@@ -246,48 +254,72 @@ function initPeer() {
   });
 
   peer.value.on('connection', (conn) => {
-    if (connection.value) {
-      connection.value.close();
-    }
     setupConnection(conn);
   });
 
   peer.value.on('error', (err) => {
     console.error('Peer error:', err);
-    connectionState.value = 'disconnected';
     toast.error('連線伺服器失敗：' + err.message);
     resetAll();
   });
 }
 
+function addConnection(conn: DataConnection) {
+  if (!connections.value.some(c => c.peer === conn.peer)) {
+    connections.value.push(conn);
+  }
+}
+
+function removeConnection(pId: string) {
+  connections.value = connections.value.filter(c => c.peer !== pId);
+  delete partnerNames.value[pId];
+  if (connections.value.length === 0) {
+    connectionState.value = 'disconnected';
+  }
+}
+
 function setupConnection(conn: DataConnection) {
-  connection.value = conn;
-  
   conn.on('open', () => {
     connectionState.value = 'connected';
-    targetPeerId.value = conn.peer;
+    addConnection(conn);
     
     // Exchange handshakes
-    if (role.value === 'guest') {
-      conn.send({ type: 'handshake', nickname: myUsername.value });
-    }
+    conn.send({ type: 'handshake', nickname: myUsername.value });
   });
 
   conn.on('data', async (data: any) => {
     if (data && typeof data === 'object') {
-      // Handle Handshake
+      // 1. Handle Handshake
       if (data.type === 'handshake') {
-        partnerName.value = data.nickname;
+        partnerNames.value[conn.peer] = data.nickname;
+        addConnection(conn);
+        
         if (role.value === 'host') {
-          // Respond to guest
-          conn.send({ type: 'handshake', nickname: myUsername.value });
+          // Announce this new peer to all OTHER already connected guests to form mesh
+          connections.value.forEach(otherConn => {
+            if (otherConn.peer !== conn.peer) {
+              otherConn.send({ type: 'announce-peer', peerId: conn.peer });
+            }
+          });
         }
+        
         uiState.value = 'chat';
-        toast.success(`連線成功！已與 ${partnerName.value} 建立連線`);
+        toast.success(`成員「${data.nickname}」已加入對話！`);
         return;
       }
 
-      // Handle normal message
+      // 2. Handle Peer Announcement (Mesh Connection)
+      if (data.type === 'announce-peer') {
+        const newPeerId = data.peerId;
+        if (peer.value && !connections.value.some(c => c.peer === newPeerId)) {
+          toast.info('正在連線至聊天室新成員...');
+          const newConn = peer.value.connect(newPeerId);
+          setupConnection(newConn);
+        }
+        return;
+      }
+
+      // 3. Handle normal message
       const msgId = 'partner_' + Math.random().toString(36).substr(2, 9);
       let isEncrypted = !!data.encrypted;
       let text = data.text || '';
@@ -343,14 +375,14 @@ function setupConnection(conn: DataConnection) {
   });
 
   conn.on('close', () => {
-    toast.info('連線已中斷。');
-    resetAll();
+    const name = partnerNames.value[conn.peer] || '成員';
+    toast.info(`「${name}」已離開對話。`);
+    removeConnection(conn.peer);
   });
 
   conn.on('error', (err) => {
     console.error('Connection error:', err);
-    toast.error('連線錯誤：' + err.message);
-    resetAll();
+    removeConnection(conn.peer);
   });
 }
 
@@ -413,10 +445,10 @@ async function reDecryptMessages() {
   }
 }
 
-// Send Message
+// Send Message (Broadcast to all connected mesh peers)
 async function sendMessage() {
   if (!messageInput.value.trim()) return;
-  if (!connection.value || connectionState.value !== 'connected') {
+  if (connections.value.length === 0) {
     toast.warning('未建立連線');
     return;
   }
@@ -446,7 +478,10 @@ async function sendMessage() {
     payload.text = textToSend;
   }
 
-  connection.value.send(payload);
+  // Broadcast to all active mesh peers
+  connections.value.forEach(conn => {
+    conn.send(payload);
+  });
 
   messages.value.push({
     id: msgId,
@@ -479,7 +514,7 @@ async function onFileSelected(e: Event) {
 
   const reader = new FileReader();
   reader.onload = async (event) => {
-    if (!event.target?.result || !connection.value) return;
+    if (!event.target?.result || connections.value.length === 0) return;
     
     const base64Data = event.target.result as string;
     const timestamp = Date.now();
@@ -517,7 +552,10 @@ async function onFileSelected(e: Event) {
       payload.file.data = base64Data;
     }
 
-    connection.value.send(payload);
+    // Broadcast to all active mesh peers
+    connections.value.forEach(conn => {
+      conn.send(payload);
+    });
 
     messages.value.push({
       id: msgId,
@@ -563,14 +601,14 @@ function scrollToBottom() {
   });
 }
 
-function disconnect() {
-  if (connection.value) {
-    connection.value.close();
-  }
+function disconnectAll() {
+  connections.value.forEach(conn => conn.close());
+  connections.value = [];
+  partnerNames.value = {};
 }
 
 function resetAll() {
-  disconnect();
+  disconnectAll();
   if (peer.value) {
     peer.value.destroy();
     peer.value = null;
@@ -580,7 +618,6 @@ function resetAll() {
   uiState.value = 'setup';
   messages.value = [];
   
-  // Clear route query to avoid auto-connect loop on retry
   if (route.query.connect) {
     router.replace({ query: {} });
   }
@@ -593,7 +630,6 @@ function cancelInvitation() {
 // Lifecycle
 onMounted(() => {
   randomizeName();
-  // Check if invited via connect URL parameter
   if (route.query.connect) {
     targetPeerId.value = String(route.query.connect);
     role.value = 'guest';
@@ -602,7 +638,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  disconnect();
+  disconnectAll();
   if (peer.value) {
     peer.value.destroy();
   }
@@ -621,7 +657,7 @@ onUnmounted(() => {
             P2P 網頁即時密聊
           </h2>
           <p class="text-xs opacity-75 leading-relaxed">
-            基於 WebRTC 協定的瀏覽器直連技術。訊息與檔案完全不經由任何伺服器儲存，確保絕對安全隱私。
+            基於 WebRTC 協定的多人家直連技術。訊息與檔案完全不經由任何伺服器儲存，且支援多人同時加入。
           </p>
         </div>
 
@@ -651,7 +687,7 @@ onUnmounted(() => {
               v-model:value="password" 
               type="password" 
               show-password-on="click" 
-              placeholder="雙方設定相同密碼後，訊息會在瀏覽器自動加密" 
+              placeholder="所有人設定相同密碼後，訊息會在瀏覽器自動加密" 
             />
             <p class="text-[10.5px] opacity-60 mt-1.5 leading-relaxed">
               🔐 設定後會自動透過 AES-GCM-256 加密傳輸。未設定則以明文直連通道傳送。
@@ -734,7 +770,7 @@ onUnmounted(() => {
 
         <h3 class="text-lg font-bold mb-2">等待好友加入...</h3>
         <p class="text-xs opacity-75 mb-6 px-4 leading-relaxed">
-          請複製下方的邀請連結傳送給好友，好友點開連結後即可自動連線到您的聊天室。
+          請複製下方的邀請連結傳送給好友，好友點開連結後即可自動連線到您的聊天室。支援多人同時加入！
         </p>
 
         <!-- Share Box -->
@@ -790,8 +826,8 @@ onUnmounted(() => {
                 <span class="font-bold">{{ myUsername }}</span>
               </div>
               <div class="flex justify-between border-t border-gray-200/5 pt-1.5 mt-0.5">
-                <span class="opacity-70">連線好友：</span>
-                <span class="font-bold text-emerald-500">{{ partnerName }}</span>
+                <span class="opacity-70">連線成員：</span>
+                <span class="font-bold" :style="{ color: activePalette.accent }">{{ partnersListString }}</span>
               </div>
             </div>
 
@@ -803,15 +839,28 @@ onUnmounted(() => {
                 type="password" 
                 show-password-on="click" 
                 size="small" 
-                placeholder="雙方設定一致以加密明文" 
+                placeholder="所有人設定一致以加密明文" 
               />
               <p class="text-[10px] opacity-60 mt-1 leading-normal">
                 密碼不同會導致解密失敗。可隨時在此修改或更正密碼。
               </p>
             </div>
 
+            <!-- Invite More Button -->
+            <div>
+              <n-tooltip trigger="hover">
+                <template #trigger>
+                  <n-button block size="small" type="primary" secondary @click="() => copyShareUrl()">
+                    <n-icon :component="IconWorld" class="mr-1" />
+                    邀請更多人加入
+                  </n-button>
+                </template>
+                {{ copiedShareUrl ? '連結已複製！' : '複製邀請網址發送給其它好友。' }}
+              </n-tooltip>
+            </div>
+
             <!-- Disconnect Button -->
-            <n-button block size="small" type="error" ghost @click="resetAll" class="mt-2">
+            <n-button block size="small" type="error" ghost @click="resetAll" class="mt-1">
               <template #icon><n-icon :component="IconBack" /></template>
               中斷並離開對話
             </n-button>
@@ -828,7 +877,7 @@ onUnmounted(() => {
             <div class="flex items-center gap-2">
               <div class="w-2.5 h-2.5 rounded-full bg-emerald-500" />
               <span class="font-bold text-sm">
-                正在與 {{ partnerName }} 對話
+                正在與 {{ partnersListString }} 對話
               </span>
             </div>
 
@@ -909,7 +958,7 @@ onUnmounted(() => {
               circle 
               secondary 
               size="medium"
-              :disabled="connectionState !== 'connected'"
+              :disabled="connections.length === 0"
               @click="triggerFileSelect"
             >
               <n-icon size="20" :component="IconAttach" />
@@ -920,14 +969,14 @@ onUnmounted(() => {
               type="text" 
               size="medium"
               placeholder="輸入訊息..." 
-              :disabled="connectionState !== 'connected'"
+              :disabled="connections.length === 0"
               @keyup.enter="sendMessage"
             />
 
             <n-button 
               type="primary" 
               size="medium"
-              :disabled="connectionState !== 'connected' || !messageInput.trim()"
+              :disabled="connections.length === 0 || !messageInput.trim()"
               @click="sendMessage"
             >
               <template #icon>

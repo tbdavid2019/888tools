@@ -412,7 +412,7 @@ onUnmounted(() => {
           <div class="flex flex-col">
             <span class="text-[10px] uppercase font-bold opacity-60 tracking-wider">您的本機名稱</span>
             <div class="flex gap-2 items-center mt-1">
-              <span class="text-lg font-bold text-emerald-500">{{ myDeviceName }}</span>
+              <span class="text-lg font-bold" :style="{ color: activePalette.accent }">{{ myDeviceName }}</span>
               <n-tooltip trigger="hover">
                 <template #trigger>
                   <n-button circle secondary size="small" @click="randomizeName" :disabled="connectionState === 'connected'">
@@ -523,7 +523,7 @@ onUnmounted(() => {
       >
         <div class="flex flex-col gap-3 py-2">
           <p class="text-sm">
-            來自 <span class="font-bold text-emerald-500">「{{ partnerDeviceName }}」</span> 的檔案傳送請求：
+            來自 <span class="font-bold" :style="{ color: activePalette.accent }">「{{ partnerDeviceName }}」</span> 的檔案傳送請求：
           </p>
           <div class="bg-black/10 dark:bg-black/30 p-3 rounded-xl flex items-center gap-3">
             <n-icon size="32" :component="IconUpload" class="text-emerald-500" />
