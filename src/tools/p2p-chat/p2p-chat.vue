@@ -2,7 +2,7 @@
 import { ref, onMounted, onUnmounted, watch, nextTick, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useClipboard, useStorage } from '@vueuse/core';
-import { useMessage, NIcon, NInput, NButton, NCard, NAlert, NTag, NTooltip, NPopover } from 'naive-ui';
+import { useMessage, NIcon, NInput, NButton, NCard, NAlert, NTag, NTooltip, NPopover, NImage } from 'naive-ui';
 import { useI18n } from 'vue-i18n';
 import Peer, { type DataConnection } from 'peerjs';
 import {
@@ -1161,8 +1161,15 @@ onUnmounted(() => {
               >
                 <!-- Image/File Payload -->
                 <div v-if="msg.type === 'file' && msg.file" class="flex flex-col gap-2">
-                  <div v-if="msg.file.type.startsWith('image/')" class="max-w-[250px] overflow-hidden rounded-lg">
-                    <img :src="msg.file.data" class="w-full h-auto object-cover max-h-[200px]" alt="Shared image" />
+                  <div v-if="msg.file.type.startsWith('image/')" class="max-w-[280px] overflow-hidden rounded-lg shadow-sm border border-black/10">
+                    <n-image 
+                      :src="msg.file.data" 
+                      :preview-src="msg.file.data"
+                      class="w-full cursor-zoom-in hover:opacity-90 transition-opacity" 
+                      style="max-height: 240px; display: block;"
+                      object-fit="contain" 
+                      alt="Shared image"
+                    />
                   </div>
                   <div class="flex items-center gap-3 bg-black/10 dark:bg-black/30 p-2 rounded-lg text-sm">
                     <n-icon size="24" :component="IconAttach" />
