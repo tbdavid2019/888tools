@@ -656,7 +656,7 @@ onUnmounted(() => {
             <n-icon size="26" :component="IconChat" class="text-emerald-500" />
             P2P 網頁即時密聊
           </h2>
-          <p class="text-xs opacity-75 leading-relaxed">
+          <p class="text-sm opacity-75 leading-relaxed">
             基於 WebRTC 協定的多人家直連技術。訊息與檔案完全不經由任何伺服器儲存，且支援多人同時加入。
           </p>
         </div>
@@ -664,7 +664,7 @@ onUnmounted(() => {
         <div class="flex flex-col gap-5 mt-2">
           <!-- Username Block -->
           <div>
-            <label class="block text-xs font-semibold mb-2 opacity-80">您的暱稱</label>
+            <label class="block text-sm font-semibold mb-2 opacity-80">您的暱稱</label>
             <div class="flex gap-2">
               <n-input v-model:value="myUsername" placeholder="輸入暱稱或點擊右側骰子隨機產生" />
               <n-tooltip trigger="hover">
@@ -680,7 +680,7 @@ onUnmounted(() => {
 
           <!-- Password (E2EE) Block -->
           <div>
-            <label class="block text-xs font-semibold mb-2 opacity-80 flex items-center gap-1">
+            <label class="block text-sm font-semibold mb-2 opacity-80 flex items-center gap-1">
               房間密碼 (E2EE 端到端加密) <n-tag size="mini" type="warning" round>選填</n-tag>
             </label>
             <n-input 
@@ -689,7 +689,7 @@ onUnmounted(() => {
               show-password-on="click" 
               placeholder="所有人設定相同密碼後，訊息會在瀏覽器自動加密" 
             />
-            <p class="text-[10.5px] opacity-60 mt-1.5 leading-relaxed">
+            <p class="text-xs opacity-60 mt-1.5 leading-relaxed">
               🔐 設定後會自動透過 AES-GCM-256 加密傳輸。未設定則以明文直連通道傳送。
             </p>
           </div>
@@ -699,7 +699,7 @@ onUnmounted(() => {
             
             <!-- CASE A: User is Guest (Invited via URL) -->
             <div v-if="targetPeerId" class="flex flex-col gap-3">
-              <n-alert type="warning" :show-icon="true" size="small" class="text-xs">
+              <n-alert type="warning" :show-icon="true" size="small" class="text-sm">
                 您的好友邀請您加入聊天室！已自動鎖定連線 ID。
               </n-alert>
               
@@ -734,7 +734,7 @@ onUnmounted(() => {
                 ✨ 建立聊天室並等待好友
               </n-button>
 
-              <div class="flex items-center my-1 text-xs opacity-50 justify-center gap-2">
+              <div class="flex items-center my-1 text-sm opacity-50 justify-center gap-2">
                 <span class="w-8 h-[1px] bg-current opacity-30"></span>
                 <span>或手動加入現有房間</span>
                 <span class="w-8 h-[1px] bg-current opacity-30"></span>
@@ -769,13 +769,13 @@ onUnmounted(() => {
         </div>
 
         <h3 class="text-lg font-bold mb-2">等待好友加入...</h3>
-        <p class="text-xs opacity-75 mb-6 px-4 leading-relaxed">
+        <p class="text-sm opacity-75 mb-6 px-4 leading-relaxed">
           請複製下方的邀請連結傳送給好友，好友點開連結後即可自動連線到您的聊天室。支援多人同時加入！
         </p>
 
         <!-- Share Box -->
         <div class="flex flex-col gap-3 bg-black/10 dark:bg-black/30 p-4 rounded-2xl mb-6">
-          <span class="text-[10px] uppercase font-bold opacity-60 tracking-wider">您的專屬邀請連結</span>
+          <span class="text-xs uppercase font-bold opacity-60 tracking-wider">您的專屬邀請連結</span>
           <div class="flex gap-2">
             <n-input :value="shareUrl" readonly size="small" placeholder="產生中..." />
             <n-tooltip trigger="hover">
@@ -790,7 +790,7 @@ onUnmounted(() => {
         </div>
 
         <!-- Peer ID manually just in case -->
-        <div class="text-[11px] opacity-70 mb-6">
+        <div class="text-xs opacity-70 mb-6">
           您的 Peer ID: <span class="font-mono bg-white/5 px-1.5 py-0.5 rounded">{{ peerId || '取得中...' }}</span>
         </div>
 
@@ -820,7 +820,7 @@ onUnmounted(() => {
 
           <div class="flex flex-col gap-3.5">
             <!-- User Status Info -->
-            <div class="text-xs flex flex-col gap-1.5 bg-black/10 dark:bg-black/20 p-2.5 rounded-xl border border-gray-200/5">
+            <div class="text-sm flex flex-col gap-1.5 bg-black/10 dark:bg-black/20 p-2.5 rounded-xl border border-gray-200/5">
               <div class="flex justify-between">
                 <span class="opacity-70">您的暱稱：</span>
                 <span class="font-bold">{{ myUsername }}</span>
@@ -833,7 +833,7 @@ onUnmounted(() => {
 
             <!-- E2EE Password Box -->
             <div>
-              <span class="text-xs font-semibold opacity-85 block mb-1">E2EE 加密密碼</span>
+              <span class="text-sm font-semibold opacity-85 block mb-1">E2EE 加密密碼</span>
               <n-input 
                 v-model:value="password" 
                 type="password" 
@@ -841,7 +841,7 @@ onUnmounted(() => {
                 size="small" 
                 placeholder="所有人設定一致以加密明文" 
               />
-              <p class="text-[10px] opacity-60 mt-1 leading-normal">
+              <p class="text-xs opacity-60 mt-1 leading-normal">
                 密碼不同會導致解密失敗。可隨時在此修改或更正密碼。
               </p>
             </div>
@@ -876,12 +876,12 @@ onUnmounted(() => {
           <div class="flex items-center justify-between border-b border-gray-200/10 pb-3 mb-3">
             <div class="flex items-center gap-2">
               <div class="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-              <span class="font-bold text-sm">
+              <span class="font-bold text-base">
                 正在與 {{ partnersListString }} 對話
               </span>
             </div>
 
-            <n-tag v-if="derivedKey" type="warning" size="small" round>
+            <n-tag v-if="derivedKey" type="warning" size="medium" round>
               <n-icon :component="IconLock" class="mr-1" />
               AES-256 E2EE 已啟用
             </n-tag>
@@ -904,13 +904,13 @@ onUnmounted(() => {
               :class="msg.sender === 'me' ? 'self-end items-end' : 'self-start items-start'"
             >
               <!-- Time and Sender name -->
-              <span class="text-[10.5px] opacity-75 mb-0.5 px-1.5">
+              <span class="text-xs opacity-75 mb-0.5 px-1.5">
                 {{ msg.senderName }} • {{ formatTime(msg.timestamp) }}
               </span>
 
               <!-- Bubble Box -->
               <div 
-                class="rounded-2xl px-4 py-2.5 text-[14px] leading-relaxed shadow-sm relative group"
+                class="rounded-2xl px-4 py-2.5 text-base leading-relaxed shadow-sm relative group"
                 :style="msg.sender === 'me' ? meBubbleStyle : (msg.decryptionFailed ? partnerBubbleFailedStyle : partnerBubbleStyle)"
               >
                 <!-- Image/File Payload -->
@@ -918,7 +918,7 @@ onUnmounted(() => {
                   <div v-if="msg.file.type.startsWith('image/')" class="max-w-[250px] overflow-hidden rounded-lg">
                     <img :src="msg.file.data" class="w-full h-auto object-cover max-h-[200px]" alt="Shared image" />
                   </div>
-                  <div class="flex items-center gap-3 bg-black/10 dark:bg-black/30 p-2 rounded-lg text-xs">
+                  <div class="flex items-center gap-3 bg-black/10 dark:bg-black/30 p-2 rounded-lg text-sm">
                     <n-icon size="24" :component="IconAttach" />
                     <div class="flex-1 min-w-0">
                       <div class="truncate font-medium">{{ msg.file.name }}</div>
@@ -936,7 +936,7 @@ onUnmounted(() => {
                 </div>
 
                 <!-- Encryption lock icon -->
-                <div v-if="msg.isEncrypted" class="absolute -bottom-2 -right-1 bg-amber-500 text-black text-[8px] font-extrabold px-1 rounded flex items-center gap-0.5 scale-90 shadow-sm">
+                <div v-if="msg.isEncrypted" class="absolute -bottom-2 -right-1 bg-amber-500 text-black text-[10px] font-extrabold px-1 rounded flex items-center gap-0.5 scale-90 shadow-sm">
                   <n-icon size="9" :component="IconLock" />
                   E2EE
                 </div>

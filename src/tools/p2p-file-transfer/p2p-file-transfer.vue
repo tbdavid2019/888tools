@@ -410,7 +410,7 @@ onUnmounted(() => {
           
           <!-- Name Display -->
           <div class="flex flex-col">
-            <span class="text-[10px] uppercase font-bold opacity-60 tracking-wider">您的本機名稱</span>
+            <span class="text-xs uppercase font-bold opacity-60 tracking-wider">您的本機名稱</span>
             <div class="flex gap-2 items-center mt-1">
               <span class="text-lg font-bold" :style="{ color: activePalette.accent }">{{ myDeviceName }}</span>
               <n-tooltip trigger="hover">
@@ -422,7 +422,7 @@ onUnmounted(() => {
                 更換隨機名稱 🎲
               </n-tooltip>
             </div>
-            <span class="text-[11px] opacity-75 mt-1 flex items-center gap-1">
+            <span class="text-xs opacity-75 mt-1 flex items-center gap-1">
               <span class="w-2 h-2 rounded-full" :class="connectionState === 'connected' ? 'bg-emerald-500' : 'bg-amber-500'" />
               狀態：{{ connectionState === 'connected' ? '已連接好友裝置' : '等待連線中' }}
             </span>
@@ -430,7 +430,7 @@ onUnmounted(() => {
 
           <!-- Share Link Action -->
           <div class="w-full md:w-auto flex flex-col gap-2">
-            <span class="text-[10px] uppercase font-bold opacity-60 tracking-wider">一鍵分享連結給好友</span>
+            <span class="text-xs uppercase font-bold opacity-60 tracking-wider">一鍵分享連結給好友</span>
             <div class="flex gap-2">
               <n-input :value="shareUrl" readonly size="small" placeholder="產生中..." class="w-full md:w-48" />
               <n-tooltip trigger="hover">
@@ -470,7 +470,7 @@ onUnmounted(() => {
             <n-icon size="40" :component="isMobileDevice ? IconPhone : IconLaptop" />
           </div>
           <h3 class="text-lg font-bold">正在等待其它裝置加入...</h3>
-          <p class="text-xs opacity-75 max-w-sm leading-relaxed px-4">
+          <p class="text-sm opacity-75 max-w-sm leading-relaxed px-4">
             請將上方的邀請網址傳送給另一部裝置（例如手機或同事的電腦），對方點擊後即可自動在此互相看見並開始傳檔。
           </p>
         </div>
@@ -492,7 +492,7 @@ onUnmounted(() => {
             </div>
             
             <span class="text-base font-bold mt-4" style="color: var(--heading)">{{ partnerDeviceName || '好友裝置' }}</span>
-            <span class="text-xs opacity-70 mt-1">點擊裝置發送檔案，或直接將檔案拖曳至此</span>
+            <span class="text-sm opacity-70 mt-1">點擊裝置發送檔案，或直接將檔案拖曳至此</span>
           </div>
 
           <div class="mt-4 pt-4 border-t border-gray-200/10 w-full max-w-xs flex justify-center">
@@ -522,17 +522,17 @@ onUnmounted(() => {
         :style="bentoCardStyle"
       >
         <div class="flex flex-col gap-3 py-2">
-          <p class="text-sm">
+          <p class="text-base">
             來自 <span class="font-bold" :style="{ color: activePalette.accent }">「{{ partnerDeviceName }}」</span> 的檔案傳送請求：
           </p>
           <div class="bg-black/10 dark:bg-black/30 p-3 rounded-xl flex items-center gap-3">
             <n-icon size="32" :component="IconUpload" class="text-emerald-500" />
             <div class="flex-1 min-w-0">
-              <div class="truncate font-bold text-sm">{{ expectedFileName }}</div>
-              <div class="text-xs opacity-75">{{ formatBytes(expectedFileSize) }}</div>
+              <div class="truncate font-bold text-base">{{ expectedFileName }}</div>
+              <div class="text-sm opacity-75">{{ formatBytes(expectedFileSize) }}</div>
             </div>
           </div>
-          <p class="text-xs opacity-70 mt-1 leading-normal">
+          <p class="text-sm opacity-70 mt-1 leading-normal">
             點擊「同意」將使用點對點安全直連建立傳輸，傳送完成後會自動儲存至您的下載資料夾。
           </p>
           <div class="flex gap-3 mt-4">
@@ -557,10 +557,10 @@ onUnmounted(() => {
         <div class="flex flex-col items-center gap-4 py-4">
           <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-500"></div>
           <h4 class="font-bold text-base">等待對方確認...</h4>
-          <p class="text-xs opacity-75 leading-relaxed">
+          <p class="text-sm opacity-75 leading-relaxed">
             正在向「{{ partnerDeviceName }}」發送傳送要求，請等待對方點擊接受。
           </p>
-          <div class="bg-black/10 dark:bg-black/30 p-2.5 rounded-lg text-xs w-full truncate font-medium mt-2">
+          <div class="bg-black/10 dark:bg-black/30 p-2.5 rounded-lg text-sm w-full truncate font-medium mt-2">
             {{ expectedFileName }} ({{ formatBytes(expectedFileSize) }})
           </div>
         </div>
@@ -584,15 +584,15 @@ onUnmounted(() => {
           <div class="bg-black/10 dark:bg-black/30 p-3 rounded-xl flex items-center gap-3">
             <n-icon size="32" :component="role === 'sender' ? IconUpload : IconDownload" class="text-emerald-500" />
             <div class="flex-1 min-w-0">
-              <div class="truncate font-bold text-sm">{{ expectedFileName }}</div>
-              <div class="text-xs opacity-75">
+              <div class="truncate font-bold text-base">{{ expectedFileName }}</div>
+              <div class="text-sm opacity-75">
                 {{ role === 'sender' ? '傳送進度：' : '接收進度：' }}{{ formatBytes(receivedSize || (transferProgress * expectedFileSize) / 100) }} / {{ formatBytes(expectedFileSize) }}
               </div>
             </div>
           </div>
           
           <div class="flex flex-col gap-1 mt-2">
-            <div class="flex justify-between text-xs font-mono opacity-85">
+            <div class="flex justify-between text-sm font-mono opacity-85">
               <span>{{ transferProgress }}%</span>
               <span>{{ transferProgress === 100 ? '組裝檔案中...' : '直連傳輸中' }}</span>
             </div>
