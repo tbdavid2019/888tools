@@ -72,6 +72,17 @@ const { t, locale } = useI18n();
 // Desktop Notifications State
 const notificationPermission = ref(typeof window !== 'undefined' ? Notification.permission : 'default');
 const soundEnabled = useStorage('p2p-chat-sound-enabled', true);
+const chatBgType = useStorage('p2p-chat-bg-type', 'telegram');
+const chatBgCustomUrl = useStorage('p2p-chat-bg-custom-url', '');
+
+const chatBgOptions = computed(() => [
+  { label: t('tools.p2p-chat.bgTelegram'), value: 'telegram' },
+  { label: t('tools.p2p-chat.bgDefault'), value: 'default' },
+  { label: t('tools.p2p-chat.bgBlue'), value: 'blue' },
+  { label: t('tools.p2p-chat.bgPink'), value: 'pink' },
+  { label: t('tools.p2p-chat.bgGreen'), value: 'green' },
+  { label: t('tools.p2p-chat.bgCustom'), value: 'custom' }
+]);
 
 async function requestNotificationPermission() {
   if (typeof window === 'undefined' || !('Notification' in window)) return;
@@ -148,10 +159,44 @@ const bentoCardStyle = computed(() => {
 
 const chatHistoryStyle = computed(() => {
   const isDark = styleStore.isDarkTheme;
-  return {
-    backgroundColor: isDark ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.45)',
-    border: `1px solid ${activePalette.value.border}20`,
+  const border = `1px solid ${activePalette.value.border}20`;
+  
+  let bgStyle: Record<string, string> = {
+    border,
   };
+
+  if (chatBgType.value === 'telegram') {
+    bgStyle.backgroundColor = isDark ? '#182533' : '#e7ebf0';
+    bgStyle.backgroundImage = 'url("https://telegram.org/img/tgme/pattern.svg")';
+    bgStyle.backgroundSize = '380px';
+    bgStyle.backgroundRepeat = 'repeat';
+    if (isDark) {
+      bgStyle.backgroundBlendMode = 'overlay';
+    }
+  } else if (chatBgType.value === 'default') {
+    bgStyle.backgroundColor = isDark ? 'rgba(0, 0, 0, 0.25)' : 'rgba(255, 255, 255, 0.45)';
+  } else if (chatBgType.value === 'blue') {
+    bgStyle.background = isDark 
+      ? 'linear-gradient(180deg, #1e293b 0%, #0f172a 100%)' 
+      : 'linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%)';
+  } else if (chatBgType.value === 'pink') {
+    bgStyle.background = isDark 
+      ? 'linear-gradient(180deg, #31151f 0%, #1e0b11 100%)' 
+      : 'linear-gradient(180deg, #fff5f7 0%, #ffe4e6 100%)';
+  } else if (chatBgType.value === 'green') {
+    bgStyle.background = isDark 
+      ? 'linear-gradient(180deg, #14281d 0%, #0c1611 100%)' 
+      : 'linear-gradient(180deg, #f0fdf4 0%, #dcfce7 100%)';
+  } else if (chatBgType.value === 'custom' && chatBgCustomUrl.value.trim()) {
+    bgStyle.backgroundImage = `url(${chatBgCustomUrl.value})`;
+    bgStyle.backgroundSize = 'cover';
+    bgStyle.backgroundPosition = 'center';
+    bgStyle.backgroundRepeat = 'no-repeat';
+  } else {
+    bgStyle.backgroundColor = isDark ? 'rgba(0, 0, 0, 0.25)' : 'rgba(255, 255, 255, 0.45)';
+  }
+
+  return bgStyle;
 });
 
 const meBubbleStyle = computed(() => ({
@@ -955,6 +1000,23 @@ onUnmounted(() => {
               <p class="text-xs opacity-60 mt-1 leading-normal">
                 {{ $t('tools.p2p-chat.e2eePasswordNoteSidebar') }}
               </p>
+            </div>
+
+            <!-- Chat Window Background -->
+            <div>
+              <span class="text-sm font-semibold opacity-85 block mb-1">{{ $t('tools.p2p-chat.chatBgLabel') }}</span>
+              <n-select 
+                v-model:value="chatBgType" 
+                size="small"
+                :options="chatBgOptions"
+              />
+              <div v-if="chatBgType === 'custom'" class="mt-1.5">
+                <n-input 
+                  v-model:value="chatBgCustomUrl" 
+                  size="small" 
+                  :placeholder="$t('tools.p2p-chat.bgCustomPlaceholder')" 
+                />
+              </div>
             </div>
 
             <!-- Desktop Notification Button -->
