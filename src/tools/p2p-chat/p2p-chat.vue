@@ -14,10 +14,11 @@ import {
   PeopleOutlined as IconPeople,
   PublicOutlined as IconWorld,
   CheckCircleOutlined as IconCheck,
-  ErrorOutlineOutlined as IconError,
   DownloadOutlined as IconDownload
 } from '@vicons/material';
 import { config } from '@/config';
+import { useStyleStore } from '@/stores/style.store';
+import { kanagawaDarkPalette, kanagawaLightPalette } from '@/theme/palette';
 
 // Types
 type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'error';
@@ -56,6 +57,55 @@ const chatContainer = ref<HTMLElement | null>(null);
 
 const route = useRoute();
 const toast = useMessage();
+const styleStore = useStyleStore();
+
+// Theme styling computed properties
+const activePalette = computed(() => (styleStore.isDarkTheme ? kanagawaDarkPalette : kanagawaLightPalette));
+
+const bentoCardStyle = computed(() => {
+  const opacity = styleStore.isDarkTheme ? styleStore.cardOpacity : Math.max(styleStore.cardOpacity, 0.9);
+  const border = activePalette.value.overlayBorder;
+  const text = activePalette.value.text;
+  return {
+    backgroundColor: `rgba(${activePalette.value.glassBackgroundRgb}, ${opacity})`,
+    border: `1px solid ${border}`,
+    color: text,
+  };
+});
+
+const chatHistoryStyle = computed(() => {
+  const isDark = styleStore.isDarkTheme;
+  return {
+    backgroundColor: isDark ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.45)',
+    border: `1px solid ${activePalette.value.border}20`,
+  };
+});
+
+const meBubbleStyle = computed(() => ({
+  backgroundColor: activePalette.value.button,
+  color: '#ffffff',
+  borderRadius: '16px 16px 0px 16px',
+}));
+
+const partnerBubbleStyle = computed(() => {
+  const isDark = styleStore.isDarkTheme;
+  return {
+    backgroundColor: isDark ? '#2A2A37' : '#FFFFFF',
+    color: activePalette.value.text,
+    border: `1px solid ${activePalette.value.border}25`,
+    borderRadius: '16px 16px 16px 0px',
+  };
+});
+
+const partnerBubbleFailedStyle = computed(() => {
+  const isDark = styleStore.isDarkTheme;
+  return {
+    backgroundColor: isDark ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.08)',
+    color: isDark ? '#F59E0B' : '#B45309',
+    border: `1px solid rgba(245, 158, 11, 0.35)`,
+    borderRadius: '16px 16px 16px 0px',
+  };
+});
 
 // Clipboard helpers
 const shareUrl = computed(() => {
@@ -459,6 +509,11 @@ function formatBytes(bytes: number, decimals = 2) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
+// Format date to local string
+function formatDate(timestamp: number) {
+  return new Date(timestamp).toLocaleDateString([], { month: '2-digit', day: '2-digit' });
+}
+
 function formatTime(timestamp: number) {
   return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
@@ -504,7 +559,7 @@ onUnmounted(() => {
       <div class="lg:col-span-1 flex flex-col gap-4">
         
         <!-- Peer Info Card -->
-        <n-card :bordered="false" size="small" class="bento-card">
+        <n-card :bordered="false" size="small" :style="bentoCardStyle" class="bento-card">
           <template #header>
             <div class="flex items-center gap-2">
               <n-icon size="20" :component="IconPeople" class="text-emerald-500" />
@@ -541,14 +596,14 @@ onUnmounted(() => {
                     複製邀請連結
                   </n-button>
                 </template>
-                {{ copiedShareUrl ? '連結已複製！' : '複製帶有連線 ID 的聊天網址，傳送給好友可以直接點擊建立連線。' }}
+                {{ copiedShareUrl ? '連結已複製！' : '複製邀請連結傳送給好友。' }}
               </n-tooltip>
             </div>
           </div>
         </n-card>
 
         <!-- Connect to Partner Card -->
-        <n-card :bordered="false" size="small" class="bento-card">
+        <n-card :bordered="false" size="small" :style="bentoCardStyle" class="bento-card">
           <template #header>
             <div class="flex items-center gap-2">
               <n-icon size="20" :component="IconWorld" class="text-blue-500" />
@@ -588,7 +643,7 @@ onUnmounted(() => {
         </n-card>
 
         <!-- End-to-End Encryption Settings -->
-        <n-card :bordered="false" size="small" class="bento-card">
+        <n-card :bordered="false" size="small" :style="bentoCardStyle" class="bento-card">
           <template #header>
             <div class="flex items-center gap-2">
               <n-icon size="20" :component="derivedKey ? IconLock : IconUnlock" :class="derivedKey ? 'text-amber-500' : 'text-gray-400'" />
@@ -614,7 +669,7 @@ onUnmounted(() => {
 
       <!-- Chat Interface Card (Right) -->
       <div class="lg:col-span-3">
-        <n-card :bordered="false" class="bento-card flex flex-col h-[600px] content-card">
+        <n-card :bordered="false" :style="bentoCardStyle" class="bento-card flex flex-col h-[600px] content-card">
           
           <!-- Chat Header -->
           <div class="flex items-center justify-between border-b border-gray-200/10 pb-3 mb-3">
@@ -649,7 +704,8 @@ onUnmounted(() => {
           <!-- Chat Messages Container -->
           <div 
             ref="chatContainer"
-            class="flex-1 overflow-y-auto px-2 py-4 flex flex-col gap-3 min-h-[380px] max-h-[380px] bg-slate-950/20 rounded-xl"
+            class="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3 min-h-[380px] max-h-[380px] rounded-xl"
+            :style="chatHistoryStyle"
           >
             <div v-if="messages.length === 0" class="h-full flex flex-col items-center justify-center text-center opacity-50 py-10">
               <n-icon size="40" :component="IconChat" class="mb-2" />
@@ -671,12 +727,7 @@ onUnmounted(() => {
               <!-- Bubble Wrapper -->
               <div 
                 class="rounded-2xl px-4 py-2.5 text-[14.5px] leading-relaxed shadow-sm relative group"
-                :class="[
-                  msg.sender === 'me' 
-                    ? 'bg-emerald-600/80 text-white rounded-tr-none' 
-                    : 'bg-slate-800 text-gray-100 rounded-tl-none',
-                  msg.decryptionFailed ? 'border border-amber-500/40 bg-amber-950/20 text-amber-200' : ''
-                ]"
+                :style="msg.sender === 'me' ? meBubbleStyle : (msg.decryptionFailed ? partnerBubbleFailedStyle : partnerBubbleStyle)"
               >
                 <!-- File Attachment Bubble -->
                 <div v-if="msg.type === 'file' && msg.file" class="flex flex-col gap-2">
@@ -685,13 +736,13 @@ onUnmounted(() => {
                     <img :src="msg.file.data" class="w-full h-auto object-cover max-h-[200px]" alt="Shared image" />
                   </div>
                   <!-- Other File Attachment Card -->
-                  <div class="flex items-center gap-3 bg-black/20 p-2 rounded-lg text-xs">
+                  <div class="flex items-center gap-3 bg-black/10 dark:bg-black/30 p-2 rounded-lg text-xs">
                     <n-icon size="24" :component="IconAttach" />
                     <div class="flex-1 min-w-0">
                       <div class="truncate font-medium">{{ msg.file.name }}</div>
                       <div class="opacity-75">{{ formatBytes(msg.file.size) }}</div>
                     </div>
-                    <a :href="msg.file.data" :download="msg.file.name" class="text-white hover:text-emerald-300">
+                    <a :href="msg.file.data" :download="msg.file.name" class="hover:text-emerald-500">
                       <n-icon size="20" :component="IconDownload" />
                     </a>
                   </div>
@@ -775,14 +826,13 @@ onUnmounted(() => {
 <style scoped lang="less">
 .p2p-chat-wrapper {
   margin: 0 auto;
+  flex: 1 1 100% !important;
+  max-width: 100% !important;
 }
 
 .bento-card {
   border-radius: 20px;
-  background-color: rgba(24, 24, 37, 0.45);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: background-color 0.3s, border-color 0.3s, color 0.3s;
 }
 
 .content-card {
