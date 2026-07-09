@@ -639,8 +639,15 @@ function triggerFileSelect() {
 async function onFileSelected(e: Event) {
   const target = e.target as HTMLInputElement;
   if (!target.files || target.files.length === 0) return;
-
   const file = target.files[0];
+  await processAndSendFile(file);
+}
+
+async function processAndSendFile(file: File) {
+  if (connections.value.length === 0) {
+    toast.warning(t('tools.p2p-chat.statusDisconnected'));
+    return;
+  }
   if (file.size > 2 * 1024 * 1024) {
     toast.error(t('tools.p2p-chat.fileTooLarge'));
     return;
@@ -713,6 +720,27 @@ async function onFileSelected(e: Event) {
   reader.readAsDataURL(file);
 }
 
+// Clipboard Paste Handler (Screenshot paste to upload)
+function handlePaste(e: ClipboardEvent) {
+  if (connections.value.length === 0) return;
+  const items = e.clipboardData?.items;
+  if (!items) return;
+  
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    if (item.type.indexOf('image') !== -1) {
+      const file = item.getAsFile();
+      if (file) {
+        e.preventDefault(); // Stop inserting text
+        const timestampStr = new Date().toISOString().replace(/[:.]/g, '-');
+        const renamedFile = new File([file], `screenshot-${timestampStr}.png`, { type: 'image/png' });
+        processAndSendFile(renamedFile);
+        break; // Only send one image
+      }
+    }
+  }
+}
+
 // Helpers
 function formatBytes(bytes: number, decimals = 2) {
   if (bytes === 0) return '0 Bytes';
@@ -772,12 +800,18 @@ onMounted(() => {
     role.value = 'guest';
     toast.info(t('tools.p2p-chat.detectInvite'));
   }
+  if (typeof window !== 'undefined') {
+    window.addEventListener('paste', handlePaste);
+  }
 });
 
 onUnmounted(() => {
   disconnectAll();
   if (peer.value) {
     peer.value.destroy();
+  }
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('paste', handlePaste);
   }
 });
 </script>

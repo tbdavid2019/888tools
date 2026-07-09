@@ -5,7 +5,17 @@ All notable changes to this project will be documented in this file. See [standa
 ## Version 2026.07.09
 
 ### Features
-- **p2p-chat**: 新增「P2P 網頁即時密聊」工具，使用 PeerJS (WebRTC) 建立瀏覽器直連，整合 Web Cryptography API (AES-GCM-256) 進行本地端到端加密 (E2EE)。支援分享帶連線參數的邀請連結，並支援傳送 2MB 以下的圖片與檔案。
+- **p2p-chat**: 新增「P2P 網頁即時密聊」工具，使用 PeerJS (WebRTC) 建立瀏覽器直連，整合 Web Cryptography API (AES-GCM-256) 進行本地端到端加密 (E2EE)。支援分享帶連線參數的邀請連結，並支援傳送 2MB 以下的圖片與檔案。本版本包含以下重要更新：
+  - **多語系重構**：將所有硬編碼的對話提示與通知文字全面遷移至語系檔（英文/繁體中文/簡體中文），實現完美的國際化支援。
+  - **多人 WebRTC Mesh 網狀連線**：支援多人同時在線！新加入成員會自動由 Host 房主廣播並建立成員間的端對端直連。
+  - **聊天室線上名單**：側邊欄新增結構化的線上成員列表，標示連線狀態與 P2P 直連徽章。
+  - **植物 Emoji 暱稱與快捷選擇器**：蔬菜水果暱稱自動配對相對應的 Emoji，且輸入框新增 😀 彈出式常用 Emoji 快捷網格面板。
+  - **瀏覽器桌面推送通知**：新增 Web Notifications 支援，當有新訊息且頁面在背景隱藏時，會自動發送桌面通知。
+  - **多行輸入與換行**：輸入框改為自動伸縮高度的 TextArea 容器，支援貼上長文，並支援 `Shift + Enter` 插入換行、`Enter` 直接送出。
+  - **風鈴和弦提示音與開關**：採用 Web Audio API 重新合成了優雅的雙音階 chime 提示音，並在側邊欄提供開啟/關閉開關。
+  - **邀請連結 ID 本地續存**：房主 Peer ID 會快取於本地 localStorage，網頁刷新或短暫斷線重連會自動請求沿用原 ID，確保已分享的邀請連結持續有效。
+  - **Telegram 風格塗鴉對話背景**：預設採用 Telegram 經典塗鴉壁紙（自動適配深淺色模式），提供莫蘭迪藍、落櫻粉花、靜謐竹林等漸層底色，並支援輸入自定義圖片網址。
+  - **貼圖與截圖黏貼傳送**：支援剪貼簿貼圖！在對話視窗內直接按下 `Ctrl+V` / `Cmd+V` 即可自動讀取剪貼簿截圖並上傳傳送。
 - **branding**: 將全站標題由 `Tool.David888.com` 與 `888 Tool` 更改為 `DAVID888 TOOL`，中文語系下自動顯示為 `DAVID888 TOOL 工具箱`，並全面更新首頁、側邊欄與各工具頁的網頁標題、OG 標籤與 Meta 說明，突顯其作為「綜合工具箱」的定位。
 - **seo/ssg**: 新增 build-time 預渲染流程，在打包 (`pnpm build`) 完成後，自動透過 Playwright Chromium (繁體中文/台北時區) 預渲染全站所有 115 個工具路由，產出高 SEO 友善度的 HTML。
 - **seo/structured-data**: 新增自動注入 JSON-LD 結構化資料。首頁注入 `WebSite` 與 `ItemList` 結構；每個工具路由頁面注入對應的 `SoftwareApplication` 結構；About 頁注入 `AboutPage` 結構。
