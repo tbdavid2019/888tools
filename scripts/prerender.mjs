@@ -1,5 +1,3 @@
-import { chromium } from '@playwright/test';
-import http from 'node:http';
 import fs from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
@@ -11,63 +9,13 @@ const rootDir = path.resolve(__dirname, '..');
 const distDir = path.join(rootDir, 'dist');
 const localesDir = path.join(rootDir, 'locales');
 
-// MIME types for the static server
-const mimeTypes = {
-  '.html': 'text/html',
-  '.js': 'text/javascript',
-  '.css': 'text/css',
-  '.json': 'application/json',
-  '.png': 'image/png',
-  '.jpg': 'image/jpg',
-  '.gif': 'image/gif',
-  '.svg': 'image/svg+xml',
-  '.ico': 'image/x-icon',
-  '.woff': 'font/woff',
-  '.woff2': 'font/woff2',
-};
-
-// 1. Start a simple HTTP server to serve the built 'dist' directory
-function startServer(port = 5050) {
-  const server = http.createServer(async (req, res) => {
-    let urlPath = req.url.split('?')[0];
-    let filePath = path.join(distDir, urlPath);
-    if (filePath.endsWith('/')) {
-      filePath = path.join(filePath, 'index.html');
-    }
-
-    let ext = path.extname(filePath);
-    // SPA Fallback: Serve the main index.html for route requests (without file extension)
-    if (!existsSync(filePath) || ext === '') {
-      filePath = path.join(distDir, 'index.html');
-      ext = '.html';
-    }
-
-    try {
-      const content = await fs.readFile(filePath);
-      const contentType = mimeTypes[ext] || 'application/octet-stream';
-      res.writeHead(200, { 'Content-Type': contentType });
-      res.end(content, 'utf-8');
-    } catch (error) {
-      res.writeHead(500);
-      res.end(`Server Error: ${error.code}`);
-    }
-  });
-
-  return new Promise((resolve) => {
-    server.listen(port, () => {
-      console.log(`Prerender server running at http://localhost:${port}`);
-      resolve(server);
-    });
-  });
-}
-
-// 2. Read translation keys to map tools with their localized titles & descriptions
+// 1. Read translation keys to map tools with their localized titles & descriptions
 async function loadTranslations() {
   const zhTwYaml = await fs.readFile(path.join(localesDir, 'zh-TW.yml'), 'utf8');
   return YAML.parse(zhTwYaml);
 }
 
-// 3. Scan and load all tool configurations dynamically
+// 2. Scan and load all tool configurations dynamically
 async function getTools(translations) {
   const toolsDir = path.join(rootDir, 'src', 'tools');
   const indexContent = await fs.readFile(path.join(toolsDir, 'index.ts'), 'utf8');
@@ -114,32 +62,32 @@ async function getTools(translations) {
   return tools;
 }
 
-// 4. Inject JSON-LD structured data into the HTML head
+// 3. Inject JSON-LD structured data into the HTML head
 function injectJsonLd(html, jsonLd) {
   const jsonLdScript = `\n    <script type="application/ld+json">\n${JSON.stringify(jsonLd, null, 2)}\n    </script>\n`;
   return html.replace('</head>', `${jsonLdScript}</head>`);
 }
 
-// 5. Main prerendering sequence
+// 4. Main prerendering sequence
 async function main() {
-  const port = 5050;
-  const server = await startServer(port);
   const translations = await loadTranslations();
   const tools = await getTools(translations);
 
   console.log(`Found ${tools.length} tools to prerender.`);
 
-  // Launch Playwright browser
-  const browser = await chromium.launch();
-  const context = await browser.newContext({
-    locale: 'zh-TW',
-    timezoneId: 'Asia/Taipei',
-  });
+  // Load the clean built index.html from dist
+  const templatePath = path.join(distDir, 'index.html');
+  if (!existsSync(templatePath)) {
+    console.error('Built index.html template not found in dist. Make sure to run vite build first.');
+    process.exit(1);
+  }
+  const htmlTemplate = await fs.readFile(templatePath, 'utf8');
 
-  // Keep a copy of the original clean index.html to avoid accumulating changes
-  const originalIndexHtml = await fs.readFile(path.join(distDir, 'index.html'), 'utf8');
+  // Pre-generate tools list HTML for crawlers
+  const globalToolsListHtml = tools
+    .map(t => `<li><a href="${t.path}">${t.title}</a> - ${t.description}</li>`)
+    .join('\n          ');
 
-  // Helper to ensure target directories exist
   const saveHtml = async (routePath, htmlContent) => {
     const relativeDir = routePath === '/' ? '' : routePath;
     const targetDir = path.join(distDir, relativeDir);
@@ -147,104 +95,120 @@ async function main() {
     await fs.writeFile(path.join(targetDir, 'index.html'), htmlContent, 'utf8');
   };
 
-  try {
-    const page = await context.newPage();
+  const processPage = (urlPath, title, description, jsonLd) => {
+    let html = htmlTemplate;
 
-    // -- A. Prerender Homepage (/) --
-    console.log('Prerendering Homepage...');
-    await page.goto(`http://localhost:${port}/`);
-    await page.waitForSelector('#app > *', { timeout: 10000 });
-    // Additional wait to ensure everything is mounted
-    await page.waitForTimeout(1000);
-    let homeHtml = await page.content();
-
-    // Inject structured data for homepage
-    const homeJsonLd = {
-      "@context": "https://schema.org",
-      "@graph": [
-        {
-          "@type": "WebSite",
-          "@id": "https://tool.david888.com/#website",
-          "url": "https://tool.david888.com/",
-          "name": "DAVID888 TOOL 工具箱",
-          "description": "整合文字處理、影音剪輯、格式轉換、生活密碼與日常辦公的綜合工具箱，無廣告、安全隱私、完全在瀏覽器端運行。",
-          "potentialAction": {
-            "@type": "SearchAction",
-            "target": "https://tool.david888.com/?search={search_term_string}",
-            "query-input": "required name=search_term_string"
-          }
-        },
-        {
-          "@type": "ItemList",
-          "name": "DAVID888 TOOL - 工具列表",
-          "numberOfItems": tools.length,
-          "itemListElement": tools.map((t, idx) => ({
-            "@type": "ListItem",
-            "position": idx + 1,
-            "url": `https://tool.david888.com${t.path}`,
-            "name": t.title,
-            "description": t.description
-          }))
-        }
-      ]
-    };
-    homeHtml = injectJsonLd(homeHtml, homeJsonLd);
-    await saveHtml('/', homeHtml);
-
-    // -- B. Prerender About page (/about) --
-    console.log('Prerendering About page...');
-    await page.goto(`http://localhost:${port}/about`);
-    await page.waitForSelector('#app > *', { timeout: 10000 });
-    await page.waitForTimeout(1000);
-    let aboutHtml = await page.content();
-
-    const aboutJsonLd = {
-      "@context": "https://schema.org",
-      "@type": "AboutPage",
-      "name": "關於 DAVID888 TOOL 工具箱",
-      "description": "DAVID888 TOOL 工具箱（Tool.David888.com）是一款整合文字處理、影音剪輯、格式轉換、生活密碼與日常辦公的綜合工具箱。預設繁體中文，無廣告，加載迅速，完全在瀏覽器端運行，安全隱私保護。",
-      "url": "https://tool.david888.com/about"
-    };
-    aboutHtml = injectJsonLd(aboutHtml, aboutJsonLd);
-    await saveHtml('/about', aboutHtml);
-
-    // -- C. Prerender individual Tool pages --
-    for (const tool of tools) {
-      console.log(`Prerendering tool: ${tool.title} (${tool.path})...`);
-      try {
-        await page.goto(`http://localhost:${port}${tool.path}`);
-        await page.waitForSelector('#app > *', { timeout: 10000 });
-        await page.waitForTimeout(1000);
-        let toolHtml = await page.content();
-
-        // Inject Structured Data (JSON-LD) for SoftwareApplication
-        const toolJsonLd = {
-          "@context": "https://schema.org",
-          "@type": "SoftwareApplication",
-          "name": tool.title,
-          "description": tool.description,
-          "applicationCategory": "DeveloperApplication",
-          "operatingSystem": "All",
-          "browserRequirements": "Requires HTML5 and modern web browser.",
-          "url": `https://tool.david888.com${tool.path}`,
-          "offers": {
-            "@type": "Offer",
-            "price": "0",
-            "priceCurrency": "USD"
-          }
-        };
-        toolHtml = injectJsonLd(toolHtml, toolJsonLd);
-        await saveHtml(tool.path, toolHtml);
-      } catch (err) {
-        console.error(`Failed to prerender tool ${tool.path}:`, err);
-      }
+    // A. Update title
+    if (urlPath !== '/') {
+      html = html.replace('<title>DAVID888 TOOL 工具箱</title>', `<title>${title} - DAVID888 TOOL 工具箱</title>`);
+      html = html.replace('<meta itemprop="name" content="DAVID888 TOOL 工具箱" />', `<meta itemprop="name" content="${title} - DAVID888 TOOL 工具箱" />`);
+      html = html.replace('<meta property="og:title" content="DAVID888 TOOL 工具箱" />', `<meta property="og:title" content="${title} - DAVID888 TOOL 工具箱" />`);
+      html = html.replace('<meta name="twitter:title" content="DAVID888 TOOL 工具箱" />', `<meta name="twitter:title" content="${title} - DAVID888 TOOL 工具箱" />`);
+      html = html.replace('<meta name="twitter:image:alt" content="DAVID888 TOOL 工具箱" />', `<meta name="twitter:image:alt" content="${title} - DAVID888 TOOL 工具箱" />`);
     }
 
-    console.log('Prerendering completed successfully!');
-  } finally {
-    await browser.close();
-    server.close();
+    // B. Update description (replaceAll occurrences of default description)
+    const defaultDesc = 'DAVID888 TOOL 工具箱 - 整合文字處理、影音剪輯、格式轉換、生活密碼與日常辦公的綜合工具箱，無廣告、安全隱私、完全在瀏覽器端運行。';
+    html = html.replaceAll(defaultDesc, description);
+
+    // C. Update canonical & og:url URLs
+    const canonicalUrl = urlPath === '/' ? 'https://tool.david888.com' : `https://tool.david888.com${urlPath}`;
+    html = html.replace('href="https://tool.david888.com"', `href="${canonicalUrl}"`);
+    html = html.replace('content="https://tool.david888.com/"', `content="${canonicalUrl}/"`);
+
+    // D. Inject JSON-LD
+    if (jsonLd) {
+      html = injectJsonLd(html, jsonLd);
+    }
+
+    // E. Inject crawler-friendly static list inside #app
+    const fallbackHtml = `
+    <div id="app">
+      <div style="padding: 20px; max-width: 800px; margin: 0 auto; font-family: sans-serif; line-height: 1.6;">
+        <h1>${title === 'DAVID888 TOOL 工具箱' ? title : title + ' - DAVID888 TOOL 工具箱'}</h1>
+        <p>${description}</p>
+        <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.15); margin: 20px 0;" />
+        <h3>DAVID888 TOOL - 熱門綜合工具列表</h3>
+        <ul>
+          ${globalToolsListHtml}
+        </ul>
+      </div>
+    </div>
+    `;
+    html = html.replace('<div id="app"></div>', fallbackHtml);
+
+    return html;
+  };
+
+  // -- 1. Process Homepage (/) --
+  console.log('Prerendering Homepage...');
+  const homeJsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://tool.david888.com/#website",
+        "url": "https://tool.david888.com/",
+        "name": "DAVID888 TOOL 工具箱",
+        "description": "整合文字處理、影音剪輯、格式轉換、生活密碼與日常辦公的綜合工具箱，無廣告、安全隱私、完全在瀏覽器端運行。",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://tool.david888.com/?search={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      },
+      {
+        "@type": "ItemList",
+        "name": "DAVID888 TOOL - 工具列表",
+        "numberOfItems": tools.length,
+        "itemListElement": tools.map((t, idx) => ({
+          "@type": "ListItem",
+          "position": idx + 1,
+          "url": `https://tool.david888.com${t.path}`,
+          "name": t.title,
+          "description": t.description
+        }))
+      }
+    ]
+  };
+  const homeHtml = processPage('/', 'DAVID888 TOOL 工具箱', '整合文字處理、影音剪輯、格式轉換、生活密碼與日常辦公的綜合工具箱，無廣告、安全隱私、完全在瀏覽器端運行。', homeJsonLd);
+  await saveHtml('/', homeHtml);
+
+  // -- 2. Process About Page (/about) --
+  console.log('Prerendering About page...');
+  const aboutJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "AboutPage",
+    "name": "關於 DAVID888 TOOL 工具箱",
+    "description": "DAVID888 TOOL 工具箱（Tool.David888.com）是一款整合文字處理、影音剪輯、格式轉換、生活密碼與日常辦公的綜合工具箱。預設繁體中文，無廣告，加載迅速，完全在瀏覽器端運行，安全隱私保護。",
+    "url": "https://tool.david888.com/about"
+  };
+  const aboutHtml = processPage('/about', '關於我們', 'DAVID888 TOOL 工具箱（Tool.David888.com）是一款整合文字處理、影音剪輯、格式轉換、生活密碼與日常辦公的綜合工具箱。預設繁體中文，無廣告，加載迅速，完全在瀏覽器端運行，安全隱私保護。', aboutJsonLd);
+  await saveHtml('/about', aboutHtml);
+
+  // -- 3. Process each Tool Page --
+  for (const tool of tools) {
+    console.log(`Prerendering tool: ${tool.title} (${tool.path})...`);
+    const toolJsonLd = {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": tool.title,
+      "description": tool.description,
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "All",
+      "browserRequirements": "Requires HTML5 and modern web browser.",
+      "url": `https://tool.david888.com${tool.path}`,
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      }
+    };
+    const toolHtml = processPage(tool.path, tool.title, tool.description, toolJsonLd);
+    await saveHtml(tool.path, toolHtml);
   }
+
+  console.log('Prerendering completed successfully using pure Node HTML rewriting!');
 }
 
 main().catch(console.error);
