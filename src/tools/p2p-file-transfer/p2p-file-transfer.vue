@@ -1,399 +1,638 @@
 <script setup lang="ts">
-import { ref, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, watch, nextTick, computed } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useClipboard } from '@vueuse/core';
-import { NProgress, NIcon, useMessage } from 'naive-ui';
-import { P2PService, type Role } from './p2p-file-transfer.service';
+import { useMessage, NIcon, NInput, NButton, NCard, NAlert, NTag, NTooltip, NProgress, NModal } from 'naive-ui';
+import Peer, { type DataConnection } from 'peerjs';
 import {
-  PublicOutlined as IconWorld,
-  AssignmentOutlined as IconClipboard,
-  CloudOutlined as IconCloud,
-  SendOutlined as IconSend,
+  LaptopMacOutlined as IconLaptop,
+  SmartphoneOutlined as IconPhone,
+  UploadFileOutlined as IconUpload,
   DownloadOutlined as IconDownload,
-  PlayArrowOutlined as IconPlay,
-  UploadFileOutlined as IconUploadFile,
-  CloseOutlined as IconClose
+  ArrowBackOutlined as IconBack,
+  CasinoOutlined as IconDice,
+  CheckCircleOutlined as IconCheck,
+  ContentCopyOutlined as IconCopy,
+  CloudUploadOutlined as IconCloudUpload,
+  PeopleOutlined as IconPeople,
+  PublicOutlined as IconWorld
 } from '@vicons/material';
+import { useStyleStore } from '@/stores/style.store';
+import { kanagawaDarkPalette, kanagawaLightPalette } from '@/theme/palette';
 
-const connectionMode = ref<'peerjs' | 'manual'>('peerjs');
-const role = ref<Role>('sender');
-const isRoomCreated = ref(false);
+// Types
+type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'error';
+type TransferState = 'idle' | 'waiting-consent' | 'transferring' | 'complete';
 
-const selectedFile = ref<File | null>(null);
-const transferProgress = ref(0);
-
-const p2pService = new P2PService(ref);
-const { state, peerId, remotePeerId } = p2pService;
-
+// State
+const myDeviceName = ref('');
+const partnerDeviceName = ref('');
+const peerId = ref('');
 const targetPeerId = ref('');
-const manualOffer = ref('');
-const manualAnswer = ref('');
+const connectionState = ref<ConnectionState>('disconnected');
+const role = ref<'sender' | 'receiver'>('sender');
 
-const CHUNK_SIZE = 64 * 1024;
-const MAX_BUFFER = 16 * 1024 * 1024;
+const peer = ref<Peer | null>(null);
+const connection = ref<DataConnection | null>(null);
 
-let currentFileOffset = 0;
-let fileReader: FileReader | null = null;
+const route = useRoute();
+const router = useRouter();
+const toast = useMessage();
+const styleStore = useStyleStore();
+
+// File Transfer States
+const transferState = ref<TransferState>('idle');
+const fileInput = ref<HTMLInputElement | null>(null);
+const activeFile = ref<File | null>(null);
+
+// Transfer progress variables
+const transferProgress = ref(0);
+const expectedFileName = ref('');
+const expectedFileSize = ref(0);
+const expectedFileType = ref('');
+const receivedSize = ref(0);
 let receivedChunks: ArrayBuffer[] = [];
-let incomingFileMetadata: { name: string, size: number, type: string } | null = null;
-let receivedSize = 0;
 
-p2pService.onFileMetadata = (metadata) => {
-  incomingFileMetadata = metadata;
-  receivedChunks = [];
-  receivedSize = 0;
-  transferProgress.value = 0;
-};
+// Chunk Sizing Constants
+const CHUNK_SIZE = 16384; // 16 KB
+const MAX_BUFFER = 65536; // 64 KB
+let currentChunkIndex = 0;
 
-p2pService.onDataReceived = (data: ArrayBuffer) => {
-  if (!incomingFileMetadata) return;
-  receivedChunks.push(data);
-  receivedSize += data.byteLength;
-  transferProgress.value = Math.round((receivedSize / incomingFileMetadata.size) * 100);
-};
+// Random Device Name Generator
+function getRandomDeviceName() {
+  const isZh = route.name?.toString().includes('zh') || navigator.language.startsWith('zh');
+  if (isZh) {
+    const adjs = ['金黃的', '香甜的', '圓滾滾的', '脆脆的', '水嫩的', '成熟的', '幸運的', '快樂的', '呆萌的', '淘氣的', '蓬鬆的', '香濃的'];
+    const nouns = ['芒果', '蘋果', '草莓', '西瓜', '水蜜桃', '鳳梨', '香蕉', '藍莓', '櫻桃', '葡萄', '荔枝', '哈密瓜', '紅豆', '玉米'];
+    return adjs[Math.floor(Math.random() * adjs.length)] + nouns[Math.floor(Math.random() * nouns.length)] + ' 的裝置';
+  } else {
+    const adjs = ['Golden', 'Sweet', 'Round', 'Crispy', 'Juicy', 'Ripe', 'Lucky', 'Happy', 'Cute', 'Playful', 'Fluffy', 'Creamy'];
+    const nouns = ['Mango', 'Apple', 'Strawberry', 'Watermelon', 'Peach', 'Pineapple', 'Banana', 'Blueberry', 'Cherry', 'Grape', 'Lychee', 'Melon', 'Corn', 'Berry'];
+    return adjs[Math.floor(Math.random() * adjs.length)] + ' ' + nouns[Math.floor(Math.random() * nouns.length)] + ' Device';
+  }
+}
 
-p2pService.onTransferComplete = () => {
-  if (!incomingFileMetadata) return;
-  const blob = new Blob(receivedChunks, { type: incomingFileMetadata.type });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = incomingFileMetadata.name;
-  a.click();
-  URL.revokeObjectURL(url);
-  transferProgress.value = 100;
-};
+function randomizeName() {
+  myDeviceName.value = getRandomDeviceName();
+}
 
-async function sendFile() {
-  if (!selectedFile.value || state.value !== 'connected') return;
+// Theme Sizing Computed Properties
+const activePalette = computed(() => (styleStore.isDarkTheme ? kanagawaDarkPalette : kanagawaLightPalette));
 
-  const file = selectedFile.value;
-  p2pService.sendData({
-    type: 'metadata',
-    metadata: {
-      name: file.name,
-      size: file.size,
-      type: file.type,
+const bentoCardStyle = computed(() => {
+  const opacity = styleStore.isDarkTheme ? styleStore.cardOpacity : Math.max(styleStore.cardOpacity, 0.9);
+  const border = activePalette.value.overlayBorder;
+  const text = activePalette.value.text;
+  return {
+    backgroundColor: `rgba(${activePalette.value.glassBackgroundRgb}, ${opacity})`,
+    border: `1px solid ${border}`,
+    color: text,
+  };
+});
+
+// Device Icon Type (Determines Laptop vs Mobile)
+const isMobileDevice = computed(() => {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+});
+
+// Clipboard Helpers
+const shareUrl = computed(() => {
+  if (!peerId.value) return '';
+  return `${window.location.origin}${route.path}?connect=${peerId.value}`;
+});
+const { copy: copyShareUrl, copied: copiedShareUrl } = useClipboard({ source: shareUrl });
+
+// PeerJS Initialization
+function initPeer() {
+  connectionState.value = 'connecting';
+  peer.value = new Peer();
+
+  peer.value.on('open', (id) => {
+    peerId.value = id;
+    connectionState.value = 'disconnected'; // Ready to accept connections
+    
+    // Auto-connect if connect parameter is present
+    if (route.query.connect) {
+      targetPeerId.value = String(route.query.connect);
+      connectToPartner();
     }
   });
 
-  currentFileOffset = 0;
-  transferProgress.value = 0;
-  fileReader = new FileReader();
+  peer.value.on('connection', (conn) => {
+    // Accept incoming connection
+    if (connection.value) {
+      connection.value.close();
+    }
+    role.value = 'receiver';
+    setupConnection(conn);
+  });
 
-  fileReader.onload = (e) => {
-    if (e.target && e.target.result) {
-      p2pService.sendData(e.target.result);
-      currentFileOffset += (e.target.result as ArrayBuffer).byteLength;
-      transferProgress.value = Math.round((currentFileOffset / file.size) * 100);
-      readNextChunk(file);
+  peer.value.on('error', (err) => {
+    console.error('Peer error:', err);
+    connectionState.value = 'error';
+    toast.error('信令伺服器錯誤：' + err.message);
+  });
+}
+
+function connectToPartner() {
+  if (!targetPeerId.value) return;
+  if (!peer.value) return;
+
+  role.value = 'sender';
+  connectionState.value = 'connecting';
+  const conn = peer.value.connect(targetPeerId.value);
+  setupConnection(conn);
+}
+
+function setupConnection(conn: DataConnection) {
+  connection.value = conn;
+
+  conn.on('open', () => {
+    connectionState.value = 'connected';
+    targetPeerId.value = conn.peer;
+    
+    // Send initial handshake exchange
+    conn.send({
+      type: 'handshake',
+      name: myDeviceName.value
+    });
+  });
+
+  conn.on('data', (data: any) => {
+    // 1. Handle Handshake
+    if (data && data.type === 'handshake') {
+      partnerDeviceName.value = data.name;
+      if (role.value === 'receiver') {
+        // Reply with our handshake
+        conn.send({
+          type: 'handshake',
+          name: myDeviceName.value
+        });
+      }
+      toast.success(`已成功連線至 ${partnerDeviceName.value}！`);
+      return;
+    }
+
+    // 2. Handle File Consent Request (Receiver Side)
+    if (data && data.type === 'file-request') {
+      expectedFileName.value = data.name;
+      expectedFileSize.value = data.size;
+      expectedFileType.value = data.mimeType;
+      receivedSize.value = 0;
+      receivedChunks = [];
+      
+      transferState.value = 'waiting-consent';
+      return;
+    }
+
+    // 3. Handle File Consent Response (Sender Side)
+    if (data && data.type === 'file-response') {
+      if (data.accepted) {
+        toast.info('對方已同意接收，開始傳送檔案...');
+        transferState.value = 'transferring';
+        currentChunkIndex = 0;
+        sendNextChunk();
+      } else {
+        toast.warning('對方拒絕接收此檔案。');
+        transferState.value = 'idle';
+        activeFile.value = null;
+      }
+      return;
+    }
+
+    // 4. Handle Completion
+    if (data && data.type === 'transfer-complete') {
+      saveReceivedFile();
+      return;
+    }
+
+    // 5. Handle raw chunk data (Binary transfer)
+    if (data instanceof ArrayBuffer || data instanceof Uint8Array) {
+      const buffer = data instanceof Uint8Array ? data.buffer : data;
+      receivedChunks.push(buffer);
+      receivedSize.value += buffer.byteLength;
+      
+      // Calculate progress
+      transferProgress.value = Math.floor((receivedSize.value / expectedFileSize.value) * 100);
+      return;
+    }
+  });
+
+  conn.on('close', () => {
+    toast.info('連線已中斷');
+    resetAll();
+  });
+
+  conn.on('error', (err) => {
+    console.error('Conn error:', err);
+    toast.error('傳輸錯誤：' + err.message);
+    resetAll();
+  });
+}
+
+// File Chunk Sender logic
+function sendNextChunk() {
+  if (!connection.value || !activeFile.value || transferState.value !== 'transferring') return;
+
+  // Check buffer limit to prevent packet loss
+  if (connection.value.dataChannel && connection.value.dataChannel.bufferedAmount > MAX_BUFFER) {
+    setTimeout(sendNextChunk, 30);
+    return;
+  }
+
+  const start = currentChunkIndex * CHUNK_SIZE;
+  const end = Math.min(activeFile.value.size, start + CHUNK_SIZE);
+  const slice = activeFile.value.slice(start, end);
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    if (e.target?.result && connection.value) {
+      connection.value.send(e.target.result);
+      currentChunkIndex++;
+      
+      // Update progress
+      transferProgress.value = Math.floor((end / activeFile.value.size) * 100);
+
+      if (end < activeFile.value.size) {
+        sendNextChunk();
+      } else {
+        // Done
+        connection.value.send({ type: 'transfer-complete' });
+        toast.success('檔案傳送完成！');
+        transferState.value = 'complete';
+        setTimeout(() => {
+          transferState.value = 'idle';
+          activeFile.value = null;
+        }, 1500);
+      }
     }
   };
-
-  readNextChunk(file);
+  reader.readAsArrayBuffer(slice);
 }
 
-function readNextChunk(file: File) {
-  if (currentFileOffset >= file.size) {
-    p2pService.sendData({ type: 'complete' });
+// Consent Handlers
+function acceptFileRequest() {
+  if (!connection.value) return;
+  
+  connection.value.send({
+    type: 'file-response',
+    accepted: true
+  });
+  
+  transferState.value = 'transferring';
+  transferProgress.value = 0;
+}
+
+function declineFileRequest() {
+  if (!connection.value) return;
+
+  connection.value.send({
+    type: 'file-response',
+    accepted: false
+  });
+
+  transferState.value = 'idle';
+}
+
+// Assemble chunks and download
+function saveReceivedFile() {
+  const blob = new Blob(receivedChunks, { type: expectedFileType.value });
+  const url = URL.createObjectURL(blob);
+  
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = expectedFileName.value;
+  a.click();
+  
+  URL.revokeObjectURL(url);
+  toast.success('檔案接收並下載完成！');
+  transferState.value = 'complete';
+  
+  setTimeout(() => {
+    transferState.value = 'idle';
+  }, 1500);
+}
+
+// Drag & Drop / File Select Helpers
+function triggerFileSelect() {
+  fileInput.value?.click();
+}
+
+function handleFileSelection(e: Event) {
+  const target = e.target as HTMLInputElement;
+  if (!target.files || target.files.length === 0) return;
+  initiateFileSend(target.files[0]);
+}
+
+function handleFileDrop(e: DragEvent) {
+  e.preventDefault();
+  if (connectionState.value !== 'connected') {
+    toast.warning('請先連線裝置再傳送檔案');
     return;
   }
+  if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+    initiateFileSend(e.dataTransfer.files[0]);
+  }
+}
 
-  if (p2pService.bufferedAmount > MAX_BUFFER) {
-    setTimeout(() => readNextChunk(file), 50);
+function initiateFileSend(file: File) {
+  if (!connection.value || connectionState.value !== 'connected') {
+    toast.warning('尚未建立連線');
     return;
   }
+  
+  activeFile.value = file;
+  expectedFileName.value = file.name;
+  expectedFileSize.value = file.size;
+  transferProgress.value = 0;
+  
+  transferState.value = 'waiting-consent';
 
-  const chunk = file.slice(currentFileOffset, currentFileOffset + CHUNK_SIZE);
-  fileReader?.readAsArrayBuffer(chunk);
+  // Request consent
+  connection.value.send({
+    type: 'file-request',
+    name: file.name,
+    size: file.size,
+    mimeType: file.type
+  });
 }
 
-function startConnection() {
-  isRoomCreated.value = true;
-  p2pService.destroy();
-  if (connectionMode.value === 'peerjs') {
-    p2pService.initPeerJS(role.value);
-  } else {
-    p2pService.initManual(role.value);
+// Helpers
+function formatBytes(bytes: number, decimals = 2) {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
+function resetAll() {
+  if (connection.value) {
+    connection.value.close();
   }
+  if (peer.value) {
+    peer.value.destroy();
+    peer.value = null;
+  }
+  peerId.value = '';
+  connectionState.value = 'disconnected';
+  transferState.value = 'idle';
+  activeFile.value = null;
+  partnerDeviceName.value = '';
+  
+  if (route.query.connect) {
+    router.replace({ query: {} });
+  }
+  
+  // Re-init so the device is ready to listen again
+  initPeer();
 }
 
-function resetConnection() {
-  isRoomCreated.value = false;
-  p2pService.destroy();
-}
-
-onUnmounted(() => {
-  p2pService.destroy();
+onMounted(() => {
+  randomizeName();
+  initPeer();
 });
 
-const { copy } = useClipboard();
-const message = useMessage();
-
-function copyPeerId() {
-  if (peerId.value) {
-    copy(peerId.value);
-    message.success('已複製房間代碼！');
-  }
-}
-
-function handleFileUpload(file: File) {
-  selectedFile.value = file;
-}
-
-function connectPeerJS() {
-  if (targetPeerId.value) {
-    p2pService.connectToPeer(targetPeerId.value);
-  }
-}
-
-async function generateManualOffer() {
-  try {
-    manualOffer.value = await p2pService.createOffer();
-  } catch (err) {
-    console.error(err);
-  }
-}
-
-async function acceptManualOffer() {
-  try {
-    if (manualOffer.value) {
-      manualAnswer.value = await p2pService.acceptOfferAndCreateAnswer(manualOffer.value);
-    }
-  } catch (err) {
-    console.error(err);
-  }
-}
-
-async function acceptManualAnswer() {
-  try {
-    if (manualAnswer.value) {
-      await p2pService.acceptAnswer(manualAnswer.value);
-    }
-  } catch (err) {
-    console.error(err);
-  }
-}
-
+onUnmounted(() => {
+  if (connection.value) connection.value.close();
+  if (peer.value) peer.value.destroy();
+});
 </script>
 
 <template>
-  <div class="p2p-wrapper w-full flex justify-center">
-    <!-- Configuration Step -->
-    <c-card v-if="!isRoomCreated" class="setup-card w-full max-w-2xl !p-6 md:!p-10">
-      <div class="mb-8">
-        <h3 class="font-bold mb-4 text-base" style="color: var(--text-color-1)">請選擇連線方式</h3>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+  <div class="p2p-transfer-wrapper w-full flex justify-center">
+    <div class="w-full max-w-2xl flex flex-col gap-6">
+
+      <!-- Device Configuration Card -->
+      <n-card :bordered="false" size="large" :style="bentoCardStyle" class="bento-card !p-2 md:!p-4">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           
-          <div 
-            class="mode-card"
-            :class="{ 'active': connectionMode === 'peerjs' }"
-            @click="connectionMode = 'peerjs'"
-          >
-            <n-icon size="32" class="mb-3"><IconWorld /></n-icon>
-            <div class="font-bold mb-1">PeerJS (簡單)</div>
-            <div class="text-xs" style="color: var(--text-color-3)">分享房間代碼，自動完成 WebRTC 信令</div>
-          </div>
-
-          <div 
-            class="mode-card"
-            :class="{ 'active': connectionMode === 'manual' }"
-            @click="connectionMode = 'manual'"
-          >
-            <n-icon size="32" class="mb-3"><IconClipboard /></n-icon>
-            <div class="font-bold mb-1">手動信令</div>
-            <div class="text-xs" style="color: var(--text-color-3)">手動交換 SDP，完全不依賴中介伺服器</div>
-          </div>
-
-          <div class="mode-card disabled border-dashed relative" style="opacity: 0.5;">
-            <div class="absolute top-2 right-2 text-[10px] px-2 py-1 rounded" style="background-color: var(--action-color); color: var(--text-color-2)">即將推出</div>
-            <n-icon size="32" class="mb-3"><IconCloud /></n-icon>
-            <div class="font-bold mb-1">Firebase</div>
-            <div class="text-xs" style="color: var(--text-color-3)">透過 Firebase 自動信令</div>
-          </div>
-
-        </div>
-      </div>
-
-      <div class="mb-8">
-        <h3 class="font-bold mb-4 text-base" style="color: var(--text-color-1)">請選擇您的角色</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          
-          <div 
-            class="mode-card"
-            :class="{ 'active': role === 'sender' }"
-            @click="role = 'sender'"
-          >
-            <n-icon size="32" class="mb-3"><IconSend /></n-icon>
-            <div class="font-bold mb-1">傳送端</div>
-            <div class="text-xs" style="color: var(--text-color-3)">選擇並傳送檔案</div>
-          </div>
-
-          <div 
-            class="mode-card"
-            :class="{ 'active': role === 'receiver' }"
-            @click="role = 'receiver'"
-          >
-            <n-icon size="32" class="mb-3"><IconDownload /></n-icon>
-            <div class="font-bold mb-1">接收端</div>
-            <div class="text-xs" style="color: var(--text-color-3)">等待並下載檔案</div>
-          </div>
-
-        </div>
-      </div>
-
-      <c-button type="primary" size="large" class="w-full text-lg h-14 font-bold tracking-widest" @click="startConnection">
-        <template #icon><n-icon><IconPlay /></n-icon></template>
-        建立房間
-      </c-button>
-    </c-card>
-
-    <!-- Active Room Step -->
-    <c-card v-else class="active-room-card w-full max-w-4xl !p-6 md:!p-10">
-      <div class="flex justify-between items-center mb-6 border-b pb-4" style="border-color: var(--divider-color)">
-        <div class="flex items-center gap-2">
-          <div class="w-3 h-3 rounded-full" :class="{
-            'bg-gray-400': state === 'disconnected',
-            'bg-yellow-500': state === 'connecting',
-            'bg-green-500': state === 'connected',
-            'bg-red-500': state === 'error'
-          }"></div>
-          <div class="font-bold text-sm" :style="{ color: state === 'connected' ? 'var(--success-color)' : 'var(--text-color-1)' }">
-            {{ state === 'connected' ? '已連線 (端對端加密)' : `狀態: ${state.toUpperCase()}` }}
-          </div>
-        </div>
-        <div class="cursor-pointer text-xs transition flex items-center gap-1 hover:opacity-80" style="color: var(--text-color-3)" @click="resetConnection">
-          <n-icon><IconClose /></n-icon> 中斷連線
-        </div>
-      </div>
-
-      <div v-if="state !== 'connected'" class="flex flex-col gap-6">
-        <div class="p-4 rounded-xl text-center font-mono font-bold tracking-widest border" style="background-color: var(--warning-color-faded); color: var(--warning-color); border-color: var(--warning-color-pressed)">
-          Status: CONNECTING
-        </div>
-
-        <!-- PeerJS Signaling -->
-        <div v-if="connectionMode === 'peerjs'" class="mt-2">
-          <div v-if="role === 'sender'" class="p-8 rounded-xl text-center border" style="background-color: var(--action-color); border-color: var(--divider-color)">
-            <div class="text-sm mb-4" style="color: var(--text-color-2)">請將以下代碼分享給接收端</div>
-            <div class="flex items-center justify-center gap-4">
-              <div class="text-3xl md:text-4xl font-mono font-bold select-all tracking-wider" style="color: var(--primary-color)">{{ peerId || '生成中...' }}</div>
-              <c-button v-if="peerId" @click="copyPeerId" size="small" type="primary" secondary>
-                複製
-              </c-button>
+          <!-- Name Display -->
+          <div class="flex flex-col">
+            <span class="text-[10px] uppercase font-bold opacity-60 tracking-wider">您的本機名稱</span>
+            <div class="flex gap-2 items-center mt-1">
+              <span class="text-lg font-bold text-emerald-500">{{ myDeviceName }}</span>
+              <n-tooltip trigger="hover">
+                <template #trigger>
+                  <n-button circle secondary size="small" @click="randomizeName" :disabled="connectionState === 'connected'">
+                    <template #icon><n-icon :component="IconDice" /></template>
+                  </n-button>
+                </template>
+                更換隨機名稱 🎲
+              </n-tooltip>
             </div>
+            <span class="text-[11px] opacity-75 mt-1 flex items-center gap-1">
+              <span class="w-2 h-2 rounded-full" :class="connectionState === 'connected' ? 'bg-emerald-500' : 'bg-amber-500'" />
+              狀態：{{ connectionState === 'connected' ? '已連接好友裝置' : '等待連線中' }}
+            </span>
           </div>
-          <div v-if="role === 'receiver'" class="flex flex-col gap-3">
-            <c-label label="輸入傳送端的房間代碼"></c-label>
+
+          <!-- Share Link Action -->
+          <div class="w-full md:w-auto flex flex-col gap-2">
+            <span class="text-[10px] uppercase font-bold opacity-60 tracking-wider">一鍵分享連結給好友</span>
             <div class="flex gap-2">
-              <c-input-text v-model:value="targetPeerId" placeholder="例如: 123-abc-456" class="flex-1 text-lg font-mono" />
-              <c-button type="primary" size="large" @click="connectPeerJS">連線</c-button>
+              <n-input :value="shareUrl" readonly size="small" placeholder="產生中..." class="w-full md:w-48" />
+              <n-tooltip trigger="hover">
+                <template #trigger>
+                  <n-button size="small" type="primary" secondary @click="() => copyShareUrl()">
+                    <n-icon :component="copiedShareUrl ? IconCheck : IconCopy" />
+                  </n-button>
+                </template>
+                {{ copiedShareUrl ? '已複製！' : '複製邀請網址' }}
+              </n-tooltip>
             </div>
           </div>
+
+        </div>
+      </n-card>
+
+      <!-- Drag & Drop upload & Devices list -->
+      <div 
+        class="border-2 border-dashed rounded-3xl p-8 flex flex-col items-center justify-center min-h-[350px] transition relative overflow-hidden group"
+        :style="{
+          borderColor: connectionState === 'connected' ? 'var(--primary-color)' : 'rgba(255,255,255,0.12)',
+          backgroundColor: connectionState === 'connected' ? 'rgba(16,185,129,0.04)' : 'rgba(255,255,255,0.01)'
+        }"
+        @dragover.prevent
+        @drop="handleFileDrop"
+      >
+        <input 
+          ref="fileInput"
+          type="file" 
+          class="hidden" 
+          @change="handleFileSelection"
+        />
+
+        <!-- CASE 1: No devices connected (Show pulsing radar / waiting indicator) -->
+        <div v-if="connectionState !== 'connected'" class="text-center flex flex-col items-center gap-4 py-8">
+          <div class="w-20 h-20 rounded-full bg-emerald-500 flex items-center justify-center pulse-circle text-white mb-2">
+            <n-icon size="40" :component="isMobileDevice ? IconPhone : IconLaptop" />
+          </div>
+          <h3 class="text-lg font-bold">正在等待其它裝置加入...</h3>
+          <p class="text-xs opacity-75 max-w-sm leading-relaxed px-4">
+            請將上方的邀請網址傳送給另一部裝置（例如手機或同事的電腦），對方點擊後即可自動在此互相看見並開始傳檔。
+          </p>
         </div>
 
-        <!-- Manual Signaling -->
-        <div v-if="connectionMode === 'manual'">
-          <div v-if="role === 'sender'" class="flex flex-col gap-4">
-            <c-button type="primary" @click="generateManualOffer" class="w-full">1. 產生邀請碼 (Offer)</c-button>
-            <c-label label="您的邀請碼 (複製給接收端)"></c-label>
-            <c-input-text v-model:value="manualOffer" multiline rows="3" readonly class="font-mono text-xs" />
-            <c-label label="接收端的回條 (貼上至此)"></c-label>
-            <c-input-text v-model:value="manualAnswer" multiline rows="3" class="font-mono text-xs" />
-            <c-button type="primary" @click="acceptManualAnswer" class="w-full">2. 確認連線</c-button>
+        <!-- CASE 2: Device Connected (Show Snapdrop device node) -->
+        <div v-else class="flex flex-col items-center justify-center gap-6 py-6 w-full">
+          
+          <div 
+            class="flex flex-col items-center justify-center cursor-pointer transition-transform duration-300 hover:scale-105"
+            @click="triggerFileSelect"
+          >
+            <!-- Device Node Icon -->
+            <div class="w-28 h-28 rounded-full border-4 border-emerald-500 bg-black/10 dark:bg-black/30 flex items-center justify-center shadow-lg relative group-hover:border-emerald-400 transition-colors">
+              <n-icon size="56" :component="isMobileDevice ? IconPhone : IconLaptop" class="text-emerald-500 group-hover:text-emerald-400" />
+              <!-- Upload badge -->
+              <div class="absolute -bottom-2 bg-emerald-500 text-white rounded-full p-1.5 shadow-md flex items-center justify-center">
+                <n-icon size="18" :component="IconCloudUpload" />
+              </div>
+            </div>
+            
+            <span class="text-base font-bold mt-4" style="color: var(--heading)">{{ partnerDeviceName || '好友裝置' }}</span>
+            <span class="text-xs opacity-70 mt-1">點擊裝置發送檔案，或直接將檔案拖曳至此</span>
           </div>
 
-          <div v-if="role === 'receiver'" class="flex flex-col gap-4">
-            <c-label label="傳送端的邀請碼 (貼上至此)"></c-label>
-            <c-input-text v-model:value="manualOffer" multiline rows="3" class="font-mono text-xs" />
-            <c-button type="primary" @click="acceptManualOffer" class="w-full">1. 接受邀請並產生回條</c-button>
-            <c-label label="您的回條 (複製給傳送端)"></c-label>
-            <c-input-text v-model:value="manualAnswer" multiline rows="3" readonly class="font-mono text-xs" />
+          <div class="mt-4 pt-4 border-t border-gray-200/10 w-full max-w-xs flex justify-center">
+            <n-button size="small" type="error" ghost @click="resetAll">
+              <template #icon><n-icon :component="IconBack" /></template>
+              中斷連線
+            </n-button>
           </div>
+
         </div>
+
       </div>
 
-      <!-- File Transfer UI -->
-      <template v-if="state === 'connected'">
-        
-        <div v-if="role === 'sender'" class="mt-4">
-          <div class="border-2 border-dashed rounded-2xl p-12 flex flex-col items-center justify-center text-center transition relative overflow-hidden group" style="border-color: var(--primary-color); background-color: var(--primary-color-faded)">
-            <c-file-upload v-if="!selectedFile" @file-upload="handleFileUpload" class="absolute inset-0 w-full h-full opacity-0 z-10 cursor-pointer" />
-            
-            <!-- Hover effect overlay -->
-            <div class="absolute inset-0 bg-[var(--primary-color)] opacity-0 group-hover:opacity-10 transition-opacity duration-300 pointer-events-none"></div>
+    </div>
 
-            <n-icon size="42" class="mb-3" style="color: var(--primary-color)"><IconUploadFile /></n-icon>
-            <div class="font-bold tracking-wider" style="color: var(--primary-color)">點擊或拖曳檔案至此</div>
-            
-            <div v-if="selectedFile" class="absolute inset-0 rounded-2xl flex flex-col items-center justify-center z-20" style="background-color: var(--card-color)">
-               <div class="font-bold text-lg truncate max-w-sm" style="color: var(--text-color-1)">{{ selectedFile.name }}</div>
-               <div class="text-sm mt-1 mb-4" style="color: var(--text-color-3)">{{ (selectedFile.size / 1024 / 1024).toFixed(2) }} MB</div>
-               <c-button size="small" type="danger" @click="selectedFile = null; transferProgress = 0" class="!absolute top-4 right-4">移除</c-button>
+    <!-- 4. MODALS & POPUPS FOR FILE TRANSFERS -->
+    
+    <!-- Consent Popup: Receive Side -->
+    <n-modal :show="transferState === 'waiting-consent' && role === 'receiver'" transform-origin="center">
+      <n-card
+        style="width: 380px"
+        title="收到檔案傳送請求"
+        :bordered="false"
+        size="medium"
+        role="dialog"
+        aria-modal="true"
+        :style="bentoCardStyle"
+      >
+        <div class="flex flex-col gap-3 py-2">
+          <p class="text-sm">
+            來自 <span class="font-bold text-emerald-500">「{{ partnerDeviceName }}」</span> 的檔案傳送請求：
+          </p>
+          <div class="bg-black/10 dark:bg-black/30 p-3 rounded-xl flex items-center gap-3">
+            <n-icon size="32" :component="IconUpload" class="text-emerald-500" />
+            <div class="flex-1 min-w-0">
+              <div class="truncate font-bold text-sm">{{ expectedFileName }}</div>
+              <div class="text-xs opacity-75">{{ formatBytes(expectedFileSize) }}</div>
             </div>
           </div>
-          <c-button v-if="selectedFile" type="primary" class="w-full mt-6 h-12 text-lg font-bold tracking-wider" @click="sendFile">
-            <template #icon><n-icon><IconPlay /></n-icon></template>
-            傳送檔案
-          </c-button>
-        </div>
-
-        <div v-if="role === 'receiver'" class="mt-4">
-          <div class="border-2 border-dashed rounded-2xl p-16 flex flex-col items-center justify-center text-center" style="border-color: var(--success-color); background-color: var(--success-color-faded)">
-            <n-icon size="56" class="mb-4" style="color: var(--success-color)"><IconDownload /></n-icon>
-            <div class="text-2xl font-bold" style="color: var(--text-color-1)">等待接收檔案...</div>
-            <div class="text-sm mt-2" style="color: var(--text-color-3)">連線已就緒，請傳送端選擇檔案並發送。</div>
+          <p class="text-xs opacity-70 mt-1 leading-normal">
+            點擊「同意」將使用點對點安全直連建立傳輸，傳送完成後會自動儲存至您的下載資料夾。
+          </p>
+          <div class="flex gap-3 mt-4">
+            <n-button block type="primary" @click="acceptFileRequest">同意接收</n-button>
+            <n-button block ghost type="error" @click="declineFileRequest">拒絕</n-button>
           </div>
         </div>
+      </n-card>
+    </n-modal>
 
-        <div v-if="transferProgress > 0" class="mt-8">
-          <c-label label="傳輸進度">
-            <div class="flex justify-between text-xs font-mono mb-1" style="color: var(--text-color-2)">
-              <span>Transferring...</span>
+    <!-- Consent Loading: Sender Side -->
+    <n-modal :show="transferState === 'waiting-consent' && role === 'sender'" transform-origin="center">
+      <n-card
+        style="width: 320px"
+        :bordered="false"
+        size="medium"
+        role="dialog"
+        aria-modal="true"
+        :style="bentoCardStyle"
+        class="text-center"
+      >
+        <div class="flex flex-col items-center gap-4 py-4">
+          <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-500"></div>
+          <h4 class="font-bold text-base">等待對方確認...</h4>
+          <p class="text-xs opacity-75 leading-relaxed">
+            正在向「{{ partnerDeviceName }}」發送傳送要求，請等待對方點擊接受。
+          </p>
+          <div class="bg-black/10 dark:bg-black/30 p-2.5 rounded-lg text-xs w-full truncate font-medium mt-2">
+            {{ expectedFileName }} ({{ formatBytes(expectedFileSize) }})
+          </div>
+        </div>
+      </n-card>
+    </n-modal>
+
+    <!-- Transferring Progress Modal (Both Sides) -->
+    <n-modal :show="transferState === 'transferring'" :closable="false" mask-closable="false" transform-origin="center">
+      <n-card
+        style="width: 360px"
+        :bordered="false"
+        size="medium"
+        role="dialog"
+        aria-modal="true"
+        :style="bentoCardStyle"
+      >
+        <div class="flex flex-col gap-4 py-2">
+          <h4 class="font-bold text-base text-center">
+            {{ role === 'sender' ? '正在傳送檔案...' : '正在接收檔案...' }}
+          </h4>
+          <div class="bg-black/10 dark:bg-black/30 p-3 rounded-xl flex items-center gap-3">
+            <n-icon size="32" :component="role === 'sender' ? IconUpload : IconDownload" class="text-emerald-500" />
+            <div class="flex-1 min-w-0">
+              <div class="truncate font-bold text-sm">{{ expectedFileName }}</div>
+              <div class="text-xs opacity-75">
+                {{ role === 'sender' ? '傳送進度：' : '接收進度：' }}{{ formatBytes(receivedSize || (transferProgress * expectedFileSize) / 100) }} / {{ formatBytes(expectedFileSize) }}
+              </div>
+            </div>
+          </div>
+          
+          <div class="flex flex-col gap-1 mt-2">
+            <div class="flex justify-between text-xs font-mono opacity-85">
               <span>{{ transferProgress }}%</span>
+              <span>{{ transferProgress === 100 ? '組裝檔案中...' : '直連傳輸中' }}</span>
             </div>
-            <n-progress type="line" :percentage="transferProgress" :show-indicator="false" :height="8" />
-          </c-label>
+            <n-progress type="line" :percentage="transferProgress" :show-indicator="false" status="success" :height="10" />
+          </div>
         </div>
-      </template>
-    </c-card>
+      </n-card>
+    </n-modal>
+
   </div>
 </template>
 
-<style lang="less" scoped>
-.setup-card, .active-room-card {
-  border-radius: 20px;
+<style scoped lang="less">
+.p2p-transfer-wrapper {
+  margin: 0 auto;
+  flex: 1 1 100% !important;
+  max-width: 100% !important;
 }
 
-.mode-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 1.5rem;
-  border: 2px solid var(--border-color);
-  border-radius: 0.75rem;
-  cursor: pointer;
-  transition: all 0.2s ease-in-out;
-  text-align: center;
-  background-color: transparent;
+.bento-card {
+  border-radius: 20px;
+  transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+}
 
-  &:hover:not(.disabled) {
-    border-color: var(--primary-color-hover);
-    transform: translateY(-2px);
+@keyframes pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
   }
-
-  &.active {
-    border-color: var(--primary-color);
-    background-color: var(--action-color-hover);
-    color: var(--primary-color);
-
-    .font-bold {
-      color: var(--primary-color);
-    }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 16px rgba(16, 185, 129, 0);
   }
-
-  &.disabled {
-    cursor: not-allowed;
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
   }
+}
+
+.pulse-circle {
+  animation: pulse 2s infinite;
 }
 </style>
