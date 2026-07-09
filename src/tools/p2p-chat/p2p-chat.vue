@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted, watch, nextTick, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useClipboard } from '@vueuse/core';
 import { useMessage, NIcon, NInput, NButton, NCard, NAlert, NTag, NTooltip } from 'naive-ui';
+import { useI18n } from 'vue-i18n';
 import Peer, { type DataConnection } from 'peerjs';
 import {
   SendOutlined as IconSend,
@@ -66,13 +67,14 @@ const route = useRoute();
 const router = useRouter();
 const toast = useMessage();
 const styleStore = useStyleStore();
+const { t, locale } = useI18n();
 
 // Random Crop & Fruit Nickname Generator based on language
 function getRandomNickname() {
-  const isZh = route.name?.toString().includes('zh') || navigator.language.startsWith('zh');
+  const isZh = locale.value.startsWith('zh');
   
   if (isZh) {
-    const adjs = ['快樂的', '幸運的', '聰明的', '勇敢的', '俏皮的', '活潑的', '溫慢的', '元氣的', '淘氣的', '呆萌的', '帥氣的', '開朗的', '元氣滿滿的', '冒險的'];
+    const adjs = ['快樂的', '幸運的', '聰明的', '勇敢的', '俏皮的', '活潑的', '溫暖的', '元氣的', '淘氣的', '呆萌的', '帥氣的', '開朗的', '元氣滿滿的', '冒險的'];
     const nouns = ['西瓜', '糙米', '紅豆', '燕麥', '芒果', '馬鈴薯', '芝麻', '綠豆', '草莓', '小麥', '花生', '玉米', '地瓜', '藍莓', '櫻桃', '水蜜桃', '小米', '薏仁', '荔枝', '鳳梨', '香蕉', '蘋果'];
     const adj = adjs[Math.floor(Math.random() * adjs.length)];
     const noun = nouns[Math.floor(Math.random() * nouns.length)];
@@ -141,7 +143,7 @@ const partnerBubbleFailedStyle = computed(() => {
 // List of connected partners
 const partnersListString = computed(() => {
   const names = Object.values(partnerNames.value);
-  if (names.length === 0) return '無';
+  if (names.length === 0) return t('tools.p2p-chat.membersNone');
   return names.join(', ');
 });
 
@@ -192,6 +194,7 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
   return window.btoa(binary);
 }
 
+// Base64 to ArrayBuffer
 function base64ToArrayBuffer(base64: string): ArrayBuffer {
   const binaryString = window.atob(base64);
   const len = binaryString.length;
@@ -259,7 +262,7 @@ function initPeer() {
 
   peer.value.on('error', (err) => {
     console.error('Peer error:', err);
-    toast.error('連線伺服器失敗：' + err.message);
+    toast.error(t('tools.p2p-chat.statusError') + ': ' + err.message);
     resetAll();
   });
 }
@@ -304,7 +307,7 @@ function setupConnection(conn: DataConnection) {
         }
         
         uiState.value = 'chat';
-        toast.success(`成員「${data.nickname}」已加入對話！`);
+        toast.success(t('tools.p2p-chat.memberJoined', { name: data.nickname }));
         return;
       }
 
@@ -312,7 +315,7 @@ function setupConnection(conn: DataConnection) {
       if (data.type === 'announce-peer') {
         const newPeerId = data.peerId;
         if (peer.value && !connections.value.some(c => c.peer === newPeerId)) {
-          toast.info('正在連線至聊天室新成員...');
+          toast.info(t('tools.p2p-chat.connectingToNew'));
           const newConn = peer.value.connect(newPeerId);
           setupConnection(newConn);
         }
@@ -328,7 +331,7 @@ function setupConnection(conn: DataConnection) {
 
       if (isEncrypted && data.encrypted) {
         if (!derivedKey.value) {
-          text = '[🔐 訊息已加密，請在左側設定房間密碼以解密]';
+          text = t('tools.p2p-chat.e2eeNoteMessage');
           decryptionFailed = true;
         } else {
           try {
@@ -348,7 +351,7 @@ function setupConnection(conn: DataConnection) {
               };
             }
           } catch (e) {
-            text = '[⚠️ 解密失敗：金鑰不匹配或密碼錯誤]';
+            text = t('tools.p2p-chat.decryptFailedMessage');
             decryptionFailed = true;
             fileData = undefined;
           }
@@ -376,7 +379,7 @@ function setupConnection(conn: DataConnection) {
 
   conn.on('close', () => {
     const name = partnerNames.value[conn.peer] || '成員';
-    toast.info(`「${name}」已離開對話。`);
+    toast.info(t('tools.p2p-chat.memberLeft', { name }));
     removeConnection(conn.peer);
   });
 
@@ -436,7 +439,7 @@ async function reDecryptMessages() {
             };
           }
         } catch (e) {
-          msg.text = '[⚠️ 解密失敗：金鑰不匹配或密碼錯誤]';
+          msg.text = t('tools.p2p-chat.decryptFailedMessage');
           msg.decryptionFailed = true;
           msg.file = undefined;
         }
@@ -449,7 +452,7 @@ async function reDecryptMessages() {
 async function sendMessage() {
   if (!messageInput.value.trim()) return;
   if (connections.value.length === 0) {
-    toast.warning('未建立連線');
+    toast.warning(t('tools.p2p-chat.statusDisconnected'));
     return;
   }
 
@@ -471,7 +474,7 @@ async function sendMessage() {
         iv: arrayBufferToBase64(iv)
       };
     } catch (e) {
-      toast.error('加密失敗');
+      toast.error(t('tools.p2p-chat.encryptError'));
       return;
     }
   } else {
@@ -508,7 +511,7 @@ async function onFileSelected(e: Event) {
 
   const file = target.files[0];
   if (file.size > 2 * 1024 * 1024) {
-    toast.error('檔案太大！P2P 聊天目前僅支援傳送 2MB 以下的圖片或檔案。');
+    toast.error(t('tools.p2p-chat.fileTooLarge'));
     return;
   }
 
@@ -533,7 +536,7 @@ async function onFileSelected(e: Event) {
 
     if (derivedKey.value) {
       try {
-        const { ciphertext: textCt, iv: textIv } = await encryptText(`[傳送了檔案: ${file.name}]`, derivedKey.value);
+        const { ciphertext: textCt, iv: textIv } = await encryptText(t('tools.p2p-chat.e2eeNoteFile', { name: file.name }), derivedKey.value);
         payload.encrypted = {
           ciphertext: arrayBufferToBase64(textCt),
           iv: arrayBufferToBase64(textIv)
@@ -544,11 +547,11 @@ async function onFileSelected(e: Event) {
         payload.file.data = arrayBufferToBase64(fileCt);
         payload.file.iv = arrayBufferToBase64(fileIv);
       } catch (e) {
-        toast.error('加密檔案失敗');
+        toast.error(t('tools.p2p-chat.fileEncryptError'));
         return;
       }
     } else {
-      payload.text = `[傳送了檔案: ${file.name}]`;
+      payload.text = t('tools.p2p-chat.e2eeNoteFile', { name: file.name });
       payload.file.data = base64Data;
     }
 
@@ -563,7 +566,7 @@ async function onFileSelected(e: Event) {
       senderName: myUsername.value,
       timestamp,
       type: 'file',
-      text: `[傳送了檔案: ${file.name}]`,
+      text: t('tools.p2p-chat.e2eeNoteFile', { name: file.name }),
       isEncrypted: !!derivedKey.value,
       file: {
         name: file.name,
@@ -633,7 +636,7 @@ onMounted(() => {
   if (route.query.connect) {
     targetPeerId.value = String(route.query.connect);
     role.value = 'guest';
-    toast.info('已偵測到好友邀請，請輸入暱稱後連線！');
+    toast.info(t('tools.p2p-chat.detectInvite'));
   }
 });
 
@@ -654,26 +657,26 @@ onUnmounted(() => {
         <div class="text-center mb-6">
           <h2 class="text-xl font-bold mb-2 flex items-center justify-center gap-2" style="color: var(--heading)">
             <n-icon size="26" :component="IconChat" class="text-emerald-500" />
-            P2P 網頁即時密聊
+            {{ $t('tools.p2p-chat.title') }}
           </h2>
           <p class="text-sm opacity-75 leading-relaxed">
-            基於 WebRTC 協定的多人家直連技術。訊息與檔案完全不經由任何伺服器儲存，且支援多人同時加入。
+            {{ $t('tools.p2p-chat.description') }}
           </p>
         </div>
 
         <div class="flex flex-col gap-5 mt-2">
           <!-- Username Block -->
           <div>
-            <label class="block text-sm font-semibold mb-2 opacity-80">您的暱稱</label>
+            <label class="block text-sm font-semibold mb-2 opacity-80">{{ $t('tools.p2p-chat.nickname') }}</label>
             <div class="flex gap-2">
-              <n-input v-model:value="myUsername" placeholder="輸入暱稱或點擊右側骰子隨機產生" />
+              <n-input v-model:value="myUsername" :placeholder="$t('tools.p2p-chat.nicknamePlaceholder')" />
               <n-tooltip trigger="hover">
                 <template #trigger>
                   <n-button secondary @click="randomizeName">
                     <template #icon><n-icon :component="IconDice" /></template>
                   </n-button>
                 </template>
-                骰出一個農作物暱稱 🎲
+                {{ $t('tools.p2p-chat.diceTooltip') }}
               </n-tooltip>
             </div>
           </div>
@@ -681,16 +684,16 @@ onUnmounted(() => {
           <!-- Password (E2EE) Block -->
           <div>
             <label class="block text-sm font-semibold mb-2 opacity-80 flex items-center gap-1">
-              房間密碼 (E2EE 端到端加密) <n-tag size="mini" type="warning" round>選填</n-tag>
+              {{ $t('tools.p2p-chat.e2eePassword') }} <n-tag size="mini" type="warning" round>{{ $t('tools.basic-auth-generator.optional') || '選填' }}</n-tag>
             </label>
             <n-input 
               v-model:value="password" 
               type="password" 
               show-password-on="click" 
-              placeholder="所有人設定相同密碼後，訊息會在瀏覽器自動加密" 
+              :placeholder="$t('tools.p2p-chat.e2eePasswordPlaceholder')" 
             />
             <p class="text-xs opacity-60 mt-1.5 leading-relaxed">
-              🔐 設定後會自動透過 AES-GCM-256 加密傳輸。未設定則以明文直連通道傳送。
+              {{ $t('tools.p2p-chat.e2eePasswordNote') }}
             </p>
           </div>
 
@@ -700,7 +703,7 @@ onUnmounted(() => {
             <!-- CASE A: User is Guest (Invited via URL) -->
             <div v-if="targetPeerId" class="flex flex-col gap-3">
               <n-alert type="warning" :show-icon="true" size="small" class="text-sm">
-                您的好友邀請您加入聊天室！已自動鎖定連線 ID。
+                {{ $t('tools.p2p-chat.invitedAlert') }}
               </n-alert>
               
               <n-button 
@@ -710,7 +713,7 @@ onUnmounted(() => {
                 :loading="connectionState === 'connecting'"
                 @click="startGuest"
               >
-                👥 立即連線聊天
+                {{ $t('tools.p2p-chat.joinChatBtn') }}
               </n-button>
 
               <n-button 
@@ -719,7 +722,7 @@ onUnmounted(() => {
                 size="medium" 
                 @click="targetPeerId = ''; router.replace({ query: {} })"
               >
-                改為建立全新聊天室
+                {{ $t('tools.p2p-chat.createInsteadBtn') }}
               </n-button>
             </div>
 
@@ -731,24 +734,24 @@ onUnmounted(() => {
                 size="large"
                 @click="startHost"
               >
-                ✨ 建立聊天室並等待好友
+                {{ $t('tools.p2p-chat.createRoomBtn') }}
               </n-button>
 
               <div class="flex items-center my-1 text-sm opacity-50 justify-center gap-2">
                 <span class="w-8 h-[1px] bg-current opacity-30"></span>
-                <span>或手動加入現有房間</span>
+                <span>{{ $t('tools.p2p-chat.orJoinManual') }}</span>
                 <span class="w-8 h-[1px] bg-current opacity-30"></span>
               </div>
 
               <div class="flex gap-2">
-                <n-input v-model:value="targetPeerId" placeholder="貼上好友的 Peer ID" />
+                <n-input v-model:value="targetPeerId" :placeholder="$t('tools.p2p-chat.pastePeerId')" />
                 <n-button 
                   type="primary" 
                   secondary
                   :disabled="!targetPeerId"
                   @click="startGuest"
                 >
-                  連線
+                  {{ $t('tools.p2p-chat.connectBtn') }}
                 </n-button>
               </div>
             </div>
@@ -768,14 +771,14 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <h3 class="text-lg font-bold mb-2">等待好友加入...</h3>
+        <h3 class="text-lg font-bold mb-2">{{ $t('tools.p2p-chat.waitingTitle') }}</h3>
         <p class="text-sm opacity-75 mb-6 px-4 leading-relaxed">
-          請複製下方的邀請連結傳送給好友，好友點開連結後即可自動連線到您的聊天室。支援多人同時加入！
+          {{ $t('tools.p2p-chat.waitingDesc') }}
         </p>
 
         <!-- Share Box -->
         <div class="flex flex-col gap-3 bg-black/10 dark:bg-black/30 p-4 rounded-2xl mb-6">
-          <span class="text-xs uppercase font-bold opacity-60 tracking-wider">您的專屬邀請連結</span>
+          <span class="text-xs uppercase font-bold opacity-60 tracking-wider">{{ $t('tools.p2p-chat.inviteUrlLabel') }}</span>
           <div class="flex gap-2">
             <n-input :value="shareUrl" readonly size="small" placeholder="產生中..." />
             <n-tooltip trigger="hover">
@@ -784,20 +787,20 @@ onUnmounted(() => {
                   <n-icon :component="copiedShareUrl ? IconCheck : IconCopy" />
                 </n-button>
               </template>
-              {{ copiedShareUrl ? '已複製' : '複製連結' }}
+              {{ copiedShareUrl ? $t('tools.p2p-chat.copiedBtn') : $t('tools.p2p-chat.copyBtn') }}
             </n-tooltip>
           </div>
         </div>
 
         <!-- Peer ID manually just in case -->
         <div class="text-xs opacity-70 mb-6">
-          您的 Peer ID: <span class="font-mono bg-white/5 px-1.5 py-0.5 rounded">{{ peerId || '取得中...' }}</span>
+          Your Peer ID: <span class="font-mono bg-white/5 px-1.5 py-0.5 rounded">{{ peerId || '...' }}</span>
         </div>
 
         <div class="flex gap-3">
           <n-button block size="medium" @click="cancelInvitation" type="error" ghost>
             <n-icon :component="IconBack" class="mr-1" />
-            取消等待
+            {{ $t('tools.p2p-chat.cancelBtn') }}
           </n-button>
         </div>
       </n-card>
@@ -814,7 +817,7 @@ onUnmounted(() => {
           <template #header>
             <div class="flex items-center gap-2">
               <n-icon size="20" :component="IconShield" class="text-emerald-500" />
-              <span class="font-bold">對話設定</span>
+              <span class="font-bold">{{ $t('tools.p2p-chat.dialogConfig') }}</span>
             </div>
           </template>
 
@@ -822,27 +825,27 @@ onUnmounted(() => {
             <!-- User Status Info -->
             <div class="text-sm flex flex-col gap-1.5 bg-black/10 dark:bg-black/20 p-2.5 rounded-xl border border-gray-200/5">
               <div class="flex justify-between">
-                <span class="opacity-70">您的暱稱：</span>
+                <span class="opacity-70">{{ $t('tools.p2p-chat.myNicknameLabel') }}</span>
                 <span class="font-bold">{{ myUsername }}</span>
               </div>
               <div class="flex justify-between border-t border-gray-200/5 pt-1.5 mt-0.5">
-                <span class="opacity-70">連線成員：</span>
+                <span class="opacity-70">{{ $t('tools.p2p-chat.membersLabel') }}</span>
                 <span class="font-bold" :style="{ color: activePalette.accent }">{{ partnersListString }}</span>
               </div>
             </div>
 
             <!-- E2EE Password Box -->
             <div>
-              <span class="text-sm font-semibold opacity-85 block mb-1">E2EE 加密密碼</span>
+              <span class="text-sm font-semibold opacity-85 block mb-1">{{ $t('tools.p2p-chat.e2eePassword') }}</span>
               <n-input 
                 v-model:value="password" 
                 type="password" 
                 show-password-on="click" 
                 size="small" 
-                placeholder="所有人設定一致以加密明文" 
+                :placeholder="$t('tools.p2p-chat.e2eePasswordPlaceholder')" 
               />
               <p class="text-xs opacity-60 mt-1 leading-normal">
-                密碼不同會導致解密失敗。可隨時在此修改或更正密碼。
+                {{ $t('tools.p2p-chat.e2eePasswordNoteSidebar') }}
               </p>
             </div>
 
@@ -852,17 +855,17 @@ onUnmounted(() => {
                 <template #trigger>
                   <n-button block size="small" type="primary" secondary @click="() => copyShareUrl()">
                     <n-icon :component="IconWorld" class="mr-1" />
-                    邀請更多人加入
+                    {{ $t('tools.p2p-chat.inviteMoreBtn') }}
                   </n-button>
                 </template>
-                {{ copiedShareUrl ? '連結已複製！' : '複製邀請網址發送給其它好友。' }}
+                {{ copiedShareUrl ? $t('tools.p2p-chat.copiedBtn') : $t('tools.p2p-chat.inviteMoreBtn') }}
               </n-tooltip>
             </div>
 
             <!-- Disconnect Button -->
             <n-button block size="small" type="error" ghost @click="resetAll" class="mt-1">
               <template #icon><n-icon :component="IconBack" /></template>
-              中斷並離開對話
+              {{ $t('tools.p2p-chat.disconnectBtn') }}
             </n-button>
           </div>
         </n-card>
@@ -877,17 +880,17 @@ onUnmounted(() => {
             <div class="flex items-center gap-2">
               <div class="w-2.5 h-2.5 rounded-full bg-emerald-500" />
               <span class="font-bold text-base">
-                正在與 {{ partnersListString }} 對話
+                {{ $t('tools.p2p-chat.statusChattingWith', { partners: partnersListString }) }}
               </span>
             </div>
 
             <n-tag v-if="derivedKey" type="warning" size="medium" round>
               <n-icon :component="IconLock" class="mr-1" />
-              AES-256 E2EE 已啟用
+              {{ $t('tools.p2p-chat.e2eeEnabled') }}
             </n-tag>
             <n-tag v-else type="default" size="small" round>
               <n-icon :component="IconUnlock" class="mr-1" />
-              直連未加密
+              {{ $t('tools.p2p-chat.e2eeDisabled') }}
             </n-tag>
           </div>
 
@@ -897,6 +900,12 @@ onUnmounted(() => {
             class="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3 min-h-[380px] max-h-[380px] rounded-xl"
             :style="chatHistoryStyle"
           >
+            <div v-if="messages.length === 0" class="h-full flex flex-col items-center justify-center text-center opacity-50 py-10">
+              <n-icon size="40" :component="IconChat" class="mb-2" />
+              <p class="text-sm">{{ $t('tools.p2p-chat.noMessages') }}</p>
+              <p class="text-xs mt-1">{{ $t('tools.p2p-chat.noMessagesDesc') }}</p>
+            </div>
+
             <div 
               v-for="msg in messages" 
               :key="msg.id" 
@@ -968,7 +977,7 @@ onUnmounted(() => {
               v-model:value="messageInput" 
               type="text" 
               size="medium"
-              placeholder="輸入訊息..." 
+              :placeholder="$t('tools.p2p-chat.inputPlaceholder')" 
               :disabled="connections.length === 0"
               @keyup.enter="sendMessage"
             />

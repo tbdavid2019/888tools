@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted, watch, nextTick, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useClipboard } from '@vueuse/core';
 import { useMessage, NIcon, NInput, NButton, NCard, NAlert, NTag, NTooltip, NProgress, NModal } from 'naive-ui';
+import { useI18n } from 'vue-i18n';
 import Peer, { type DataConnection } from 'peerjs';
 import {
   LaptopMacOutlined as IconLaptop,
@@ -39,6 +40,7 @@ const route = useRoute();
 const router = useRouter();
 const toast = useMessage();
 const styleStore = useStyleStore();
+const { t, locale } = useI18n();
 
 // File Transfer States
 const transferState = ref<TransferState>('idle');
@@ -60,7 +62,7 @@ let currentChunkIndex = 0;
 
 // Random Device Name Generator
 function getRandomDeviceName() {
-  const isZh = route.name?.toString().includes('zh') || navigator.language.startsWith('zh');
+  const isZh = locale.value.startsWith('zh');
   if (isZh) {
     const adjs = ['金黃的', '香甜的', '圓滾滾的', '脆脆的', '水嫩的', '成熟的', '幸運的', '快樂的', '呆萌的', '淘氣的', '蓬鬆的', '香濃的'];
     const nouns = ['芒果', '蘋果', '草莓', '西瓜', '水蜜桃', '鳳梨', '香蕉', '藍莓', '櫻桃', '葡萄', '荔枝', '哈密瓜', '紅豆', '玉米'];
@@ -130,7 +132,7 @@ function initPeer() {
   peer.value.on('error', (err) => {
     console.error('Peer error:', err);
     connectionState.value = 'error';
-    toast.error('信令伺服器錯誤：' + err.message);
+    toast.error(t('tools.p2p-chat.statusError') + ': ' + err.message);
   });
 }
 
@@ -169,7 +171,7 @@ function setupConnection(conn: DataConnection) {
           name: myDeviceName.value
         });
       }
-      toast.success(`已成功連線至 ${partnerDeviceName.value}！`);
+      toast.success(t('tools.p2p-file-transfer.statusConnected'));
       return;
     }
 
@@ -188,12 +190,12 @@ function setupConnection(conn: DataConnection) {
     // 3. Handle File Consent Response (Sender Side)
     if (data && data.type === 'file-response') {
       if (data.accepted) {
-        toast.info('對方已同意接收，開始傳送檔案...');
+        toast.info(t('tools.p2p-file-transfer.transferring'));
         transferState.value = 'transferring';
         currentChunkIndex = 0;
         sendNextChunk();
       } else {
-        toast.warning('對方拒絕接收此檔案。');
+        toast.warning(t('tools.p2p-file-transfer.transferDecline'));
         transferState.value = 'idle';
         activeFile.value = null;
       }
@@ -219,13 +221,13 @@ function setupConnection(conn: DataConnection) {
   });
 
   conn.on('close', () => {
-    toast.info('連線已中斷');
+    toast.info(t('tools.p2p-chat.statusDisconnected'));
     resetAll();
   });
 
   conn.on('error', (err) => {
     console.error('Conn error:', err);
-    toast.error('傳輸錯誤：' + err.message);
+    toast.error(t('tools.p2p-chat.statusError') + ': ' + err.message);
     resetAll();
   });
 }
@@ -258,7 +260,7 @@ function sendNextChunk() {
       } else {
         // Done
         connection.value.send({ type: 'transfer-complete' });
-        toast.success('檔案傳送完成！');
+        toast.success(t('tools.p2p-file-transfer.transferDone'));
         transferState.value = 'complete';
         setTimeout(() => {
           transferState.value = 'idle';
@@ -283,6 +285,7 @@ function acceptFileRequest() {
   transferProgress.value = 0;
 }
 
+// Decline file request
 function declineFileRequest() {
   if (!connection.value) return;
 
@@ -305,7 +308,7 @@ function saveReceivedFile() {
   a.click();
   
   URL.revokeObjectURL(url);
-  toast.success('檔案接收並下載完成！');
+  toast.success(t('tools.p2p-file-transfer.transferSave'));
   transferState.value = 'complete';
   
   setTimeout(() => {
@@ -327,7 +330,7 @@ function handleFileSelection(e: Event) {
 function handleFileDrop(e: DragEvent) {
   e.preventDefault();
   if (connectionState.value !== 'connected') {
-    toast.warning('請先連線裝置再傳送檔案');
+    toast.warning(t('tools.p2p-file-transfer.warnChooseDevice'));
     return;
   }
   if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
@@ -337,7 +340,7 @@ function handleFileDrop(e: DragEvent) {
 
 function initiateFileSend(file: File) {
   if (!connection.value || connectionState.value !== 'connected') {
-    toast.warning('尚未建立連線');
+    toast.warning(t('tools.p2p-chat.statusDisconnected'));
     return;
   }
   
@@ -410,7 +413,7 @@ onUnmounted(() => {
           
           <!-- Name Display -->
           <div class="flex flex-col">
-            <span class="text-xs uppercase font-bold opacity-60 tracking-wider">您的本機名稱</span>
+            <span class="text-xs uppercase font-bold opacity-60 tracking-wider">{{ $t('tools.p2p-file-transfer.myDeviceName') }}</span>
             <div class="flex gap-2 items-center mt-1">
               <span class="text-lg font-bold" :style="{ color: activePalette.accent }">{{ myDeviceName }}</span>
               <n-tooltip trigger="hover">
@@ -419,18 +422,18 @@ onUnmounted(() => {
                     <template #icon><n-icon :component="IconDice" /></template>
                   </n-button>
                 </template>
-                更換隨機名稱 🎲
+                {{ $t('tools.p2p-file-transfer.changeName') }}
               </n-tooltip>
             </div>
             <span class="text-xs opacity-75 mt-1 flex items-center gap-1">
               <span class="w-2 h-2 rounded-full" :class="connectionState === 'connected' ? 'bg-emerald-500' : 'bg-amber-500'" />
-              狀態：{{ connectionState === 'connected' ? '已連接好友裝置' : '等待連線中' }}
+              {{ connectionState === 'connected' ? $t('tools.p2p-file-transfer.statusConnected') : $t('tools.p2p-file-transfer.statusWaiting') }}
             </span>
           </div>
 
           <!-- Share Link Action -->
           <div class="w-full md:w-auto flex flex-col gap-2">
-            <span class="text-xs uppercase font-bold opacity-60 tracking-wider">一鍵分享連結給好友</span>
+            <span class="text-xs uppercase font-bold opacity-60 tracking-wider">{{ $t('tools.p2p-file-transfer.shareLinkLabel') }}</span>
             <div class="flex gap-2">
               <n-input :value="shareUrl" readonly size="small" placeholder="產生中..." class="w-full md:w-48" />
               <n-tooltip trigger="hover">
@@ -439,7 +442,7 @@ onUnmounted(() => {
                     <n-icon :component="copiedShareUrl ? IconCheck : IconCopy" />
                   </n-button>
                 </template>
-                {{ copiedShareUrl ? '已複製！' : '複製邀請網址' }}
+                {{ copiedShareUrl ? $t('tools.p2p-chat.copiedBtn') : $t('tools.p2p-file-transfer.copyInviteUrl') }}
               </n-tooltip>
             </div>
           </div>
@@ -469,9 +472,9 @@ onUnmounted(() => {
           <div class="w-20 h-20 rounded-full bg-emerald-500 flex items-center justify-center pulse-circle text-white mb-2">
             <n-icon size="40" :component="isMobileDevice ? IconPhone : IconLaptop" />
           </div>
-          <h3 class="text-lg font-bold">正在等待其它裝置加入...</h3>
+          <h3 class="text-lg font-bold">{{ $t('tools.p2p-file-transfer.dropAreaWaiting') }}</h3>
           <p class="text-sm opacity-75 max-w-sm leading-relaxed px-4">
-            請將上方的邀請網址傳送給另一部裝置（例如手機或同事的電腦），對方點擊後即可自動在此互相看見並開始傳檔。
+            {{ $t('tools.p2p-file-transfer.dropAreaWaitingDesc') }}
           </p>
         </div>
 
@@ -491,14 +494,14 @@ onUnmounted(() => {
               </div>
             </div>
             
-            <span class="text-base font-bold mt-4" style="color: var(--heading)">{{ partnerDeviceName || '好友裝置' }}</span>
-            <span class="text-sm opacity-70 mt-1">點擊裝置發送檔案，或直接將檔案拖曳至此</span>
+            <span class="text-base font-bold mt-4" style="color: var(--heading)">{{ partnerDeviceName || $t('tools.p2p-file-transfer.deviceStatusConnected') }}</span>
+            <span class="text-sm opacity-70 mt-1">{{ $t('tools.p2p-file-transfer.dropAreaConnectedDesc') }}</span>
           </div>
 
           <div class="mt-4 pt-4 border-t border-gray-200/10 w-full max-w-xs flex justify-center">
             <n-button size="small" type="error" ghost @click="resetAll">
               <template #icon><n-icon :component="IconBack" /></template>
-              中斷連線
+              {{ $t('tools.p2p-chat.disconnectBtn') }}
             </n-button>
           </div>
 
@@ -514,7 +517,7 @@ onUnmounted(() => {
     <n-modal :show="transferState === 'waiting-consent' && role === 'receiver'" transform-origin="center">
       <n-card
         style="width: 380px"
-        title="收到檔案傳送請求"
+        :title="$t('tools.p2p-file-transfer.acceptRequestTitle')"
         :bordered="false"
         size="medium"
         role="dialog"
@@ -523,7 +526,7 @@ onUnmounted(() => {
       >
         <div class="flex flex-col gap-3 py-2">
           <p class="text-base">
-            來自 <span class="font-bold" :style="{ color: activePalette.accent }">「{{ partnerDeviceName }}」</span> 的檔案傳送請求：
+            {{ $t('tools.p2p-file-transfer.acceptRequestDesc', { name: partnerDeviceName }) }}
           </p>
           <div class="bg-black/10 dark:bg-black/30 p-3 rounded-xl flex items-center gap-3">
             <n-icon size="32" :component="IconUpload" class="text-emerald-500" />
@@ -533,11 +536,11 @@ onUnmounted(() => {
             </div>
           </div>
           <p class="text-sm opacity-70 mt-1 leading-normal">
-            點擊「同意」將使用點對點安全直連建立傳輸，傳送完成後會自動儲存至您的下載資料夾。
+            {{ $t('tools.p2p-file-transfer.acceptRequestNote') }}
           </p>
           <div class="flex gap-3 mt-4">
-            <n-button block type="primary" @click="acceptFileRequest">同意接收</n-button>
-            <n-button block ghost type="error" @click="declineFileRequest">拒絕</n-button>
+            <n-button block type="primary" @click="acceptFileRequest">{{ $t('tools.p2p-file-transfer.acceptBtn') }}</n-button>
+            <n-button block ghost type="error" @click="declineFileRequest">{{ $t('tools.p2p-file-transfer.declineBtn') }}</n-button>
           </div>
         </div>
       </n-card>
@@ -556,9 +559,9 @@ onUnmounted(() => {
       >
         <div class="flex flex-col items-center gap-4 py-4">
           <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-500"></div>
-          <h4 class="font-bold text-base">等待對方確認...</h4>
+          <h4 class="font-bold text-base">{{ $t('tools.p2p-file-transfer.waitingConsentTitle') }}</h4>
           <p class="text-sm opacity-75 leading-relaxed">
-            正在向「{{ partnerDeviceName }}」發送傳送要求，請等待對方點擊接受。
+            {{ $t('tools.p2p-file-transfer.waitingConsentDesc', { name: partnerDeviceName }) }}
           </p>
           <div class="bg-black/10 dark:bg-black/30 p-2.5 rounded-lg text-sm w-full truncate font-medium mt-2">
             {{ expectedFileName }} ({{ formatBytes(expectedFileSize) }})
@@ -579,14 +582,14 @@ onUnmounted(() => {
       >
         <div class="flex flex-col gap-4 py-2">
           <h4 class="font-bold text-base text-center">
-            {{ role === 'sender' ? '正在傳送檔案...' : '正在接收檔案...' }}
+            {{ role === 'sender' ? $t('tools.p2p-file-transfer.sendingTitle') : $t('tools.p2p-file-transfer.receivingTitle') }}
           </h4>
           <div class="bg-black/10 dark:bg-black/30 p-3 rounded-xl flex items-center gap-3">
             <n-icon size="32" :component="role === 'sender' ? IconUpload : IconDownload" class="text-emerald-500" />
             <div class="flex-1 min-w-0">
               <div class="truncate font-bold text-base">{{ expectedFileName }}</div>
               <div class="text-sm opacity-75">
-                {{ role === 'sender' ? '傳送進度：' : '接收進度：' }}{{ formatBytes(receivedSize || (transferProgress * expectedFileSize) / 100) }} / {{ formatBytes(expectedFileSize) }}
+                {{ role === 'sender' ? $t('tools.p2p-file-transfer.sendProgress') : $t('tools.p2p-file-transfer.receiveProgress') }} {{ formatBytes(receivedSize || (transferProgress * expectedFileSize) / 100) }} / {{ formatBytes(expectedFileSize) }}
               </div>
             </div>
           </div>
@@ -594,7 +597,7 @@ onUnmounted(() => {
           <div class="flex flex-col gap-1 mt-2">
             <div class="flex justify-between text-sm font-mono opacity-85">
               <span>{{ transferProgress }}%</span>
-              <span>{{ transferProgress === 100 ? '組裝檔案中...' : '直連傳輸中' }}</span>
+              <span>{{ transferProgress === 100 ? $t('tools.p2p-file-transfer.assembling') : $t('tools.p2p-file-transfer.transferring') }}</span>
             </div>
             <n-progress type="line" :percentage="transferProgress" :show-indicator="false" status="success" :height="10" />
           </div>
