@@ -2,7 +2,7 @@
 import { ref, onMounted, onUnmounted, watch, nextTick, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useClipboard } from '@vueuse/core';
-import { useMessage, NIcon, NInput, NButton, NCard, NAlert, NTag, NTooltip } from 'naive-ui';
+import { useMessage, NIcon, NInput, NButton, NCard, NAlert, NTag, NTooltip, NPopover } from 'naive-ui';
 import { useI18n } from 'vue-i18n';
 import Peer, { type DataConnection } from 'peerjs';
 import {
@@ -73,18 +73,35 @@ const { t, locale } = useI18n();
 function getRandomNickname() {
   const isZh = locale.value.startsWith('zh');
   
+  const nounEmojis: Record<string, string> = {
+    // Chinese nouns
+    '西瓜': '🍉', '糙米': '🌾', '紅豆': '🫘', '燕麥': '🌾', '芒果': '🥭', 
+    '馬鈴薯': '🥔', '芝麻': '🌾', '綠豆': '🟢', '草莓': '🍓', '小麥': '🌾', 
+    '花生': '🥜', '玉米': '🌽', '地瓜': '🍠', '藍莓': '🫐', '櫻桃': '🍒', 
+    '水蜜桃': '🍑', '小米': '🌾', '薏仁': '🥣', '荔枝': '🍒', '鳳梨': '🍍', 
+    '香蕉': '🍌', '蘋果': '🍎',
+    // English nouns
+    'Watermelon': '🍉', 'Rice': '🌾', 'RedBean': '🫘', 'Oat': '🌾', 'Mango': '🥭', 
+    'Potato': '🥔', 'Sesame': '🌾', 'MungBean': '🟢', 'Strawberry': '🍓', 'Wheat': '🌾', 
+    'Peanut': '🥜', 'Corn': '🌽', 'SweetPotato': '🍠', 'Blueberry': '🫐', 'Cherry': '🍒', 
+    'Peach': '🍑', 'Millet': '🌾', 'Barley': '🥣', 'Lychee': '🍒', 'Pineapple': '🍍', 
+    'Banana': '🍌', 'Apple': '🍎'
+  };
+
   if (isZh) {
     const adjs = ['快樂的', '幸運的', '聰明的', '勇敢的', '俏皮的', '活潑的', '溫暖的', '元氣的', '淘氣的', '呆萌的', '帥氣的', '開朗的', '元氣滿滿的', '冒險的'];
     const nouns = ['西瓜', '糙米', '紅豆', '燕麥', '芒果', '馬鈴薯', '芝麻', '綠豆', '草莓', '小麥', '花生', '玉米', '地瓜', '藍莓', '櫻桃', '水蜜桃', '小米', '薏仁', '荔枝', '鳳梨', '香蕉', '蘋果'];
     const adj = adjs[Math.floor(Math.random() * adjs.length)];
     const noun = nouns[Math.floor(Math.random() * nouns.length)];
-    return adj + noun;
+    const emoji = nounEmojis[noun] || '';
+    return adj + noun + ' ' + emoji;
   } else {
     const adjs = ['Happy', 'Lucky', 'Clever', 'Brave', 'Playful', 'Active', 'Warm', 'Energetic', 'Naughty', 'Cute', 'Cool', 'Cheerful', 'Jolly'];
     const nouns = ['Watermelon', 'Rice', 'RedBean', 'Oat', 'Mango', 'Potato', 'Sesame', 'MungBean', 'Strawberry', 'Wheat', 'Peanut', 'Corn', 'SweetPotato', 'Blueberry', 'Cherry', 'Peach', 'Millet', 'Barley', 'Lychee', 'Pineapple', 'Banana', 'Apple'];
     const adj = adjs[Math.floor(Math.random() * adjs.length)];
     const noun = nouns[Math.floor(Math.random() * nouns.length)];
-    return adj + ' ' + noun;
+    const emoji = nounEmojis[noun] || '';
+    return adj + ' ' + noun + ' ' + emoji;
   }
 }
 
@@ -826,15 +843,30 @@ onUnmounted(() => {
           </template>
 
           <div class="flex flex-col gap-3.5">
-            <!-- User Status Info -->
-            <div class="text-sm flex flex-col gap-1.5 bg-black/10 dark:bg-black/20 p-2.5 rounded-xl border border-gray-200/5">
-              <div class="flex justify-between">
-                <span class="opacity-70">{{ $t('tools.p2p-chat.myNicknameLabel') }}</span>
-                <span class="font-bold">{{ myUsername }}</span>
-              </div>
-              <div class="flex justify-between border-t border-gray-200/5 pt-1.5 mt-0.5">
-                <span class="opacity-70">{{ $t('tools.p2p-chat.membersLabel') }}</span>
-                <span class="font-bold" :style="{ color: activePalette.accent }">{{ partnersListString }}</span>
+            <!-- Members List Section -->
+            <div class="flex flex-col gap-2">
+              <span class="text-xs font-semibold opacity-85 block">{{ $t('tools.p2p-chat.roomMembers') }} ({{ Object.keys(partnerNames).length + 1 }})</span>
+              <div class="flex flex-col gap-1.5 bg-black/10 dark:bg-black/20 p-2.5 rounded-xl border border-gray-200/5">
+                <!-- Self -->
+                <div class="flex items-center justify-between text-sm py-0.5">
+                  <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    <span class="font-medium">{{ myUsername }}</span>
+                  </div>
+                  <n-tag size="mini" type="success" round>{{ $t('tools.p2p-chat.me') }}</n-tag>
+                </div>
+                <!-- Connected Peers -->
+                <div 
+                  v-for="(name, pId) in partnerNames" 
+                  :key="pId"
+                  class="flex items-center justify-between text-sm py-0.5 border-t border-gray-200/5 pt-1.5 mt-0.5"
+                >
+                  <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span class="font-bold" :style="{ color: activePalette.accent }">{{ name }}</span>
+                  </div>
+                  <span class="text-[10px] opacity-50 font-mono">P2P</span>
+                </div>
               </div>
             </div>
 
@@ -976,6 +1008,24 @@ onUnmounted(() => {
             >
               <n-icon size="20" :component="IconAttach" />
             </n-button>
+            
+            <n-popover trigger="click" placement="top-start" scrollable style="max-width: 250px">
+              <template #trigger>
+                <n-button circle secondary size="medium" :disabled="connections.length === 0">
+                  <span class="text-lg">😀</span>
+                </n-button>
+              </template>
+              <div class="grid grid-cols-6 gap-2 p-1">
+                <button 
+                  v-for="emoji in ['😀', '😂', '😊', '😍', '🥰', '😘', '😜', '🤔', '🤫', '🤨', '🙄', '😢', '😡', '👍', '👎', '👏', '🙌', '🔥', '🎉', '❤️', '💡', '❓']" 
+                  :key="emoji" 
+                  class="text-xl hover:bg-black/10 dark:hover:bg-white/10 p-1.5 rounded-lg transition-colors cursor-pointer border-none bg-transparent"
+                  @click="messageInput += emoji"
+                >
+                  {{ emoji }}
+                </button>
+              </div>
+            </n-popover>
 
             <n-input 
               v-model:value="messageInput" 

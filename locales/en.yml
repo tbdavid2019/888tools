@@ -739,6 +739,8 @@ tools:
     myNicknameLabel: "Your Nickname:"
     membersLabel: "Connected Members:"
     membersNone: "None"
+    roomMembers: "Chat Room Members"
+    me: "Me"
     inviteMoreBtn: "Invite More People"
     disconnectBtn: "Disconnect & Leave"
     statusConnecting: "Connecting..."

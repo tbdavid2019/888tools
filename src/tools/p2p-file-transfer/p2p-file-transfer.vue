@@ -63,14 +63,32 @@ let currentChunkIndex = 0;
 // Random Device Name Generator
 function getRandomDeviceName() {
   const isZh = locale.value.startsWith('zh');
+  
+  const nounEmojis: Record<string, string> = {
+    // Chinese nouns
+    '芒果': '🥭', '蘋果': '🍎', '草莓': '🍓', '西瓜': '🍉', '水蜜桃': '🍑', 
+    '鳳梨': '🍍', '香蕉': '🍌', '藍莓': '🫐', '櫻桃': '🍒', '葡萄': '🍇', 
+    '荔枝': '🍒', '哈密瓜': '🍈', '紅豆': '🫘', '玉米': '🌽',
+    // English nouns
+    'Mango': '🥭', 'Apple': '🍎', 'Strawberry': '🍓', 'Watermelon': '🍉', 'Peach': '🍑', 
+    'Pineapple': '🍍', 'Banana': '🍌', 'Blueberry': '🫐', 'Cherry': '🍒', 'Grape': '🍇', 
+    'Lychee': '🍒', 'Melon': '🍈', 'Corn': '🌽', 'Berry': '🍓'
+  };
+
   if (isZh) {
     const adjs = ['金黃的', '香甜的', '圓滾滾的', '脆脆的', '水嫩的', '成熟的', '幸運的', '快樂的', '呆萌的', '淘氣的', '蓬鬆的', '香濃的'];
     const nouns = ['芒果', '蘋果', '草莓', '西瓜', '水蜜桃', '鳳梨', '香蕉', '藍莓', '櫻桃', '葡萄', '荔枝', '哈密瓜', '紅豆', '玉米'];
-    return adjs[Math.floor(Math.random() * adjs.length)] + nouns[Math.floor(Math.random() * nouns.length)] + ' 的裝置';
+    const adj = adjs[Math.floor(Math.random() * adjs.length)];
+    const noun = nouns[Math.floor(Math.random() * nouns.length)];
+    const emoji = nounEmojis[noun] || '';
+    return adj + noun + ' ' + emoji + ' 的裝置';
   } else {
     const adjs = ['Golden', 'Sweet', 'Round', 'Crispy', 'Juicy', 'Ripe', 'Lucky', 'Happy', 'Cute', 'Playful', 'Fluffy', 'Creamy'];
     const nouns = ['Mango', 'Apple', 'Strawberry', 'Watermelon', 'Peach', 'Pineapple', 'Banana', 'Blueberry', 'Cherry', 'Grape', 'Lychee', 'Melon', 'Corn', 'Berry'];
-    return adjs[Math.floor(Math.random() * adjs.length)] + ' ' + nouns[Math.floor(Math.random() * nouns.length)] + ' Device';
+    const adj = adjs[Math.floor(Math.random() * adjs.length)];
+    const noun = nouns[Math.floor(Math.random() * nouns.length)];
+    const emoji = nounEmojis[noun] || '';
+    return adj + ' ' + noun + ' ' + emoji + ' Device';
   }
 }
 

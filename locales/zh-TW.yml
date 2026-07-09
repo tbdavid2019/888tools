@@ -735,6 +735,8 @@ tools:
     myNicknameLabel: "您的暱稱："
     membersLabel: "連線成員："
     membersNone: "無"
+    roomMembers: "聊天室成員"
+    me: "您"
     inviteMoreBtn: "邀請更多人加入"
     disconnectBtn: "中斷並離開對話"
     statusConnecting: "建立連線中..."

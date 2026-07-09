@@ -556,6 +556,8 @@ tools:
     myNicknameLabel: "您的昵称："
     membersLabel: "连线成员："
     membersNone: "无"
+    roomMembers: "聊天室成员"
+    me: "您"
     inviteMoreBtn: "邀请更多人加入"
     disconnectBtn: "中断并离开对话"
     statusConnecting: "建立连线中..."
