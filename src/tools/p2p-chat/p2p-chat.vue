@@ -69,6 +69,28 @@ const toast = useMessage();
 const styleStore = useStyleStore();
 const { t, locale } = useI18n();
 
+// Desktop Notifications State
+const notificationPermission = ref(typeof window !== 'undefined' ? Notification.permission : 'default');
+
+async function requestNotificationPermission() {
+  if (typeof window === 'undefined' || !('Notification' in window)) return;
+  try {
+    const permission = await Notification.requestPermission();
+    notificationPermission.value = permission;
+    if (permission === 'granted') {
+      toast.success(t('tools.p2p-chat.notificationsEnabled'));
+      new Notification(t('tools.p2p-chat.title'), {
+        body: t('tools.p2p-chat.notificationTest'),
+        icon: '/favicon.ico'
+      });
+    } else if (permission === 'denied') {
+      toast.warning(t('tools.p2p-chat.notificationsBlocked'));
+    }
+  } catch (e) {
+    console.error('Notification permission request failed:', e);
+  }
+}
+
 // Random Crop & Fruit Nickname Generator based on language
 function getRandomNickname() {
   const isZh = locale.value.startsWith('zh');
@@ -389,6 +411,14 @@ function setupConnection(conn: DataConnection) {
         rawEncryptedFile: data.file?.isEncryptedData ? data.file : null
       } as any);
       
+      // Trigger browser notification if document is hidden and permission is granted
+      if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted' && document.hidden) {
+        new Notification(data.senderName || 'P2P Chat', {
+          body: text || (fileData ? `[傳送了檔案: ${fileData.name}]` : ''),
+          icon: '/favicon.ico'
+        });
+      }
+      
       playAlertSound();
       scrollToBottom();
     }
@@ -462,6 +492,13 @@ async function reDecryptMessages() {
         }
       }
     }
+  }
+}
+
+function handleKeyDown(e: KeyboardEvent) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault(); // Prevent standard newline
+    sendMessage();
   }
 }
 
@@ -885,6 +922,23 @@ onUnmounted(() => {
               </p>
             </div>
 
+            <!-- Desktop Notification Button -->
+            <div>
+              <n-button 
+                block 
+                size="small" 
+                :type="notificationPermission === 'granted' ? 'success' : 'warning'" 
+                secondary
+                :disabled="notificationPermission === 'granted'"
+                @click="requestNotificationPermission"
+              >
+                <template #icon>
+                  <span class="text-xs">🛎️</span>
+                </template>
+                {{ notificationPermission === 'granted' ? $t('tools.p2p-chat.notificationsEnabled') : $t('tools.p2p-chat.enableNotifications') }}
+              </n-button>
+            </div>
+
             <!-- Invite More Button -->
             <div>
               <n-tooltip trigger="hover">
@@ -1029,11 +1083,12 @@ onUnmounted(() => {
 
             <n-input 
               v-model:value="messageInput" 
-              type="text" 
+              type="textarea" 
+              :autosize="{ minRows: 1, maxRows: 4 }"
               size="medium"
               :placeholder="$t('tools.p2p-chat.inputPlaceholder')" 
               :disabled="connections.length === 0"
-              @keyup.enter="sendMessage"
+              @keydown="handleKeyDown"
             />
 
             <n-button 
