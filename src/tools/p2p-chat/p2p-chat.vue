@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, nextTick, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useClipboard } from '@vueuse/core';
+import { useClipboard, useStorage } from '@vueuse/core';
 import { useMessage, NIcon, NInput, NButton, NCard, NAlert, NTag, NTooltip, NPopover } from 'naive-ui';
 import { useI18n } from 'vue-i18n';
 import Peer, { type DataConnection } from 'peerjs';
@@ -71,6 +71,7 @@ const { t, locale } = useI18n();
 
 // Desktop Notifications State
 const notificationPermission = ref(typeof window !== 'undefined' ? Notification.permission : 'default');
+const soundEnabled = useStorage('p2p-chat-sound-enabled', true);
 
 async function requestNotificationPermission() {
   if (typeof window === 'undefined' || !('Notification' in window)) return;
@@ -246,22 +247,31 @@ function base64ToArrayBuffer(base64: string): ArrayBuffer {
 
 // Audio Alert on New Message
 function playAlertSound() {
+  if (!soundEnabled.value) return;
   try {
     const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
+    const now = ctx.currentTime;
     
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
-    osc.frequency.setValueAtTime(880, ctx.currentTime + 0.08); // A5
+    // Play a dual-tone chime (higher pitch, pleasant sound)
+    const playTone = (freq: number, start: number, duration: number) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, start);
+      
+      gain.gain.setValueAtTime(0.0, start);
+      gain.gain.linearRampToValueAtTime(0.08, start + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + duration);
+      
+      osc.start(start);
+      osc.stop(start + duration);
+    };
     
-    gain.gain.setValueAtTime(0.08, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
-    
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.2);
+    playTone(830.61, now, 0.45); // Ab5
+    playTone(1046.50, now + 0.08, 0.45); // C6
   } catch (e) {
     // Audio Context might be blocked
   }
@@ -283,10 +293,24 @@ function startGuest() {
 
 // PeerJS Initialization
 function initPeer() {
-  peer.value = new Peer();
+  // Try to load saved peer ID for room persistence (only for hosts)
+  let savedId = typeof window !== 'undefined' ? localStorage.getItem('p2p-chat-saved-peer-id') : null;
+  if (role.value === 'guest') {
+    savedId = null;
+  }
+
+  connectionState.value = 'connecting';
+  if (savedId) {
+    peer.value = new Peer(savedId);
+  } else {
+    peer.value = new Peer();
+  }
 
   peer.value.on('open', (id) => {
     peerId.value = id;
+    if (role.value === 'host') {
+      localStorage.setItem('p2p-chat-saved-peer-id', id);
+    }
     
     if (role.value === 'guest') {
       // Connect to host immediately
@@ -301,6 +325,14 @@ function initPeer() {
 
   peer.value.on('error', (err) => {
     console.error('Peer error:', err);
+    
+    // If the saved ID is unavailable (e.g. active in another tab/reconnecting) or invalid, clear and recreate
+    if (err.type === 'unavailable-id' || err.type === 'invalid-id') {
+      localStorage.removeItem('p2p-chat-saved-peer-id');
+      initPeer();
+      return;
+    }
+    
     toast.error(t('tools.p2p-chat.statusError') + ': ' + err.message);
     resetAll();
   });
@@ -666,6 +698,9 @@ function disconnectAll() {
 
 function resetAll() {
   disconnectAll();
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('p2p-chat-saved-peer-id');
+  }
   if (peer.value) {
     peer.value.destroy();
     peer.value = null;
@@ -936,6 +971,22 @@ onUnmounted(() => {
                   <span class="text-xs">🛎️</span>
                 </template>
                 {{ notificationPermission === 'granted' ? $t('tools.p2p-chat.notificationsEnabled') : $t('tools.p2p-chat.enableNotifications') }}
+              </n-button>
+            </div>
+
+            <!-- Sound Notification Button -->
+            <div>
+              <n-button 
+                block 
+                size="small" 
+                :type="soundEnabled ? 'success' : 'default'" 
+                secondary
+                @click="soundEnabled = !soundEnabled"
+              >
+                <template #icon>
+                  <span class="text-xs">{{ soundEnabled ? '🔊' : '🔇' }}</span>
+                </template>
+                {{ soundEnabled ? $t('tools.p2p-chat.soundEnabled') : $t('tools.p2p-chat.soundDisabled') }}
               </n-button>
             </div>
 

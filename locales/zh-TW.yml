@@ -743,6 +743,8 @@ tools:
     notificationsEnabled: "桌面通知已啟用"
     notificationsBlocked: "桌面通知已遭瀏覽器封鎖，請至設定中開啟"
     notificationTest: "測試通知：當有新訊息且您不在該分頁時，將會收到通知。"
+    soundEnabled: "音效通知：已開啟"
+    soundDisabled: "音效通知：已關閉"
     statusConnecting: "建立連線中..."
     statusError: "連線發生錯誤"
     statusDisconnected: "未連線"

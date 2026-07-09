@@ -747,6 +747,8 @@ tools:
     notificationsEnabled: "Notifications Enabled"
     notificationsBlocked: "Notifications blocked by browser. Please enable them in settings."
     notificationTest: "Test Notification: You will receive notifications when new messages arrive and the tab is not active."
+    soundEnabled: "Sound Alerts: On"
+    soundDisabled: "Sound Alerts: Off"
     statusConnecting: "Connecting..."
     statusError: "Connection Error"
     statusDisconnected: "Disconnected"

@@ -564,6 +564,8 @@ tools:
     notificationsEnabled: "桌面通知已启用"
     notificationsBlocked: "桌面通知已遭浏览器封锁，请至设定中开启"
     notificationTest: "测试通知：当有新消息且您不在该页面时，将会收到通知。"
+    soundEnabled: "音效通知：已开启"
+    soundDisabled: "音效通知：已关闭"
     statusConnecting: "建立连线中..."
     statusError: "连线发生错误"
     statusDisconnected: "未连线"
