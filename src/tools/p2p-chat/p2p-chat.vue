@@ -684,7 +684,7 @@ onUnmounted(() => {
           <!-- Password (E2EE) Block -->
           <div>
             <label class="block text-sm font-semibold mb-2 opacity-80 flex items-center gap-1">
-              {{ $t('tools.p2p-chat.e2eePassword') }} <n-tag size="mini" type="warning" round>{{ $t('tools.basic-auth-generator.optional') || '選填' }}</n-tag>
+              {{ $t('tools.p2p-chat.e2eePassword') }} <n-tag size="mini" type="warning" round>{{ $t('tools.p2p-chat.optional') }}</n-tag>
             </label>
             <n-input 
               v-model:value="password" 
@@ -702,7 +702,10 @@ onUnmounted(() => {
             
             <!-- CASE A: User is Guest (Invited via URL) -->
             <div v-if="targetPeerId" class="flex flex-col gap-3">
-              <n-alert type="warning" :show-icon="true" size="small" class="text-sm">
+              <n-alert type="info" size="small" class="text-sm">
+                <template #icon>
+                  <n-icon :component="IconPeople" />
+                </template>
                 {{ $t('tools.p2p-chat.invitedAlert') }}
               </n-alert>
               
@@ -712,6 +715,7 @@ onUnmounted(() => {
                 size="large" 
                 :loading="connectionState === 'connecting'"
                 @click="startGuest"
+                class="wiggle-btn"
               >
                 {{ $t('tools.p2p-chat.joinChatBtn') }}
               </n-button>
@@ -1041,5 +1045,18 @@ onUnmounted(() => {
 
 .pulse-circle {
   animation: pulse 2s infinite;
+}
+
+@keyframes gentle-wiggle {
+  0%, 90%, 100% { transform: rotate(0deg) scale(1); }
+  92% { transform: rotate(-1.5deg) scale(1.015); }
+  94% { transform: rotate(1.5deg) scale(1.015); }
+  96% { transform: rotate(-1.5deg) scale(1.015); }
+  98% { transform: rotate(1.5deg) scale(1.015); }
+}
+
+.wiggle-btn {
+  animation: gentle-wiggle 4s infinite;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.2);
 }
 </style>
