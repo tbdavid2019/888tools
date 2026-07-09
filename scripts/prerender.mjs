@@ -166,8 +166,8 @@ async function main() {
           "@type": "WebSite",
           "@id": "https://tool.david888.com/#website",
           "url": "https://tool.david888.com/",
-          "name": "888工具箱 - 實用的文字、影音與日常開發工具箱",
-          "description": "提供文字處理、進制轉換、密碼產生、圖片影片音訊處理、網路、數學等豐富的免費線上開發者工具，界面簡潔，體驗優質。",
+          "name": "DAVID888 TOOL 工具箱",
+          "description": "整合文字處理、影音剪輯、格式轉換、生活密碼與日常辦公的綜合工具箱，無廣告、安全隱私、完全在瀏覽器端運行。",
           "potentialAction": {
             "@type": "SearchAction",
             "target": "https://tool.david888.com/?search={search_term_string}",
@@ -176,7 +176,7 @@ async function main() {
         },
         {
           "@type": "ItemList",
-          "name": "888工具箱 - 工具列表",
+          "name": "DAVID888 TOOL - 工具列表",
           "numberOfItems": tools.length,
           "itemListElement": tools.map((t, idx) => ({
             "@type": "ListItem",
@@ -201,8 +201,8 @@ async function main() {
     const aboutJsonLd = {
       "@context": "https://schema.org",
       "@type": "AboutPage",
-      "name": "關於 888工具箱",
-      "description": "888工具箱（Tool.David888.com）是一款為開發人員和 IT 從業者設計的實用工具集合。預設繁體中文，無廣告，加載迅速，完全在瀏覽器端運行，安全隱私保護。",
+      "name": "關於 DAVID888 TOOL 工具箱",
+      "description": "DAVID888 TOOL 工具箱（Tool.David888.com）是一款整合文字處理、影音剪輯、格式轉換、生活密碼與日常辦公的綜合工具箱。預設繁體中文，無廣告，加載迅速，完全在瀏覽器端運行，安全隱私保護。",
       "url": "https://tool.david888.com/about"
     };
     aboutHtml = injectJsonLd(aboutHtml, aboutJsonLd);

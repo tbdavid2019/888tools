@@ -714,3 +714,6 @@ tools:
   p2p-file-transfer:
     title: "P2P File Transfer"
     description: "Transfer files directly between devices using WebRTC."
+  p2p-chat:
+    title: "P2P Web Chat"
+    description: "End-to-End Encrypted (E2EE) P2P chat tool using WebRTC, running entirely in browser with zero server storage."

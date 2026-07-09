@@ -710,3 +710,6 @@ tools:
   p2p-file-transfer:
     title: "P2P 點對點傳檔"
     description: "透過 WebRTC 協定在裝置之間直接傳送檔案，無檔案大小限制且端對端加密。"
+  p2p-chat:
+    title: "P2P 網頁即時密聊"
+    description: "基於 WebRTC 的瀏覽器端端到端加密 (E2EE) 私密聊天工具，無需伺服器中繼，訊息不經任何資料庫儲存。"

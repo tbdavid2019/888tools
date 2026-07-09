@@ -68,7 +68,7 @@ const breadcrumbItems = computed(() => {
               Workspace
             </div>
             <div class="title">
-              {{ styleStore.isMenuCollapsed ? '888' : '888 Tool' }}
+              {{ styleStore.isMenuCollapsed ? '888' : (locale.startsWith('zh') ? 'DAVID888 TOOL 工具箱' : 'DAVID888 TOOL') }}
             </div>
             <div v-if="!styleStore.isMenuCollapsed" class="subtitle">
               {{ $t('home.subtitle') }}

@@ -527,4 +527,10 @@ tools:
 
   post-writer:
     title: "社群贴文排版"
-    description: 全程本地处理，提供杂志感排版与 Broetry 文体排版，自动换行、全角标点符号转换、标题框线装饰，并提供 FB/IG/Threads 模拟预览与字数计算。
+    description: "全程本地处理，提供杂志感排版与 Broetry 文体排版，自动换行、全角标点符号转换、标题框线裝飾，并提供 FB/IG/Threads 模拟预览与字数计算。"
+  p2p-file-transfer:
+    title: "P2P 点对点传档"
+    description: "通过 WebRTC 协定在设备之间直接传送文件，无文件大小限制且端对端加密。"
+  p2p-chat:
+    title: "P2P 网页即時密聊"
+    description: "基于 WebRTC 的浏览器端端对端加密 (E2EE) 私密聊天工具，无需服务器中继，消息不经任何数据库存储。"

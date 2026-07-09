@@ -94,14 +94,17 @@
 | 45  | 側欄改為兩態固定模式：支援完整展開與窄欄 icon 模式，不再完全隱藏；窄欄下保留工具 icon 導覽與最小設定入口 |
 | 46  | 首頁資訊密度優化：縮小左上品牌區，放大工具卡標題與說明字級，並將全站 GitHub 倉庫入口統一到 `https://github.com/tbdavid2019/888tools` |
 | 47  | RWD 導覽修正：手機版側欄改為預設收合的 drawer，搜尋移到上方工具列，breadcrumb 改到內容上方並放大字級，修正 mobile overlay 擋住 tree 導致分類無法展開的問題 |
+| 48  | 新增「P2P 網頁即時密聊」工具（網路 分類），使用 PeerJS (WebRTC) 建立瀏覽器直連，整合 Web Cryptography API (AES-GCM-256) 進行本地端到端加密 (E2EE)（https://tool.david888.com/p2p-chat ） |
 
 ## Changelog
 
 ### 2026-07-09
 
+- P2P 網頁即時密聊：新增安全、隱私的端到端加密 (E2EE) P2P 聊天室工具，基於 WebRTC (PeerJS) 直連與瀏覽器原生 AES-GCM-256 金鑰加密，不經過任何伺服器儲存，支援分享連線連結與 2MB 以下圖片檔案傳送。
+- 全站品牌重塑：全站網頁標題及 logo Suffix 統一更新為 `DAVID888 TOOL`（中文切換下為 `DAVID888 TOOL 工具箱`），重新調整 OG 標籤與 Meta 描述以切合其定位。
 - SEO & 預渲染優化：為解決 CSR (Client-Side Rendering) 導致搜尋引擎爬蟲抓取不到網頁內容、SEO 分數低 (40/100) 的問題，實現了基於 Playwright 的靜態頁面預渲染 (SSG) 機制。
 - 結構化資料：自動在預渲染後的頁面中注入 page-specific 的 JSON-LD 結構化資料（首頁注入 `WebSite` 與 `ItemList`；各工具頁注入 `SoftwareApplication`；關於頁注入 `AboutPage`），為站點帶來富摘要搜尋結果支援。
-- 打包自動化：將預渲染流程整合至 `pnpm build` 命令中，每次 build 都會自動模擬 Chromium 瀏覽器（繁體中文語系/台北時區）預渲染全部 114 個路由頁面，產出高 SEO 友善度的 HTML。
+- 打包自動化：將預渲染流程整合至 `pnpm build` 命令中，每次 build 都會自動模擬 Chromium 瀏覽器（繁體中文語系/台北時區）預渲染全部 115 個路由頁面，產出高 SEO 友善度的 HTML。
 
 ### 2026-06-25
 

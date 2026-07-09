@@ -24,8 +24,14 @@ const layoutBackgroundColor = computed(() => {
   return `rgba(${activePalette.value.glassBackgroundRgb}, ${opacity})`;
 });
 
+const { locale } = useI18n();
+const siteTitleSuffix = computed(() => {
+  const isZh = locale.value.startsWith('zh');
+  return isZh ? 'DAVID888 TOOL 工具箱' : 'DAVID888 TOOL';
+});
+
 const head = computed<HeadObject>(() => ({
-  title: `${route.meta.name} - Tool.David888.com`,
+  title: `${route.meta.name} - ${siteTitleSuffix.value}`,
   link: [
     {
       rel: 'canonical',

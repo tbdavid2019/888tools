@@ -12,8 +12,22 @@ import { config } from '@/config';
 const toolStore = useToolStore();
 const styleStore = useStyleStore();
 
-useHead({ title: 'Tool.David888.com - Creative tools for text, media, and everyday work' });
-useHead({
+const { locale } = useI18n();
+
+const pageTitle = computed(() => {
+  const isZh = locale.value.startsWith('zh');
+  return isZh ? 'DAVID888 TOOL 工具箱' : 'DAVID888 TOOL';
+});
+
+const pageDescription = computed(() => {
+  const isZh = locale.value.startsWith('zh');
+  return isZh 
+    ? 'DAVID888 TOOL 工具箱 - 整合文字處理、影音剪輯、格式轉換、生活密碼與日常辦公的綜合工具箱，無廣告、安全隱私、完全在瀏覽器端運行。' 
+    : 'DAVID888 TOOL - A comprehensive toolkit for text processing, media editing, format conversion, and daily work utilities. Ad-free, secure, and runs entirely in the browser.';
+});
+
+useHead(computed(() => ({
+  title: pageTitle.value,
   link: [
     {
       rel: 'canonical',
@@ -22,11 +36,31 @@ useHead({
   ],
   meta: [
     {
+      name: 'description',
+      content: pageDescription.value,
+    },
+    {
       property: 'og:url',
       content: `${config.app.siteOrigin}/`,
     },
+    {
+      property: 'og:title',
+      content: pageTitle.value,
+    },
+    {
+      property: 'og:description',
+      content: pageDescription.value,
+    },
+    {
+      name: 'twitter:title',
+      content: pageTitle.value,
+    },
+    {
+      name: 'twitter:description',
+      content: pageDescription.value,
+    },
   ],
-});
+})));
 const { t } = useI18n();
 
 const favoriteTools = computed(() => toolStore.favoriteTools);

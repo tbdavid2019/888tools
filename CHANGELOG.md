@@ -5,7 +5,9 @@ All notable changes to this project will be documented in this file. See [standa
 ## Version 2026.07.09
 
 ### Features
-- **seo/ssg**: 新增 build-time 預渲染流程，在打包 (`pnpm build`) 完成後，自動透過 Playwright Chromium (繁體中文/台北時區) 預渲染全站所有 114 個工具路由，產出高 SEO 友善度的 HTML。
+- **p2p-chat**: 新增「P2P 網頁即時密聊」工具，使用 PeerJS (WebRTC) 建立瀏覽器直連，整合 Web Cryptography API (AES-GCM-256) 進行本地端到端加密 (E2EE)。支援分享帶連線參數的邀請連結，並支援傳送 2MB 以下的圖片與檔案。
+- **branding**: 將全站標題由 `Tool.David888.com` 與 `888 Tool` 更改為 `DAVID888 TOOL`，中文語系下自動顯示為 `DAVID888 TOOL 工具箱`，並全面更新首頁、側邊欄與各工具頁的網頁標題、OG 標籤與 Meta 說明，突顯其作為「綜合工具箱」的定位。
+- **seo/ssg**: 新增 build-time 預渲染流程，在打包 (`pnpm build`) 完成後，自動透過 Playwright Chromium (繁體中文/台北時區) 預渲染全站所有 115 個工具路由，產出高 SEO 友善度的 HTML。
 - **seo/structured-data**: 新增自動注入 JSON-LD 結構化資料。首頁注入 `WebSite` 與 `ItemList` 結構；每個工具路由頁面注入對應的 `SoftwareApplication` 結構；About 頁注入 `AboutPage` 結構。
 - **build**: 將預渲染流程整合至 `package.json` 中的 `build` 指令，保證每次打包皆會自動產生高 SEO 友善度的靜態 HTML 檔案。
 
