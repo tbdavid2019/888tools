@@ -718,10 +718,12 @@ tools:
     e2eePasswordNote: "🔐 設定後會自動透過 AES-GCM-256 加密傳輸。未設定則以明文直連通道傳送。"
     e2eePasswordNoteSidebar: "密碼不同會導致解密失敗。可隨時在此修改或更正密碼。"
     createRoomBtn: "建立聊天室並等待好友"
+    resumeRoomBtn: "恢復我的聊天室"
     orJoinManual: "或手動加入現有房間"
     pastePeerId: "貼上好友的 Peer ID"
     connectBtn: "連線"
     invitedAlert: "您的好友邀請您加入聊天室，已自動鎖定連線 ID。"
+    ownRoomInviteDetected: "這是您自己建立的聊天室邀請連結，恢復後可繼續邀請好友加入。"
     joinChatBtn: "👥 立即連線聊天"
     createInsteadBtn: "改為建立全新聊天室"
     optional: "選填"
@@ -777,6 +779,7 @@ tools:
     recallTooltip: "發送後 2 分鐘內可以撤回"
     recallExpired: "撤回期限已過"
     messageRecalled: "此訊息已撤回"
+    systemMessageLabel: "系統訊息"
 
   p2p-file-transfer:
     title: "P2P 點對點傳檔"

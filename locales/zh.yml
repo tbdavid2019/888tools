@@ -539,10 +539,12 @@ tools:
     e2eePasswordNote: "🔐 设定后会自动通过 AES-GCM-256 加密传输。未设定则以明文直连通道传送。"
     e2eePasswordNoteSidebar: "密码不同会导致解密失败。可随时在此修改或更正密码。"
     createRoomBtn: "建立聊天室并等待好友"
+    resumeRoomBtn: "恢复我的聊天室"
     orJoinManual: "或手动加入现有房间"
     pastePeerId: "贴上好友的 Peer ID"
     connectBtn: "连线"
     invitedAlert: "您的好友邀请您加入聊天室，已自动锁定连线 ID。"
+    ownRoomInviteDetected: "这是您自己建立的聊天室邀请链接，恢复后可继续邀请好友加入。"
     joinChatBtn: "👥 立即连线聊天"
     createInsteadBtn: "改为建立全新聊天室"
     optional: "选填"
@@ -598,6 +600,7 @@ tools:
     recallTooltip: "发送后 2 分钟内可以撤回"
     recallExpired: "撤回期限已过"
     messageRecalled: "此消息已撤回"
+    systemMessageLabel: "系统消息"
 
   p2p-file-transfer:
     title: "P2P 点对点传档"

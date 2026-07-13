@@ -25,6 +25,7 @@ import { useStyleStore } from '@/stores/style.store';
 import { kanagawaDarkPalette, kanagawaLightPalette } from '@/theme/palette';
 import {
   createMessageId,
+  isOwnRoomInvite,
   isRecallPacket,
   isWithinRecallWindow,
 } from './p2p-chat.protocol';
@@ -63,6 +64,7 @@ const connectionState = ref<ConnectionState>('disconnected');
 const messages = ref<MessageItem[]>([]);
 const messageInput = ref('');
 const fileInput = ref<HTMLInputElement | null>(null);
+const isOwnRoomInviteLink = ref(false);
 const pendingRecalls = new Set<string>();
 
 function getRecallKey(senderPeerId: string, messageId: string) {
@@ -237,6 +239,14 @@ const partnerBubbleFailedStyle = computed(() => {
   };
 });
 
+const recalledBubbleStyle = computed(() => ({
+  backgroundColor: styleStore.isDarkTheme ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)',
+  color: activePalette.value.text,
+  border: `1px dashed ${activePalette.value.border}80`,
+  borderRadius: '10px',
+  boxShadow: 'none',
+}));
+
 // List of connected partners
 const partnersListString = computed(() => {
   const names = Object.values(partnerNames.value);
@@ -367,6 +377,7 @@ function initPeer() {
     peerId.value = id;
     if (role.value === 'host') {
       localStorage.setItem('p2p-chat-saved-peer-id', id);
+      router.replace({ query: { connect: id } });
     }
     
     if (role.value === 'guest') {
@@ -871,6 +882,7 @@ function resetAll() {
   connectionState.value = 'disconnected';
   uiState.value = 'setup';
   messages.value = [];
+  isOwnRoomInviteLink.value = false;
   pendingRecalls.clear();
   
   if (route.query.connect) {
@@ -885,8 +897,17 @@ function cancelInvitation() {
 // Lifecycle
 onMounted(() => {
   randomizeName();
-  if (route.query.connect) {
-    targetPeerId.value = String(route.query.connect);
+  const requestedPeerId = route.query.connect ? String(route.query.connect) : '';
+  const savedHostPeerId = typeof window !== 'undefined'
+    ? localStorage.getItem('p2p-chat-saved-peer-id')
+    : null;
+
+  if (isOwnRoomInvite(requestedPeerId, savedHostPeerId)) {
+    isOwnRoomInviteLink.value = true;
+    role.value = 'host';
+    toast.info(t('tools.p2p-chat.ownRoomInviteDetected'));
+  } else if (requestedPeerId) {
+    targetPeerId.value = requestedPeerId;
     role.value = 'guest';
     toast.info(t('tools.p2p-chat.detectInvite'));
   }
@@ -982,7 +1003,7 @@ onUnmounted(() => {
                 secondary 
                 block 
                 size="medium" 
-                @click="targetPeerId = ''; router.replace({ query: {} })"
+                @click="targetPeerId = ''; isOwnRoomInviteLink = false; router.replace({ query: {} })"
               >
                 {{ $t('tools.p2p-chat.createInsteadBtn') }}
               </n-button>
@@ -990,13 +1011,20 @@ onUnmounted(() => {
 
             <!-- CASE B: User is Creator (No URL Inv) -->
             <div v-else class="flex flex-col gap-4">
+              <n-alert v-if="isOwnRoomInviteLink" type="success" size="small" class="text-sm">
+                <template #icon>
+                  <n-icon :component="IconCheck" />
+                </template>
+                {{ $t('tools.p2p-chat.ownRoomInviteDetected') }}
+              </n-alert>
+
               <n-button 
                 type="primary" 
                 block 
                 size="large"
                 @click="startHost"
               >
-                {{ $t('tools.p2p-chat.createRoomBtn') }}
+                {{ $t(isOwnRoomInviteLink ? 'tools.p2p-chat.resumeRoomBtn' : 'tools.p2p-chat.createRoomBtn') }}
               </n-button>
 
               <div class="flex items-center my-1 text-sm opacity-50 justify-center gap-2">
@@ -1240,17 +1268,21 @@ onUnmounted(() => {
               :class="msg.sender === 'me' ? 'self-end items-end' : 'self-start items-start'"
             >
               <!-- Time and Sender name -->
-              <span class="text-xs opacity-75 mb-0.5 px-1.5">
+              <span v-if="msg.isRecalled" class="text-xs opacity-60 mb-0.5 px-1.5 uppercase tracking-wide">
+                {{ $t('tools.p2p-chat.systemMessageLabel') }} • {{ formatTime(msg.timestamp) }}
+              </span>
+              <span v-else class="text-xs opacity-75 mb-0.5 px-1.5">
                 {{ msg.senderName }} • {{ formatTime(msg.timestamp) }}
               </span>
 
               <!-- Bubble Box -->
               <div 
                 class="rounded-2xl px-4 py-2.5 text-base leading-relaxed shadow-sm relative group"
-                :style="msg.sender === 'me' ? meBubbleStyle : (msg.decryptionFailed ? partnerBubbleFailedStyle : partnerBubbleStyle)"
+                :style="msg.isRecalled ? recalledBubbleStyle : (msg.sender === 'me' ? meBubbleStyle : (msg.decryptionFailed ? partnerBubbleFailedStyle : partnerBubbleStyle))"
               >
                 <!-- Recalled message placeholder -->
-                <div v-if="msg.isRecalled" class="italic opacity-75 text-sm py-1">
+                <div v-if="msg.isRecalled" class="flex items-center gap-1 italic opacity-75 text-sm py-1">
+                  <span aria-hidden="true">↩</span>
                   {{ $t('tools.p2p-chat.messageRecalled') }}
                 </div>
 

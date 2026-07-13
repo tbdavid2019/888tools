@@ -722,10 +722,12 @@ tools:
     e2eePasswordNote: "🔐 Setting a password automatically enables AES-GCM-256 local encryption. Leave blank for unencrypted direct channel."
     e2eePasswordNoteSidebar: "Different passwords will cause decryption failure. You can change/correct the password here at any time."
     createRoomBtn: "Create Chat Room & Wait"
+    resumeRoomBtn: "Resume My Chat Room"
     orJoinManual: "or manually join existing room"
     pastePeerId: "Paste friend's Peer ID"
     connectBtn: "Connect"
     invitedAlert: "Your friend invited you to join the chat, ID locked."
+    ownRoomInviteDetected: "This is your own room invite link. Resume the room to keep inviting friends."
     joinChatBtn: "👥 Connect & Chat"
     createInsteadBtn: "Create new chat room instead"
     optional: "Optional"
@@ -781,6 +783,7 @@ tools:
     recallTooltip: "Recall within 2 minutes after sending"
     recallExpired: "The recall window has expired"
     messageRecalled: "This message was recalled"
+    systemMessageLabel: "System message"
 
   p2p-file-transfer:
     title: "P2P File Transfer"
