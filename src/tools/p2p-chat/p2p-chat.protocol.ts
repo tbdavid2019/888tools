@@ -31,3 +31,17 @@ export function isWithinRecallWindow(timestamp: number, now = Date.now()): boole
     && timestamp <= now
     && now - timestamp <= RECALL_WINDOW_MS;
 }
+
+export interface MessageKeyEvent {
+  key: string
+  shiftKey: boolean
+  isComposing?: boolean
+  keyCode?: number
+}
+
+export function shouldSendMessageOnEnter(event: MessageKeyEvent): boolean {
+  return event.key === 'Enter'
+    && !event.shiftKey
+    && !event.isComposing
+    && event.keyCode !== 229;
+}

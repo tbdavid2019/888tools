@@ -4,6 +4,7 @@ import {
   createMessageId,
   isRecallPacket,
   isWithinRecallWindow,
+  shouldSendMessageOnEnter,
 } from './p2p-chat.protocol';
 
 describe('p2p chat recall protocol', () => {
@@ -39,5 +40,12 @@ describe('p2p chat recall protocol', () => {
     expect(isWithinRecallWindow(now - RECALL_WINDOW_MS, now)).toBe(true);
     expect(isWithinRecallWindow(now - RECALL_WINDOW_MS - 1, now)).toBe(false);
     expect(isWithinRecallWindow(now + 1, now)).toBe(false);
+  });
+
+  it('does not treat IME composition confirmation as send', () => {
+    expect(shouldSendMessageOnEnter({ key: 'Enter', shiftKey: false, isComposing: true, keyCode: 13 })).toBe(false);
+    expect(shouldSendMessageOnEnter({ key: 'Enter', shiftKey: false, isComposing: false, keyCode: 229 })).toBe(false);
+    expect(shouldSendMessageOnEnter({ key: 'Enter', shiftKey: false, isComposing: false, keyCode: 13 })).toBe(true);
+    expect(shouldSendMessageOnEnter({ key: 'Enter', shiftKey: true, isComposing: false, keyCode: 13 })).toBe(false);
   });
 });

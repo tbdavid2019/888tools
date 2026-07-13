@@ -27,6 +27,7 @@ import {
   createMessageId,
   isRecallPacket,
   isWithinRecallWindow,
+  shouldSendMessageOnEnter,
 } from './p2p-chat.protocol';
 import {
   createRoomId,
@@ -70,6 +71,7 @@ const password = ref('');
 const connectionState = ref<ConnectionState>('disconnected');
 const messages = ref<MessageItem[]>([]);
 const messageInput = ref('');
+const isMessageInputComposing = ref(false);
 const fileInput = ref<HTMLInputElement | null>(null);
 const pendingRecalls = new Set<string>();
 
@@ -729,10 +731,23 @@ function markMessageRecalled(message: MessageItem) {
 }
 
 function handleKeyDown(e: KeyboardEvent) {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault(); // Prevent standard newline
-    sendMessage();
-  }
+  if (!shouldSendMessageOnEnter({
+    key: e.key,
+    shiftKey: e.shiftKey,
+    isComposing: e.isComposing || isMessageInputComposing.value,
+    keyCode: e.keyCode,
+  })) return;
+
+  e.preventDefault(); // Prevent standard newline
+  void sendMessage();
+}
+
+function handleCompositionStart() {
+  isMessageInputComposing.value = true;
+}
+
+function handleCompositionEnd() {
+  isMessageInputComposing.value = false;
 }
 
 // Send Message (Broadcast to all connected mesh peers)
@@ -1470,6 +1485,8 @@ onUnmounted(() => {
               :placeholder="$t('tools.p2p-chat.inputPlaceholder')" 
               :disabled="connections.length === 0"
               @keydown="handleKeyDown"
+              @compositionstart="handleCompositionStart"
+              @compositionend="handleCompositionEnd"
             />
 
             <n-button 
