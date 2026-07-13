@@ -181,12 +181,11 @@ const chatHistoryStyle = computed(() => {
 
   if (chatBgType.value === 'telegram') {
     bgStyle.backgroundColor = isDark ? '#182533' : '#e7ebf0';
-    bgStyle.backgroundImage = 'url("https://telegram.org/img/tgme/pattern.svg")';
-    bgStyle.backgroundSize = '380px';
-    bgStyle.backgroundRepeat = 'repeat';
-    if (isDark) {
-      bgStyle.backgroundBlendMode = 'overlay';
-    }
+    bgStyle['--chat-pattern-image'] = 'url("https://telegram.org/img/tgme/pattern.svg")';
+    bgStyle['--chat-pattern-opacity'] = isDark ? '0.11' : '0.08';
+    bgStyle['--chat-pattern-overlay'] = isDark
+      ? 'rgba(24, 37, 51, 0.72)'
+      : 'rgba(231, 235, 240, 0.78)';
   } else if (chatBgType.value === 'default') {
     bgStyle.backgroundColor = isDark ? 'rgba(0, 0, 0, 0.25)' : 'rgba(255, 255, 255, 0.45)';
   } else if (chatBgType.value === 'blue') {
@@ -1252,7 +1251,7 @@ onUnmounted(() => {
           <!-- Chat History -->
           <div 
             ref="chatContainer"
-            class="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3 min-h-[380px] max-h-[380px] rounded-xl"
+            class="chat-history-container flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3 min-h-[380px] max-h-[380px] rounded-xl"
             :style="chatHistoryStyle"
           >
             <div v-if="messages.length === 0" class="h-full flex flex-col items-center justify-center text-center opacity-50 py-10">
@@ -1422,6 +1421,40 @@ onUnmounted(() => {
 .content-card {
   display: flex;
   flex-direction: column;
+}
+
+.chat-history-container {
+  position: relative;
+  isolation: isolate;
+}
+
+.chat-history-container::before,
+.chat-history-container::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.chat-history-container::before {
+  inset: -12px;
+  background-image: var(--chat-pattern-image, none);
+  background-size: 380px;
+  background-repeat: repeat;
+  filter: blur(4px);
+  opacity: var(--chat-pattern-opacity, 0);
+  transform: scale(1.02);
+  z-index: 0;
+}
+
+.chat-history-container::after {
+  background: var(--chat-pattern-overlay, transparent);
+  z-index: 0;
+}
+
+.chat-history-container > * {
+  position: relative;
+  z-index: 1;
 }
 
 ::v-deep(.n-card__content) {
