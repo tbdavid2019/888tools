@@ -777,6 +777,10 @@ tools:
     e2eeNoteMessage: "[🔐 Message encrypted. Set password in the sidebar to decrypt]"
     decryptFailedMessage: "[⚠️ Decryption failed: Password mismatch or incorrect key]"
     e2eeNoteFile: "[Sent file: {name}]"
+    recallBtn: "Recall"
+    recallTooltip: "Recall within 2 minutes after sending"
+    recallExpired: "The recall window has expired"
+    messageRecalled: "This message was recalled"
 
   p2p-file-transfer:
     title: "P2P File Transfer"

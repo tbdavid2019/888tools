@@ -594,6 +594,10 @@ tools:
     e2eeNoteMessage: "[🔐 消息已加密，请在左侧设定房间密码以解密]"
     decryptFailedMessage: "[⚠️ 解密失败：金钥不匹配或密码错误]"
     e2eeNoteFile: "[传送了文件: {name}]"
+    recallBtn: "撤回"
+    recallTooltip: "发送后 2 分钟内可以撤回"
+    recallExpired: "撤回期限已过"
+    messageRecalled: "此消息已撤回"
 
   p2p-file-transfer:
     title: "P2P 点对点传档"

@@ -23,6 +23,11 @@ import {
 import { config } from '@/config';
 import { useStyleStore } from '@/stores/style.store';
 import { kanagawaDarkPalette, kanagawaLightPalette } from '@/theme/palette';
+import {
+  createMessageId,
+  isRecallPacket,
+  isWithinRecallWindow,
+} from './p2p-chat.protocol';
 
 // Types
 type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'error';
@@ -31,11 +36,13 @@ type UIState = 'setup' | 'waiting' | 'chat';
 interface MessageItem {
   id: string;
   sender: 'me' | 'partner';
+  senderPeerId?: string;
   senderName: string;
   timestamp: number;
   type: 'text' | 'file';
   text?: string;
   isEncrypted: boolean;
+  isRecalled?: boolean;
   decryptionFailed?: boolean;
   file?: {
     name: string;
@@ -56,6 +63,11 @@ const connectionState = ref<ConnectionState>('disconnected');
 const messages = ref<MessageItem[]>([]);
 const messageInput = ref('');
 const fileInput = ref<HTMLInputElement | null>(null);
+const pendingRecalls = new Set<string>();
+
+function getRecallKey(senderPeerId: string, messageId: string) {
+  return JSON.stringify([senderPeerId, messageId]);
+}
 
 const peer = ref<Peer | null>(null);
 const connections = ref<DataConnection[]>([]);
@@ -438,12 +450,38 @@ function setupConnection(conn: DataConnection) {
         return;
       }
 
-      // 3. Handle normal message
-      const msgId = 'partner_' + Math.random().toString(36).substr(2, 9);
+      // 3. Handle message recall control packets
+      if (data.type === 'recall') {
+        if (!isRecallPacket(data) || data.senderPeerId !== conn.peer) return;
+
+        const recalledMessage = messages.value.find(
+          msg => msg.id === data.messageId && msg.senderPeerId === conn.peer,
+        );
+        if (recalledMessage) {
+          if (isWithinRecallWindow(recalledMessage.timestamp)) {
+            markMessageRecalled(recalledMessage);
+          }
+        } else if (pendingRecalls.size < 100) {
+          // Decryption is asynchronous, so the recall packet can be handled
+          // before the original message has been added to the list.
+          pendingRecalls.add(getRecallKey(data.senderPeerId, data.messageId));
+        }
+        return;
+      }
+
+      // 4. Handle normal message
+      const msgId = typeof data.messageId === 'string' && data.messageId
+        ? data.messageId
+        : createMessageId('received');
       let isEncrypted = !!data.encrypted;
       let text = data.text || '';
       let fileData = data.file;
       let decryptionFailed = false;
+      const messageTimestamp = typeof data.timestamp === 'number' ? data.timestamp : Date.now();
+      const hasPendingRecall = pendingRecalls.delete(getRecallKey(conn.peer, msgId));
+      const shouldApplyPendingRecall = hasPendingRecall && isWithinRecallWindow(messageTimestamp);
+
+      if (messages.value.some(msg => msg.id === msgId && msg.senderPeerId === conn.peer)) return;
 
       if (isEncrypted && data.encrypted) {
         if (!derivedKey.value) {
@@ -477,11 +515,13 @@ function setupConnection(conn: DataConnection) {
       messages.value.push({
         id: msgId,
         sender: 'partner',
+        senderPeerId: conn.peer,
         senderName: data.senderName || 'Partner',
-        timestamp: data.timestamp || Date.now(),
+        timestamp: messageTimestamp,
         type: data.type || 'text',
         text,
         isEncrypted,
+        isRecalled: shouldApplyPendingRecall,
         decryptionFailed,
         file: fileData,
         rawEncrypted: data.encrypted,
@@ -541,7 +581,7 @@ async function reDecryptMessages() {
   if (!derivedKey.value) return;
 
   for (const msg of messages.value) {
-    if (msg.isEncrypted && (msg.decryptionFailed || !msg.text || msg.text.startsWith('['))) {
+    if (!msg.isRecalled && msg.isEncrypted && (msg.decryptionFailed || !msg.text || msg.text.startsWith('['))) {
       const rawEnc = (msg as any).rawEncrypted;
       if (rawEnc) {
         try {
@@ -572,6 +612,13 @@ async function reDecryptMessages() {
   }
 }
 
+function markMessageRecalled(message: MessageItem) {
+  message.isRecalled = true;
+  message.decryptionFailed = false;
+  message.text = undefined;
+  message.file = undefined;
+}
+
 function handleKeyDown(e: KeyboardEvent) {
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault(); // Prevent standard newline
@@ -589,10 +636,12 @@ async function sendMessage() {
 
   const textToSend = messageInput.value;
   const timestamp = Date.now();
-  const msgId = 'me_' + Math.random().toString(36).substr(2, 9);
+  const msgId = createMessageId();
   
   let payload: any = {
     type: 'text',
+    messageId: msgId,
+    senderPeerId: peerId.value,
     senderName: myUsername.value,
     timestamp,
   };
@@ -620,6 +669,7 @@ async function sendMessage() {
   messages.value.push({
     id: msgId,
     sender: 'me',
+    senderPeerId: peerId.value,
     senderName: myUsername.value,
     timestamp,
     type: 'text',
@@ -628,6 +678,42 @@ async function sendMessage() {
   });
 
   messageInput.value = '';
+  scrollToBottom();
+}
+
+function canRecallMessage(message: MessageItem) {
+  return message.sender === 'me'
+    && !message.isRecalled
+    && isWithinRecallWindow(message.timestamp);
+}
+
+function recallMessage(message: MessageItem) {
+  if (message.isRecalled) return;
+  if (!canRecallMessage(message)) {
+    toast.warning(t('tools.p2p-chat.recallExpired'));
+    return;
+  }
+  if (connections.value.length === 0) {
+    toast.warning(t('tools.p2p-chat.statusDisconnected'));
+    return;
+  }
+
+  const packet = {
+    type: 'recall' as const,
+    messageId: message.id,
+    senderPeerId: peerId.value,
+    text: t('tools.p2p-chat.messageRecalled'),
+  };
+
+  markMessageRecalled(message);
+  connections.value.forEach(conn => {
+    try {
+      conn.send(packet);
+    } catch (error) {
+      console.error('Failed to send recall packet:', error);
+    }
+  });
+
   scrollToBottom();
 }
 
@@ -659,10 +745,12 @@ async function processAndSendFile(file: File) {
     
     const base64Data = event.target.result as string;
     const timestamp = Date.now();
-    const msgId = 'me_' + Math.random().toString(36).substr(2, 9);
+    const msgId = createMessageId();
 
     let payload: any = {
       type: 'file',
+      messageId: msgId,
+      senderPeerId: peerId.value,
       senderName: myUsername.value,
       timestamp,
       file: {
@@ -701,6 +789,7 @@ async function processAndSendFile(file: File) {
     messages.value.push({
       id: msgId,
       sender: 'me',
+      senderPeerId: peerId.value,
       senderName: myUsername.value,
       timestamp,
       type: 'file',
@@ -782,6 +871,7 @@ function resetAll() {
   connectionState.value = 'disconnected';
   uiState.value = 'setup';
   messages.value = [];
+  pendingRecalls.clear();
   
   if (route.query.connect) {
     router.replace({ query: {} });
@@ -1159,8 +1249,13 @@ onUnmounted(() => {
                 class="rounded-2xl px-4 py-2.5 text-base leading-relaxed shadow-sm relative group"
                 :style="msg.sender === 'me' ? meBubbleStyle : (msg.decryptionFailed ? partnerBubbleFailedStyle : partnerBubbleStyle)"
               >
+                <!-- Recalled message placeholder -->
+                <div v-if="msg.isRecalled" class="italic opacity-75 text-sm py-1">
+                  {{ $t('tools.p2p-chat.messageRecalled') }}
+                </div>
+
                 <!-- Image/File Payload -->
-                <div v-if="msg.type === 'file' && msg.file" class="flex flex-col gap-2">
+                <div v-else-if="msg.type === 'file' && msg.file" class="flex flex-col gap-2">
                   <div v-if="msg.file.type.startsWith('image/')" class="max-w-[280px] overflow-hidden rounded-lg shadow-sm border border-black/10">
                     <n-image 
                       :src="msg.file.data" 
@@ -1188,8 +1283,24 @@ onUnmounted(() => {
                   {{ msg.text }}
                 </div>
 
+                <n-tooltip v-if="msg.sender === 'me' && canRecallMessage(msg)" trigger="hover">
+                  <template #trigger>
+                    <n-button
+                      quaternary
+                      size="tiny"
+                      class="mt-1 !text-white/80 hover:!text-white"
+                      :aria-label="$t('tools.p2p-chat.recallBtn')"
+                      @click="recallMessage(msg)"
+                    >
+                      <template #icon><n-icon :component="IconBack" /></template>
+                      {{ $t('tools.p2p-chat.recallBtn') }}
+                    </n-button>
+                  </template>
+                  {{ $t('tools.p2p-chat.recallTooltip') }}
+                </n-tooltip>
+
                 <!-- Encryption lock icon -->
-                <div v-if="msg.isEncrypted" class="absolute -bottom-2 -right-1 bg-amber-500 text-black text-[10px] font-extrabold px-1 rounded flex items-center gap-0.5 scale-90 shadow-sm">
+                <div v-if="msg.isEncrypted && !msg.isRecalled" class="absolute -bottom-2 -right-1 bg-amber-500 text-black text-[10px] font-extrabold px-1 rounded flex items-center gap-0.5 scale-90 shadow-sm">
                   <n-icon size="9" :component="IconLock" />
                   E2EE
                 </div>

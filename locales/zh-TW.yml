@@ -773,6 +773,10 @@ tools:
     e2eeNoteMessage: "[🔐 訊息已加密，請在左側設定房間密碼以解密]"
     decryptFailedMessage: "[⚠️ 解密失敗：金鑰不匹配或密碼錯誤]"
     e2eeNoteFile: "[傳送了檔案: {name}]"
+    recallBtn: "撤回"
+    recallTooltip: "發送後 2 分鐘內可以撤回"
+    recallExpired: "撤回期限已過"
+    messageRecalled: "此訊息已撤回"
 
   p2p-file-transfer:
     title: "P2P 點對點傳檔"

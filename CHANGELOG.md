@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
  
+## Version 2026.07.13
+
+### Features
+- **p2p-chat**: 新增限時訊息撤回功能。文字、圖片與檔案發送後 2 分鐘內可由發送者撤回，並同步更新所有目前在線的聊天室成員。
+  - 封包加入穩定訊息 ID，支援多人 WebRTC Mesh 廣播。
+  - 撤回封包驗證來源 peer，只允許原作者撤回自己的訊息。
+  - 處理 E2EE 非同步解密期間的撤回競態，並維持訊息不經伺服器儲存的設計。
+  - 離線成員、已下載檔案、截圖或複製出去的內容無法被遠端收回。
+
 ## Version 2026.07.09
 
 ### Features
