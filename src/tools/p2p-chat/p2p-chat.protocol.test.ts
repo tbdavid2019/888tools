@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import {
   RECALL_WINDOW_MS,
   createMessageId,
-  isOwnRoomInvite,
   isRecallPacket,
   isWithinRecallWindow,
 } from './p2p-chat.protocol';
@@ -32,12 +31,6 @@ describe('p2p chat recall protocol', () => {
     expect(isRecallPacket({ type: 'recall', messageId: 'msg_123' })).toBe(false);
     expect(isRecallPacket({ type: 'text', messageId: 'msg_123' })).toBe(false);
     expect(isRecallPacket(null)).toBe(false);
-  });
-
-  it('recognizes an invite URL for the local host room', () => {
-    expect(isOwnRoomInvite('peer-local', 'peer-local')).toBe(true);
-    expect(isOwnRoomInvite('peer-other', 'peer-local')).toBe(false);
-    expect(isOwnRoomInvite('', 'peer-local')).toBe(false);
   });
 
   it('allows recall within the two-minute window, including the boundary', () => {

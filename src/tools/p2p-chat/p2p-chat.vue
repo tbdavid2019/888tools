@@ -25,10 +25,16 @@ import { useStyleStore } from '@/stores/style.store';
 import { kanagawaDarkPalette, kanagawaLightPalette } from '@/theme/palette';
 import {
   createMessageId,
-  isOwnRoomInvite,
   isRecallPacket,
   isWithinRecallWindow,
 } from './p2p-chat.protocol';
+import {
+  createRoomId,
+  createRoomSessionId,
+  isValidRoomId,
+  parseRoomServerMessage,
+  type RoomMember,
+} from './p2p-chat.room-protocol';
 
 // Types
 type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'error';
@@ -55,16 +61,16 @@ interface MessageItem {
 
 // State
 const uiState = ref<UIState>('setup');
-const role = ref<'host' | 'guest'>('host');
 const myUsername = ref('');
 const peerId = ref('');
-const targetPeerId = ref('');
+const targetRoomId = ref('');
+const roomId = ref('');
+const roomSessionId = ref(createRoomSessionId());
 const password = ref('');
 const connectionState = ref<ConnectionState>('disconnected');
 const messages = ref<MessageItem[]>([]);
 const messageInput = ref('');
 const fileInput = ref<HTMLInputElement | null>(null);
-const isOwnRoomInviteLink = ref(false);
 const pendingRecalls = new Set<string>();
 
 function getRecallKey(senderPeerId: string, messageId: string) {
@@ -74,6 +80,10 @@ function getRecallKey(senderPeerId: string, messageId: string) {
 const peer = ref<Peer | null>(null);
 const connections = ref<DataConnection[]>([]);
 const partnerNames = ref<Record<string, string>>({}); // peerId -> nickname
+const roomMembers = ref<Record<string, RoomMember>>({});
+const roomSocket = ref<WebSocket | null>(null);
+const roomHeartbeatTimer = ref<number | null>(null);
+const pendingPeerConnections = new Set<string>();
 const derivedKey = ref<CryptoKey | null>(null);
 const chatContainer = ref<HTMLElement | null>(null);
 
@@ -253,11 +263,10 @@ const partnersListString = computed(() => {
   return names.join(', ');
 });
 
-// Clipboard helpers (Invite URL always points to the Host to support mesh entry)
+// Clipboard helpers (Invite URL points to the stable room id)
 const shareUrl = computed(() => {
-  const hostId = role.value === 'host' ? peerId.value : targetPeerId.value;
-  if (!hostId) return '';
-  return `${window.location.origin}${route.path}?connect=${hostId}`;
+  if (!roomId.value) return '';
+  return `${window.location.origin}${route.path}?room=${roomId.value}`;
 });
 const { copy: copyId, copied: copiedId } = useClipboard({ source: peerId });
 const { copy: copyShareUrl, copied: copiedShareUrl } = useClipboard({ source: shareUrl });
@@ -343,47 +352,44 @@ function playAlertSound() {
   }
 }
 
-// Host initiates and waits
+// Any member can create or join a room. The room id, not a user, is the stable identity.
 function startHost() {
-  role.value = 'host';
+  if (!config.p2pChat.signalingUrl.trim()) {
+    toast.error(t('tools.p2p-chat.signalingUnavailable'));
+    return;
+  }
+
+  roomId.value = createRoomId();
   uiState.value = 'waiting';
+  router.replace({ query: { room: roomId.value } });
   initPeer();
 }
 
-// Guest connects
 function startGuest() {
-  role.value = 'guest';
+  if (!config.p2pChat.signalingUrl.trim()) {
+    toast.error(t('tools.p2p-chat.signalingUnavailable'));
+    return;
+  }
+
+  if (!isValidRoomId(targetRoomId.value.trim())) {
+    toast.error(t('tools.p2p-chat.invalidRoomId'));
+    return;
+  }
+
+  roomId.value = targetRoomId.value.trim();
   connectionState.value = 'connecting';
+  router.replace({ query: { room: roomId.value } });
   initPeer();
 }
 
 // PeerJS Initialization
 function initPeer() {
-  // Try to load saved peer ID for room persistence (only for hosts)
-  let savedId = typeof window !== 'undefined' ? localStorage.getItem('p2p-chat-saved-peer-id') : null;
-  if (role.value === 'guest') {
-    savedId = null;
-  }
-
   connectionState.value = 'connecting';
-  if (savedId) {
-    peer.value = new Peer(savedId);
-  } else {
-    peer.value = new Peer();
-  }
+  peer.value = new Peer();
 
   peer.value.on('open', (id) => {
     peerId.value = id;
-    if (role.value === 'host') {
-      localStorage.setItem('p2p-chat-saved-peer-id', id);
-      router.replace({ query: { connect: id } });
-    }
-    
-    if (role.value === 'guest') {
-      // Connect to host immediately
-      const conn = peer.value!.connect(targetPeerId.value);
-      setupConnection(conn);
-    }
+    connectRoomSignal();
   });
 
   peer.value.on('connection', (conn) => {
@@ -393,16 +399,126 @@ function initPeer() {
   peer.value.on('error', (err) => {
     console.error('Peer error:', err);
     
-    // If the saved ID is unavailable (e.g. active in another tab/reconnecting) or invalid, clear and recreate
-    if (err.type === 'unavailable-id' || err.type === 'invalid-id') {
-      localStorage.removeItem('p2p-chat-saved-peer-id');
-      initPeer();
-      return;
-    }
-    
     toast.error(t('tools.p2p-chat.statusError') + ': ' + err.message);
     resetAll();
   });
+}
+
+function closeRoomSignal() {
+  if (roomHeartbeatTimer.value !== null) {
+    window.clearInterval(roomHeartbeatTimer.value);
+    roomHeartbeatTimer.value = null;
+  }
+  if (roomSocket.value) {
+    roomSocket.value.close();
+    roomSocket.value = null;
+  }
+  roomMembers.value = {};
+}
+
+function connectRoomSignal() {
+  const signalingUrl = config.p2pChat.signalingUrl.trim();
+  if (!signalingUrl) {
+    toast.error(t('tools.p2p-chat.signalingUnavailable'));
+    return;
+  }
+
+  let signalUrl: URL;
+  try {
+    signalUrl = new URL(`${signalingUrl.replace(/\/$/, '')}/rooms/${roomId.value}`);
+    signalUrl.protocol = signalUrl.protocol === 'https:' ? 'wss:' : 'ws:';
+    signalUrl.searchParams.set('peerId', peerId.value);
+    signalUrl.searchParams.set('sessionId', roomSessionId.value);
+    signalUrl.searchParams.set('nickname', myUsername.value);
+  } catch {
+    toast.error(t('tools.p2p-chat.roomSignalError'));
+    return;
+  }
+
+  const socket = new WebSocket(signalUrl);
+  roomSocket.value = socket;
+
+  socket.addEventListener('open', () => {
+    connectionState.value = 'connected';
+    roomHeartbeatTimer.value = window.setInterval(() => {
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ type: 'heartbeat' }));
+      }
+    }, 20_000);
+  });
+
+  socket.addEventListener('message', (event) => {
+    try {
+      const message = parseRoomServerMessage(JSON.parse(event.data));
+      if (message) handleRoomSignalMessage(message);
+    } catch {
+      // Ignore malformed signaling data from the external room service.
+    }
+  });
+
+  socket.addEventListener('error', () => {
+    toast.error(t('tools.p2p-chat.roomSignalError'));
+  });
+
+  socket.addEventListener('close', () => {
+    if (roomSocket.value === socket) {
+      closeRoomSignal();
+    }
+  });
+}
+
+function handleRoomSignalMessage(message: ReturnType<typeof parseRoomServerMessage>) {
+  if (!message) return;
+
+  if (message.type === 'room-state') {
+    const nextMembers: Record<string, RoomMember> = {};
+    const activePeerIds = new Set<string>();
+    message.members.forEach((member) => {
+      nextMembers[member.peerId] = member;
+      activePeerIds.add(member.peerId);
+      if (member.peerId !== peerId.value) {
+        partnerNames.value[member.peerId] = member.nickname;
+        connectToRoomMember(member.peerId);
+      }
+    });
+    Object.keys(partnerNames.value).forEach((remotePeerId) => {
+      if (!activePeerIds.has(remotePeerId)) delete partnerNames.value[remotePeerId];
+    });
+    roomMembers.value = nextMembers;
+    return;
+  }
+
+  if (message.type === 'member-joined') {
+    roomMembers.value[message.member.peerId] = message.member;
+    if (message.member.peerId !== peerId.value) {
+      partnerNames.value[message.member.peerId] = message.member.nickname;
+      connectToRoomMember(message.member.peerId);
+    }
+    return;
+  }
+
+  const member = roomMembers.value[message.peerId];
+  if (member?.sessionId !== message.sessionId) return;
+
+  delete roomMembers.value[message.peerId];
+  delete partnerNames.value[message.peerId];
+  const connection = connections.value.find(conn => conn.peer === message.peerId);
+  connection?.close();
+}
+
+function connectToRoomMember(remotePeerId: string) {
+  if (!peer.value || !peerId.value || remotePeerId === peerId.value) return;
+  if (connections.value.some(conn => conn.peer === remotePeerId) || pendingPeerConnections.has(remotePeerId)) return;
+
+  // Only the lexicographically smaller peer dials to avoid duplicate channels.
+  if (peerId.value > remotePeerId) return;
+
+  pendingPeerConnections.add(remotePeerId);
+  try {
+    setupConnection(peer.value.connect(remotePeerId));
+  } catch {
+    pendingPeerConnections.delete(remotePeerId);
+  }
 }
 
 function addConnection(conn: DataConnection) {
@@ -421,6 +537,7 @@ function removeConnection(pId: string) {
 
 function setupConnection(conn: DataConnection) {
   conn.on('open', () => {
+    pendingPeerConnections.delete(conn.peer);
     connectionState.value = 'connected';
     addConnection(conn);
     
@@ -435,32 +552,12 @@ function setupConnection(conn: DataConnection) {
         partnerNames.value[conn.peer] = data.nickname;
         addConnection(conn);
         
-        if (role.value === 'host') {
-          // Announce this new peer to all OTHER already connected guests to form mesh
-          connections.value.forEach(otherConn => {
-            if (otherConn.peer !== conn.peer) {
-              otherConn.send({ type: 'announce-peer', peerId: conn.peer });
-            }
-          });
-        }
-        
         uiState.value = 'chat';
         toast.success(t('tools.p2p-chat.memberJoined', { name: data.nickname }));
         return;
       }
 
-      // 2. Handle Peer Announcement (Mesh Connection)
-      if (data.type === 'announce-peer') {
-        const newPeerId = data.peerId;
-        if (peer.value && !connections.value.some(c => c.peer === newPeerId)) {
-          toast.info(t('tools.p2p-chat.connectingToNew'));
-          const newConn = peer.value.connect(newPeerId);
-          setupConnection(newConn);
-        }
-        return;
-      }
-
-      // 3. Handle message recall control packets
+      // 2. Handle message recall control packets
       if (data.type === 'recall') {
         if (!isRecallPacket(data) || data.senderPeerId !== conn.peer) return;
 
@@ -479,7 +576,7 @@ function setupConnection(conn: DataConnection) {
         return;
       }
 
-      // 4. Handle normal message
+      // 3. Handle normal message
       const msgId = typeof data.messageId === 'string' && data.messageId
         ? data.messageId
         : createMessageId('received');
@@ -552,12 +649,14 @@ function setupConnection(conn: DataConnection) {
   });
 
   conn.on('close', () => {
+    pendingPeerConnections.delete(conn.peer);
     const name = partnerNames.value[conn.peer] || '成員';
     toast.info(t('tools.p2p-chat.memberLeft', { name }));
     removeConnection(conn.peer);
   });
 
   conn.on('error', (err) => {
+    pendingPeerConnections.delete(conn.peer);
     console.error('Connection error:', err);
     removeConnection(conn.peer);
   });
@@ -865,14 +964,13 @@ function scrollToBottom() {
 function disconnectAll() {
   connections.value.forEach(conn => conn.close());
   connections.value = [];
+  pendingPeerConnections.clear();
   partnerNames.value = {};
 }
 
 function resetAll() {
+  closeRoomSignal();
   disconnectAll();
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem('p2p-chat-saved-peer-id');
-  }
   if (peer.value) {
     peer.value.destroy();
     peer.value = null;
@@ -881,12 +979,11 @@ function resetAll() {
   connectionState.value = 'disconnected';
   uiState.value = 'setup';
   messages.value = [];
-  isOwnRoomInviteLink.value = false;
   pendingRecalls.clear();
-  
-  if (route.query.connect) {
-    router.replace({ query: {} });
-  }
+  roomId.value = '';
+  roomSessionId.value = createRoomSessionId();
+  targetRoomId.value = '';
+  router.replace({ query: {} });
 }
 
 function cancelInvitation() {
@@ -896,19 +993,13 @@ function cancelInvitation() {
 // Lifecycle
 onMounted(() => {
   randomizeName();
-  const requestedPeerId = route.query.connect ? String(route.query.connect) : '';
-  const savedHostPeerId = typeof window !== 'undefined'
-    ? localStorage.getItem('p2p-chat-saved-peer-id')
-    : null;
+  const requestedRoomId = route.query.room ? String(route.query.room) : '';
 
-  if (isOwnRoomInvite(requestedPeerId, savedHostPeerId)) {
-    isOwnRoomInviteLink.value = true;
-    role.value = 'host';
-    toast.info(t('tools.p2p-chat.ownRoomInviteDetected'));
-  } else if (requestedPeerId) {
-    targetPeerId.value = requestedPeerId;
-    role.value = 'guest';
+  if (requestedRoomId && isValidRoomId(requestedRoomId)) {
+    targetRoomId.value = requestedRoomId;
     toast.info(t('tools.p2p-chat.detectInvite'));
+  } else if (route.query.connect) {
+    toast.warning(t('tools.p2p-chat.legacyInviteLink'));
   }
   if (typeof window !== 'undefined') {
     window.addEventListener('paste', handlePaste);
@@ -916,6 +1007,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  closeRoomSignal();
   disconnectAll();
   if (peer.value) {
     peer.value.destroy();
@@ -979,7 +1071,7 @@ onUnmounted(() => {
           <div class="mt-4 pt-4 border-t border-gray-200/10 flex flex-col gap-4">
             
             <!-- CASE A: User is Guest (Invited via URL) -->
-            <div v-if="targetPeerId" class="flex flex-col gap-3">
+            <div v-if="targetRoomId" class="flex flex-col gap-3">
               <n-alert type="info" size="small" class="text-sm">
                 <template #icon>
                   <n-icon :component="IconPeople" />
@@ -1002,7 +1094,7 @@ onUnmounted(() => {
                 secondary 
                 block 
                 size="medium" 
-                @click="targetPeerId = ''; isOwnRoomInviteLink = false; router.replace({ query: {} })"
+                @click="targetRoomId = ''; router.replace({ query: {} })"
               >
                 {{ $t('tools.p2p-chat.createInsteadBtn') }}
               </n-button>
@@ -1010,20 +1102,13 @@ onUnmounted(() => {
 
             <!-- CASE B: User is Creator (No URL Inv) -->
             <div v-else class="flex flex-col gap-4">
-              <n-alert v-if="isOwnRoomInviteLink" type="success" size="small" class="text-sm">
-                <template #icon>
-                  <n-icon :component="IconCheck" />
-                </template>
-                {{ $t('tools.p2p-chat.ownRoomInviteDetected') }}
-              </n-alert>
-
               <n-button 
                 type="primary" 
                 block 
                 size="large"
                 @click="startHost"
               >
-                {{ $t(isOwnRoomInviteLink ? 'tools.p2p-chat.resumeRoomBtn' : 'tools.p2p-chat.createRoomBtn') }}
+                {{ $t('tools.p2p-chat.createRoomBtn') }}
               </n-button>
 
               <div class="flex items-center my-1 text-sm opacity-50 justify-center gap-2">
@@ -1033,11 +1118,11 @@ onUnmounted(() => {
               </div>
 
               <div class="flex gap-2">
-                <n-input v-model:value="targetPeerId" :placeholder="$t('tools.p2p-chat.pastePeerId')" />
+                <n-input v-model:value="targetRoomId" :placeholder="$t('tools.p2p-chat.pasteRoomId')" />
                 <n-button 
                   type="primary" 
                   secondary
-                  :disabled="!targetPeerId"
+                  :disabled="!targetRoomId"
                   @click="startGuest"
                 >
                   {{ $t('tools.p2p-chat.connectBtn') }}
@@ -1081,9 +1166,9 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <!-- Peer ID manually just in case -->
+        <!-- Stable room identifier -->
         <div class="text-xs opacity-70 mb-6">
-          Your Peer ID: <span class="font-mono bg-white/5 px-1.5 py-0.5 rounded">{{ peerId || '...' }}</span>
+          Room ID: <span class="font-mono bg-white/5 px-1.5 py-0.5 rounded">{{ roomId || '...' }}</span>
         </div>
 
         <div class="flex gap-3">

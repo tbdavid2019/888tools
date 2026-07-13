@@ -26,10 +26,6 @@ export function isRecallPacket(data: unknown): data is RecallPacket {
     && packet.senderPeerId.length > 0;
 }
 
-export function isOwnRoomInvite(connectPeerId: string, savedPeerId: string | null): boolean {
-  return connectPeerId.length > 0 && connectPeerId === savedPeerId;
-}
-
 export function isWithinRecallWindow(timestamp: number, now = Date.now()): boolean {
   return Number.isFinite(timestamp)
     && timestamp <= now

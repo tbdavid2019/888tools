@@ -74,6 +74,14 @@ export const config = figue({
       env: 'VITE_GA_ENABLED',
     },
   },
+  p2pChat: {
+    signalingUrl: {
+      doc: 'P2P chat room signaling Worker URL',
+      format: 'string',
+      default: 'https://david888-p2p-room-signal.oobwei.workers.dev',
+      env: 'VITE_P2P_ROOM_SIGNALING_URL',
+    },
+  },
   showBanner: {
     doc: 'Show the banner',
     format: 'boolean',

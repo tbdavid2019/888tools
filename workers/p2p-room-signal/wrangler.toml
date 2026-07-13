@@ -1,0 +1,11 @@
+name = "david888-p2p-room-signal"
+main = "src/index.ts"
+compatibility_date = "2026-07-13"
+
+[[durable_objects.bindings]]
+name = "ROOMS"
+class_name = "Room"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Room"]

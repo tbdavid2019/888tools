@@ -95,9 +95,9 @@
 | 46  | 首頁資訊密度優化：縮小左上品牌區，放大工具卡標題與說明字級，並將全站 GitHub 倉庫入口統一到 `https://github.com/tbdavid2019/888tools` |
 | 47  | RWD 導覽修正：手機版側欄改為預設收合的 drawer，搜尋移到上方工具列，breadcrumb 改到內容上方並放大字級，修正 mobile overlay 擋住 tree 導致分類無法展開的問題 |
 | 48  | 新增「P2P 網頁即時密聊」工具（網路 分類），使用 PeerJS (WebRTC) 建立瀏覽器直連，整合 Web Cryptography API (AES-GCM-256) 進行本地端到端加密 (E2EE)（https://tool.david888.com/p2p-chat ） |
-| 49  | 密聊工具體驗重大優化：多人 Mesh 信令直連、側邊欄在線名單、植物 Emoji 暱稱、表情快捷面板、桌面推送通知、多行 TextArea (Shift+Enter 換行)、雙音階風鈴和弦提示音、房主 ID 本地續存防重整斷連、預設 Telegram 經典壁紙與自訂背景、剪貼簿圖片與截圖貼上傳送 |
+| 49  | 密聊工具體驗重大優化：固定 Room ID 與多人 Mesh 直連、側邊欄在線名單、植物 Emoji 暱稱、表情快捷面板、桌面推送通知、多行 TextArea (Shift+Enter 換行)、雙音階風鈴和弦提示音、預設 Telegram 經典壁紙與自訂背景、剪貼簿圖片與截圖貼上傳送 |
 | 50  | P2P 網頁即時密聊新增限時撤回：文字與檔案發送後 2 分鐘內可同步撤回所有目前在線成員，維持 WebRTC 直連與不落地儲存設計（https://tool.david888.com/p2p-chat ） |
-| 51  | 修正 P2P 密聊房主重整/重新開啟自己邀請網址時被誤判為 Guest 的問題；Host 建立成功後同步更新房間網址，撤回訊息改用系統訊息樣式與虛線框顯示（https://tool.david888.com/p2p-chat ） |
+| 51  | P2P 密聊改用固定 Room ID 搭配 Cloudflare Durable Object signaling：房間不再綁定房主或單一 Peer ID，重整後可用同一網址重新加入；撤回訊息改用系統訊息樣式與虛線框顯示（https://tool.david888.com/p2p-chat ） |
 | 52  | P2P 密聊 Telegram 經典塗鴉背景新增模糊與半透明遮罩，降低背景圖案對訊息文字的干擾，並避免背景層產生額外捲軸（https://tool.david888.com/p2p-chat ） |
 
 ## Changelog
@@ -108,10 +108,19 @@
   - 封包加入穩定訊息 ID，支援多人 Mesh 廣播與非同步 E2EE 解密期間的撤回競態處理。
   - 撤回封包會驗證來源 peer，只允許訊息原作者撤回自己的訊息。
   - 聊天室仍不保存訊息；離線成員、已下載檔案、截圖或複製出去的內容無法被遠端收回。
-- 修正房主重整或重新開啟自己的邀請網址時被誤判為 Guest 的問題；房主建立成功後會將目前網址同步為可分享、可恢復的房間網址。
+- P2P 密聊改用固定 Room ID 與共享 signaling room：A 離開或重整不會摧毀聊天室，B 分享同一房間網址即可讓 A 重新加入；signaling 只管理在線成員，不儲存聊天訊息或檔案。
 - 撤回訊息改用「系統訊息」標籤、↩ 符號與虛線框顯示，與使用者實際輸入的訊息清楚區分。
 - Telegram 經典塗鴉背景改用獨立模糊背景層、低透明度與半透明遮罩，避免圖案穿透干擾訊息文字。
 - 背景裝飾層不再擴張聊天容器，並隱藏橫向溢出，避免主題背景造成不必要的水平捲軸。
+
+### P2P Chat signaling deployment
+
+P2P 聊天內容仍由瀏覽器透過 WebRTC 直連傳送；Cloudflare Worker 只負責房間的暫時在線成員清單與 PeerJS 連線協調，不保存聊天訊息、圖片或檔案。
+
+- Worker 程式碼：`workers/p2p-room-signal/`
+- 部署指令：`wrangler deploy --config workers/p2p-room-signal/wrangler.toml`
+- 目前正式 Worker：`https://david888-p2p-room-signal.oobwei.workers.dev`
+- 若要替換 signaling 服務，於 Vercel 設定 `VITE_P2P_ROOM_SIGNALING_URL`；未設定時會使用上述預設網址。
 
 ### 2026-07-09
 
@@ -123,7 +132,7 @@
   - **桌面推送通知 (Web Notifications)**：當收到新訊息且頁面在背景隱藏時，會自動發送桌面通知。
   - **多行長文輸入與換行**：輸入框改為自動伸縮高度的 TextArea，按 `Shift + Enter` 插入換行，`Enter` 直接發送。
   - **水晶和弦鈴聲**：升級為雙音階 chime 風鈴提示音，並可在側邊欄快速開啟/關閉。
-  - **房主 ID 續存**：房主 ID 快取至 localStorage，重整或短暫斷線會自動要求沿用原 ID，確保已分享的邀請連結持續有效。
+  - **固定房間身份**：邀請網址只包含穩定的 Room ID；房間成員由 Cloudflare Durable Object 暫存在線 Peer 身份，任何人都可用同一連結加入，重整後不需要恢復房主身份。
   - **Telegram 經典壁紙**：預設採用 Telegram 經典圖標塗鴉背景（適配深淺色模式），提供莫蘭迪藍、落櫻粉花、靜謐竹林等漸層底色，並支援輸入自定義圖片網址。
   - **貼圖與截圖貼上傳送**：支援直接在對話視窗中 `Ctrl+V` / `Cmd+V` 貼上剪貼簿圖片傳送。
 - 全站品牌重塑：全站網頁標題及 logo Suffix 統一更新為 `DAVID888 TOOL`（中文切換下為 `DAVID888 TOOL 工具箱`），重新調整 OG 標籤與 Meta 描述以切合其定位。
