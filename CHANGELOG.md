@@ -14,6 +14,7 @@ All notable changes to this project will be documented in this file. See [standa
 - 撤回訊息改用「系統訊息」標籤、↩ 符號與虛線框顯示，與使用者實際輸入的訊息清楚區分。
 - Telegram 經典塗鴉背景改用獨立模糊背景層、低透明度與半透明遮罩，避免圖案穿透干擾訊息文字。
 - 背景裝飾層不再擴張聊天容器，並隱藏橫向溢出，避免主題背景造成不必要的水平捲軸。
+- 補充 P2P Chat 架構文件，說明 Vercel、Cloudflare Worker、Durable Object 與瀏覽器 WebRTC 的分工，以及目前不使用 R2/KV 儲存聊天內容的原因。
 
 ## Version 2026.07.09
 

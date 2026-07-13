@@ -118,6 +118,7 @@
 P2P 聊天內容仍由瀏覽器透過 WebRTC 直連傳送；Cloudflare Worker 只負責房間的暫時在線成員清單與 PeerJS 連線協調，不保存聊天訊息、圖片或檔案。
 
 - Worker 程式碼：`workers/p2p-room-signal/`
+- 架構說明：[P2P Chat 架構說明](docs/p2p-chat-architecture.md)
 - 部署指令：`wrangler deploy --config workers/p2p-room-signal/wrangler.toml`
 - 目前正式 Worker：`https://david888-p2p-room-signal.oobwei.workers.dev`
 - 若要替換 signaling 服務，於 Vercel 設定 `VITE_P2P_ROOM_SIGNALING_URL`；未設定時會使用上述預設網址。
