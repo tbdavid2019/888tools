@@ -1251,7 +1251,7 @@ onUnmounted(() => {
           <!-- Chat History -->
           <div 
             ref="chatContainer"
-            class="chat-history-container flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3 min-h-[380px] max-h-[380px] rounded-xl"
+            class="chat-history-container flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 flex flex-col gap-3 min-h-[380px] max-h-[380px] rounded-xl"
             :style="chatHistoryStyle"
           >
             <div v-if="messages.length === 0" class="h-full flex flex-col items-center justify-center text-center opacity-50 py-10">
@@ -1426,6 +1426,7 @@ onUnmounted(() => {
 .chat-history-container {
   position: relative;
   isolation: isolate;
+  overscroll-behavior: contain;
 }
 
 .chat-history-container::before,
@@ -1437,13 +1438,11 @@ onUnmounted(() => {
 }
 
 .chat-history-container::before {
-  inset: -12px;
   background-image: var(--chat-pattern-image, none);
   background-size: 380px;
   background-repeat: repeat;
-  filter: blur(4px);
+  filter: blur(3px);
   opacity: var(--chat-pattern-opacity, 0);
-  transform: scale(1.02);
   z-index: 0;
 }
 
