@@ -5,9 +5,13 @@ const props = withDefaults(defineProps<{ option: PaletteOption; selected?: boole
   selected: false,
 });
 const emit = defineEmits(['activated']);
-const { option } = toRefs(props);
+const { option, selected } = toRefs(props);
 
-const { selected } = toRefs(props);
+function activate() {
+  // Emit the option itself, rather than the ref returned by toRefs(). This keeps
+  // navigation targets intact when the palette is rendered in a nested layout.
+  emit('activated', props.option);
+}
 </script>
 
 <template>
@@ -19,7 +23,7 @@ const { selected } = toRefs(props);
       'bg-primary': selected,
     }"
     w-full flex cursor-pointer items-center overflow-hidden rounded pa-3 transition hover:bg-primary hover:text-white
-    @click="() => emit('activated', option)"
+    @click="activate"
   >
     <component :is="option.icon" v-if="option.icon" mr-3 h-30px w-30px shrink-0 op-50 />
 

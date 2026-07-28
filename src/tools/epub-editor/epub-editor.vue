@@ -803,15 +803,23 @@ async function updateSpineDirection(zip: JSZip) {
 
   const content = await zip.files[opfFile].async('string');
   let newContent = content;
+
   if (isVertical) {
-    if (newContent.includes('page-progression-direction')) {
-      newContent = newContent.replace(/page-progression-direction="[^"]*"/, 'page-progression-direction="rtl"');
-    } else {
-      newContent = newContent.replace(/<spine([^>]*)>/, '<spine$1 page-progression-direction="rtl">');
-    }
-  } else {
-    newContent = newContent.replace(/\s*page-progression-direction="rtl"/, '');
+    // Upgrade EPUB version to 3.0 so readers respect page-progression-direction
+    newContent = newContent.replace(/(<package[^>]+version=["'])2\.[0-9](["'][^>]*>)/i, '$13.0$2');
   }
+
+  // Remove existing page-progression-direction from spine (to prevent duplicates/conflicts)
+  newContent = newContent.replace(/\s*page-progression-direction="[^"]*"/g, '');
+
+  if (isVertical) {
+    // Add page-progression-direction="rtl" to spine
+    newContent = newContent.replace(/<spine([^>]*)>/i, '<spine$1 page-progression-direction="rtl">');
+  } else {
+    // For horizontal, standard readers assume LTR if omitted, but we can explicitly set it
+    // if we wanted to. However, omitting is fine for LTR.
+  }
+
   zip.file(opfFile, newContent);
 }
 

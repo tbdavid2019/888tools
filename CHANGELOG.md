@@ -1,7 +1,15 @@
 # Changelog
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
- 
+
+## Version 2026.07.28
+
+### Bug Fixes
+- **mobile/search**: 修正手機版搜尋面板被側欄限縮、半透明疊字與點選結果無法跳轉的問題；搜尋視窗改由頁面根層顯示，並確保手機任一時刻只掛載一個搜尋元件。
+- **epub-editor**: 修正 EPUB 轉換為直式排版時翻頁邏輯（RTL）無效的問題。
+  - 當設定為直行排版時，自動將原始 EPUB 套件版本升級為 `<package version="3.0">`，確保電子書閱讀器（如 Apple Books、Readmoo 等）能正確支援並套用 `page-progression-direction="rtl"` 由右至左翻頁規範。
+  - 重構 OPF `<spine>` 屬性置換邏輯，避免舊有翻頁方向屬性殘留或置換失敗。
+
 ## Version 2026.07.13
 
 ### Features

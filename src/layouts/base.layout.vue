@@ -141,7 +141,7 @@ const breadcrumbItems = computed(() => {
             </c-button>
           </c-tooltip>
 
-          <command-palette compact />
+          <command-palette v-if="!styleStore.isSmallScreen" compact />
           <NavbarButtons />
 
           <n-popover trigger="click" placement="right" :show-arrow="false">
@@ -171,7 +171,7 @@ const breadcrumbItems = computed(() => {
     </template>
 
     <template #content>
-      <div v-if="styleStore.isSmallScreen" class="mobile-topbar">
+      <div v-if="styleStore.isSmallScreen && styleStore.isMenuCollapsed" class="mobile-topbar">
         <c-button circle variant="text" :aria-label="$t('home.toggleMenu')" @click="styleStore.isMenuCollapsed = !styleStore.isMenuCollapsed">
           <NIcon size="22" :component="Menu2" />
         </c-button>

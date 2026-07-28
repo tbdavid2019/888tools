@@ -3,6 +3,7 @@ import { storeToRefs } from 'pinia';
 import _ from 'lodash';
 import { useCommandPaletteStore } from './command-palette.store';
 import type { PaletteOption } from './command-palette.types';
+import { useAppTheme } from '@/ui/theme/themes';
 
 const props = withDefaults(defineProps<{ compact?: boolean }>(), {
   compact: false,
@@ -12,6 +13,7 @@ const isModalOpen = ref(false);
 const inputRef = ref();
 const router = useRouter();
 const isMac = computed(() => window.navigator.userAgent.toLowerCase().includes('mac'));
+const appTheme = useAppTheme();
 
 const commandPaletteStore = useCommandPaletteStore();
 const { searchPrompt, filteredSearchResult } = storeToRefs(commandPaletteStore);
@@ -35,6 +37,12 @@ whenever(keys.ctrl_k, open);
 whenever(keys.meta_k, open);
 whenever(keys.escape, close);
 
+const selectedOptionIndex = ref(0);
+
+watch(searchPrompt, () => {
+  selectedOptionIndex.value = 0;
+});
+
 function open() {
   return isModalOpen.value = true;
 }
@@ -43,8 +51,6 @@ function close() {
   isModalOpen.value = false;
   searchPrompt.value = '';
 }
-
-const selectedOptionIndex = ref(0);
 
 function handleKeydown(event: KeyboardEvent) {
   const { key } = event;
@@ -80,7 +86,11 @@ function getOptionIndex(option: PaletteOption) {
     .value();
 }
 
-function activateOption(option: PaletteOption) {
+async function activateOption(option?: PaletteOption) {
+  if (!option) {
+    return;
+  }
+
   const { closeOnSelect } = option;
 
   if (option.action) {
@@ -96,7 +106,7 @@ function activateOption(option: PaletteOption) {
   const closeAfterNavigation = closeOnSelect || _.isUndefined(closeOnSelect);
 
   if (option.to) {
-    router.push(option.to);
+    await router.push(option.to);
 
     if (closeAfterNavigation) {
       close();
@@ -134,11 +144,19 @@ function activateOption(option: PaletteOption) {
       </span>
     </c-button>
 
-    <c-modal v-model:open="isModalOpen" class="palette-modal" shadow-xl important:max-w-650px important:pa-12px @keydown="handleKeydown">
+    <c-modal
+      v-model:open="isModalOpen"
+      class="palette-modal"
+      :style="{ backgroundColor: appTheme.background, opacity: 1 }"
+      shadow-xl
+      important:max-w-650px
+      important:pa-12px
+      @keydown="handleKeydown"
+    >
       <c-input-text ref="inputRef" v-model:value="searchPrompt" raw-text placeholder="Type to search a tool or a command..." autofocus clearable />
 
       <div v-for="(options, category) in filteredSearchResult" :key="category">
-        <div ml-3 mt-3 text-sm font-bold text-primary op-60>
+        <div ml-3 mt-3 text-sm text-primary font-bold op-60>
           {{ category }}
         </div>
         <command-palette-option v-for="option in options" :key="option.name" :option="option" :selected="selectedOptionIndex === getOptionIndex(option)" @activated="activateOption" />
