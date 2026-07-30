@@ -4,6 +4,7 @@ import { useMessage } from 'naive-ui';
 import JSZip from 'jszip';
 import { decodeWithEncoding, detectEncoding } from '../txt-to-epub/encodingDetector';
 import { updatePackageDirection } from './package-direction';
+import { getPreviewChapterIndex, parsePreviewChapter, type PreviewChapter } from './preview-chapters';
 import { clampPreviewPage, getPreviewPageCount } from './preview-pagination';
 import { translate } from '@/plugins/i18n.plugin';
 import { config } from '@/config';
@@ -64,6 +65,8 @@ function clickFileInput(input: HTMLInputElement | null) {
 // Live Preview Sample Text
 const previewTitle = ref('即時排版預覽');
 const previewText = ref('載入 EPUB 電子書後，這裡將會呈現第一個內容章節的實際渲染結果。您可以調整左側的排版、字型、直橫排等參數，效果會即時更新。');
+const previewChapters = ref<PreviewChapter[]>([]);
+const previewChapterIndex = ref(0);
 const previewViewport = ref<HTMLElement | null>(null);
 const previewPage = ref(0);
 const previewPageCount = ref(1);
@@ -203,6 +206,16 @@ function handlePreviewKeydown(event: KeyboardEvent) {
   const nextKey = isVertical ? 'ArrowLeft' : 'ArrowRight';
   event.preventDefault();
   goToPreviewPage(previewPage.value + (event.key === nextKey ? 1 : -1));
+}
+
+function selectPreviewChapter(index: number) {
+  const chapterIndex = getPreviewChapterIndex(previewChapterIndex.value, index - previewChapterIndex.value, previewChapters.value.length);
+  const chapter = previewChapters.value[chapterIndex];
+  if (!chapter) return;
+
+  previewChapterIndex.value = chapterIndex;
+  previewTitle.value = chapter.title;
+  previewText.value = chapter.text;
 }
 
 watch([previewTitle, previewText, () => settings.value.writingMode, () => settings.value.fontFamily, () => settings.value.fontSize, () => settings.value.lineHeight, () => settings.value.textIndent], async () => {
@@ -404,12 +417,12 @@ async function handleFileUpload(uploadedFile: File) {
       coverAction.value = 'keep';
     }
 
-    // Extract Preview Sample Text
+    // Extract every content document so the preview can move between chapters.
     progressStage.value = '生成即時排版預覽...';
     progressPercent.value = 95;
-    const sample = await extractPreviewSample(zip);
-    previewTitle.value = sample.title;
-    previewText.value = sample.text;
+    previewChapters.value = await extractPreviewChapters(zip);
+    previewChapterIndex.value = 0;
+    selectPreviewChapter(0);
 
     progressPercent.value = 100;
     message.success('EPUB 解析成功！');
@@ -511,8 +524,8 @@ async function detectCover(zip: JSZip): Promise<{ path: string; mimeType: string
   return null;
 }
 
-// Extract Preview Sample Text from EPUB Content file
-async function extractPreviewSample(zip: JSZip): Promise<{ title: string; text: string }> {
+// Extract every content document for the interactive preview.
+async function extractPreviewChapters(zip: JSZip): Promise<PreviewChapter[]> {
   const allFiles = Object.keys(zip.files);
   const fileNames = allFiles.filter(f => {
     if (zip.files[f].dir) return false;
@@ -521,34 +534,20 @@ async function extractPreviewSample(zip: JSZip): Promise<{ title: string; text: 
   }).sort();
 
   const skipPatterns = /(cover|nav|toc|colophon|copyright|titlepage|frontmatter)/i;
-  const candidate = fileNames.find(f => !skipPatterns.test(f.split('/').pop() || '')) || fileNames[0];
-  if (!candidate) return { title: '即時預覽', text: '此電子書未包含符合條件的內容網頁檔案。' };
+  const candidates = fileNames.filter(filename => !skipPatterns.test(filename.split('/').pop() || ''));
+  const contentFiles = candidates.length > 0 ? candidates : fileNames;
+  const chapters: PreviewChapter[] = [];
 
-  const u8 = await zip.files[candidate].async('uint8array');
-  const html = decodeContent(u8);
-  
-  const titleMatch = html.match(/<(?:h1|h2)[^>]*>([\s\S]*?)<\/(?:h1|h2)>/i);
-  let title = titleMatch ? titleMatch[1] : '';
-  title = title.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
-
-  const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
-  const bodyHtml = bodyMatch ? bodyMatch[1] : html;
-  const pMatches = bodyHtml.match(/<p[^>]*>([\s\S]*?)<\/p>/gi) || [];
-  const paragraphs: string[] = [];
-  for (const p of pMatches) {
-    const text = p
-      .replace(/<br\s*\/?>/gi, '\n')
-      .replace(/<[^>]+>/g, '')
-      .replace(/&nbsp;/g, ' ')
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&quot;/g, '"')
-      .trim();
-    if (!text) continue;
-    paragraphs.push(text);
+  for (const filename of contentFiles) {
+    const u8 = await zip.files[filename].async('uint8array');
+    const fallbackTitle = filename.split('/').pop()?.replace(/\.[^.]+$/, '') || '預覽章節';
+    const chapter = parsePreviewChapter(decodeContent(u8), fallbackTitle);
+    if (chapter.text) chapters.push(chapter);
   }
-  return { title: title || '預覽章節', text: paragraphs.join('\n') };
+
+  return chapters.length > 0
+    ? chapters
+    : [{ title: '即時預覽', text: '此電子書未包含符合條件的內容網頁檔案。' }];
 }
 
 // Font helpers
@@ -1716,6 +1715,17 @@ onUnmounted(() => {
                 </p>
               </div>
             </div>
+            <div v-if="previewChapters.length > 1" class="preview-chapter-pagination mt-3" aria-label="預覽章節控制">
+              <c-button size="small" tertiary :disabled="previewChapterIndex === 0" @click="selectPreviewChapter(previewChapterIndex - 1)">
+                上一章
+              </c-button>
+              <span class="text-xs text-gray-500 dark:text-gray-400 tabular-nums" aria-live="polite">
+                章節 {{ previewChapterIndex + 1 }} / {{ previewChapters.length }}
+              </span>
+              <c-button size="small" tertiary :disabled="previewChapterIndex >= previewChapters.length - 1" @click="selectPreviewChapter(previewChapterIndex + 1)">
+                下一章
+              </c-button>
+            </div>
             <div v-if="settings.writingMode === 'vertical'" class="preview-pagination mt-3" aria-label="直排預覽翻頁控制">
               <c-button size="small" tertiary :disabled="previewPage === 0" @click="goToPreviewPage(previewPage - 1)">
                 上一頁
@@ -1854,6 +1864,12 @@ onUnmounted(() => {
   display: block;
 }
 .preview-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+.preview-chapter-pagination {
   display: flex;
   align-items: center;
   justify-content: center;
