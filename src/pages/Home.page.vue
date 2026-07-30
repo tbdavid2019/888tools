@@ -111,6 +111,26 @@ function onUpdateFavoriteTools() {
         </div>
       </transition>
 
+      <!-- Recently Used Tools -->
+      <transition name="height">
+        <div v-if="toolStore.recentTools.length > 0">
+          <h3 class="section-title flex items-center justify-between">
+            <span class="flex items-center gap-1.5">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {{ locale.startsWith('zh') ? '最近使用的工具' : 'Recently Used Tools' }}
+            </span>
+            <button class="text-xs text-gray-400 hover:text-primary transition-colors font-normal cursor-pointer" @click="toolStore.clearRecentTools">
+              {{ locale.startsWith('zh') ? '清空紀錄' : 'Clear' }}
+            </button>
+          </h3>
+          <div class="grid grid-cols-1 gap-14px lg:grid-cols-3 md:grid-cols-3 sm:grid-cols-2 xl:grid-cols-4">
+            <ToolCard v-for="tool in toolStore.recentTools" :key="tool.name" :tool="tool" />
+          </div>
+        </div>
+      </transition>
+
       <div v-if="toolStore.newTools.length > 0">
         <h3 class="section-title">
           {{ t('home.categories.newestTools') }}

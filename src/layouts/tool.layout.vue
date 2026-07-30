@@ -16,6 +16,18 @@ const toolStore = useToolStore();
 const styleStore = useStyleStore();
 const activePalette = computed(() => (styleStore.isDarkTheme ? kanagawaDarkPalette : kanagawaLightPalette));
 
+onMounted(() => {
+  if (route.path) {
+    toolStore.addToolToRecent(route.path);
+  }
+});
+
+watch(() => route.path, (newPath) => {
+  if (newPath) {
+    toolStore.addToolToRecent(newPath);
+  }
+});
+
 const layoutBackgroundColor = computed(() => {
   if (!styleStore.isBingWallpaperEnabled) {
     return 'transparent';

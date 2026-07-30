@@ -5,6 +5,8 @@ All notable changes to this project will be documented in this file. See [standa
 ## Version 2026.07.30
 
 ### Features
+- **home/tools**: 新增「最近使用的工具 (Recently Used Tools)」首頁自動記憶區塊。
+  - 自動記錄使用者造訪過的所有工具路由至 `localStorage` (`recentToolsPath`)，並於首頁熱門/最愛工具區下方顯示「最近使用的工具」快速導覽卡片，支援一鍵清空紀錄。
 - **epub-editor**: 新增 `localStorage` 本地偏好設定持久化與「最近處理歷史紀錄」面板。
   - **排版與字型偏好記憶**：使用 `useStorage` 自動保存使用者選擇的字型 (`fontFamily`)、直橫排模式 (`writingMode`)、簡轉繁選項 (`convertMode`) 與標點轉換設定，每次開啟或重新整理頁面皆會自動載入上次選擇。
   - **最近處理歷史紀錄**：完成轉換時自動記錄產出的檔名、書籍標題、轉換時間與排版參數，並於上傳區提供「最近處理歷史紀錄」面板與清空歷史功能。
