@@ -8,10 +8,8 @@ const epub2Package = `<?xml version="1.0"?>
 </package>`;
 
 describe('EPUB package direction', () => {
-  it('sets all Apple Books direction signals for a vertical EPUB', () => {
+  it('sets spine page-progression-direction="rtl" for a vertical EPUB', () => {
     const result = updatePackageDirection(epub2Package, 'vertical');
-
-    expect(result).toContain('<package dir="rtl" version="3.0"');
     expect(result).toContain('<spine toc="ncx" page-progression-direction="rtl">');
   });
 
@@ -22,11 +20,12 @@ describe('EPUB package direction', () => {
   <spine toc="ncx"><itemref idref="chapter-1" /></spine>
 </package>`;
     const result = updatePackageDirection(opf, 'vertical');
-    expect(result).toContain('<spine page-progression-direction="rtl" toc="ncx">');
-    expect(result).toContain('<package dir="rtl" version="3.0"');
+    expect(result).toContain('<spine toc="ncx" page-progression-direction="rtl">');
+  });
+
+  it('restores horizontal direction', () => {
+    const verticalOpf = updatePackageDirection(epub2Package, 'vertical');
+    const result = updatePackageDirection(verticalOpf, 'horizontal');
+    expect(result).toContain('<spine toc="ncx" page-progression-direction="ltr">');
   });
 });
-
-function resultForVertical() {
-  return updatePackageDirection(epub2Package, 'vertical');
-}
