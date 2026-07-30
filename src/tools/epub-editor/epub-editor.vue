@@ -3,6 +3,7 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useMessage } from 'naive-ui';
 import JSZip from 'jszip';
 import { decodeWithEncoding, detectEncoding } from '../txt-to-epub/encodingDetector';
+import { updatePackageDirection } from './package-direction';
 import { clampPreviewPage, getPreviewPageCount } from './preview-pagination';
 import { translate } from '@/plugins/i18n.plugin';
 import { config } from '@/config';
@@ -534,7 +535,6 @@ async function extractPreviewSample(zip: JSZip): Promise<{ title: string; text: 
   const bodyHtml = bodyMatch ? bodyMatch[1] : html;
   const pMatches = bodyHtml.match(/<p[^>]*>([\s\S]*?)<\/p>/gi) || [];
   const paragraphs: string[] = [];
-  let totalChars = 0;
   for (const p of pMatches) {
     const text = p
       .replace(/<br\s*\/?>/gi, '\n')
@@ -547,8 +547,6 @@ async function extractPreviewSample(zip: JSZip): Promise<{ title: string; text: 
       .trim();
     if (!text) continue;
     paragraphs.push(text);
-    totalChars += text.length;
-    if (totalChars > 650) break;
   }
   return { title: title || '預覽章節', text: paragraphs.join('\n') };
 }
@@ -863,30 +861,11 @@ async function injectStyleIntoCSS(zip: JSZip, customFontInfo: any) {
 
 // Update Spine direction in OPF
 async function updateSpineDirection(zip: JSZip) {
-  const isVertical = settings.value.writingMode === 'vertical';
   const opfFile = Object.keys(zip.files).find(f => f.toLowerCase().endsWith('.opf'));
   if (!opfFile) return;
 
   const content = await zip.files[opfFile].async('string');
-  let newContent = content;
-
-  if (isVertical) {
-    // Upgrade EPUB version to 3.0 so readers respect page-progression-direction
-    newContent = newContent.replace(/(<package[^>]+version=["'])2\.[0-9](["'][^>]*>)/i, '$13.0$2');
-  }
-
-  // Remove existing page-progression-direction from spine (to prevent duplicates/conflicts)
-  newContent = newContent.replace(/\s*page-progression-direction="[^"]*"/g, '');
-
-  if (isVertical) {
-    // Add page-progression-direction="rtl" to spine
-    newContent = newContent.replace(/<spine([^>]*)>/i, '<spine$1 page-progression-direction="rtl">');
-  } else {
-    // For horizontal, standard readers assume LTR if omitted, but we can explicitly set it
-    // if we wanted to. However, omitting is fine for LTR.
-  }
-
-  zip.file(opfFile, newContent);
+  zip.file(opfFile, updatePackageDirection(content, settings.value.writingMode));
 }
 
 // Collect codepoints for subsetting
