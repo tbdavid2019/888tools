@@ -858,13 +858,20 @@ async function injectStyleIntoCSS(zip: JSZip, customFontInfo: any) {
   }
 }
 
-// Update Spine direction in OPF
+// Update Spine direction and metadata in OPF
 async function updateSpineDirection(zip: JSZip) {
-  const opfFile = Object.keys(zip.files).find(f => f.toLowerCase().endsWith('.opf'));
-  if (!opfFile) return;
+  const opfFile = opfPath.value || Object.keys(zip.files).find(f => f.toLowerCase().endsWith('.opf'));
+  if (!opfFile || !zip.files[opfFile]) return;
 
-  const content = await zip.files[opfFile].async('string');
-  zip.file(opfFile, updatePackageDirection(content, settings.value.writingMode));
+  let content = await zip.files[opfFile].async('string');
+  content = updatePackageDirection(content, settings.value.writingMode);
+  content = updateOpfMetadata(content);
+  zip.file(opfFile, content);
+
+  const opfEntry = fileEntries.value.find(e => e.name === opfFile);
+  if (opfEntry) {
+    opfEntry.currentContent = content;
+  }
 }
 
 // Collect codepoints for subsetting
@@ -1208,19 +1215,10 @@ async function processEpub() {
     progressPercent.value = 80;
     await injectStyleIntoCSS(zip, finalFontInfo);
 
-    // 4. Set spine page progression direction (vertical / horizontal)
-    progressStage.value = '設定翻頁方向...';
+    // 4. Set spine page progression direction and metadata (vertical / horizontal)
+    progressStage.value = '設定翻頁方向與元數據...';
     progressPercent.value = 83;
     await updateSpineDirection(zip);
-
-    // 5. Save opf metadata modifications
-    if (opfPath.value) {
-      const opfEntry = fileEntries.value.find(e => e.name === opfPath.value);
-      if (opfEntry) {
-        opfEntry.currentContent = updateOpfMetadata(opfEntry.currentContent);
-        zip.file(opfPath.value, opfEntry.currentContent);
-      }
-    }
 
     // 6. Cover image
     if (coverAction.value !== 'keep') {

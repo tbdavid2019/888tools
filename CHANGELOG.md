@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## Version 2026.07.30
+
+### Bug Fixes
+- **epub-editor**: 修正直排 (Vertical) EPUB 匯出時 `page-progression-direction="rtl"` 被舊 OPF 內容覆蓋抹除的問題。
+  - 將 OPF 直排屬性更新 (`updatePackageDirection`) 與元數據更新 (`updateOpfMetadata`) 整合為單一 `updateSpineDirection` 步驟。
+  - 確保匯出的 `.epub` 檔案正確保留 `<spine page-progression-direction="rtl">` 與 `<package dir="rtl" version="3.0">`，使電子書閱讀器（Apple Books, Kobo, Readium 等）在直排書籍下能以按左鍵/左滑正確翻至下一頁。
+
 ## Version 2026.07.28
 
 ### Bug Fixes
