@@ -6,6 +6,7 @@ import { decodeWithEncoding, detectEncoding } from '../txt-to-epub/encodingDetec
 import { updatePackageDirection } from './package-direction';
 import { getPreviewChapterIndex, parsePreviewChapter, type PreviewChapter } from './preview-chapters';
 import { clampPreviewPage, getPreviewPageCount } from './preview-pagination';
+import { useStorage } from '@vueuse/core';
 import { translate } from '@/plugins/i18n.plugin';
 import { config } from '@/config';
 import { convertOpenCC } from '@/services/opencc.service';
@@ -35,9 +36,9 @@ const opfPath = ref('');
 // Tab settings
 const activeTab = ref<'preview' | 'editor' | 'metadata'>('preview');
 
-// Conversion and layout settings
-const settings = ref({
-  convertMode: 'twp', // 'twp' (詞彙) | 'tw' (純字) | 'off' (關閉)
+// Conversion and layout settings (persisted in localStorage)
+const settings = useStorage('epub-editor:settings', {
+  convertMode: 'twp' as 'twp' | 'tw' | 'off',
   convertPunctuation: true,
   writingMode: 'horizontal' as 'horizontal' | 'vertical',
   fontFamily: 'noto-sans', // 'noto-sans' | 'noto-serif' | 'guankiap' | 'huninn' | 'default' | 'custom'
@@ -46,6 +47,25 @@ const settings = ref({
   lineHeight: 'normal', // 'compact' | 'normal' | 'relaxed' | 'loose'
   textIndent: 'two', // 'none' | 'one' | 'two'
 });
+
+export interface ProcessedHistoryItem {
+  id: string;
+  originalFileName: string;
+  outputFileName: string;
+  title: string;
+  author: string;
+  writingMode: 'horizontal' | 'vertical';
+  fontFamily: string;
+  convertMode: string;
+  timestamp: number;
+}
+
+const processedHistory = useStorage<ProcessedHistoryItem[]>('epub-editor:history', []);
+
+function clearHistory() {
+  processedHistory.value = [];
+  message.success('已清空轉換歷史紀錄');
+}
 
 // Custom Font File
 const customFontFile = ref<File | null>(null);
@@ -1273,9 +1293,23 @@ async function processEpub() {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 10000);
-
     message.success('EPUB 電子書處理完成並已開始下載！');
+
+    // Record in local history
+    processedHistory.value.unshift({
+      id: Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
+      originalFileName: file.value.name,
+      outputFileName: finalFilename,
+      title: cleanTitle,
+      author: bookAuthor.value || '未知',
+      writingMode: settings.value.writingMode,
+      fontFamily: settings.value.fontFamily,
+      convertMode: settings.value.convertMode,
+      timestamp: Date.now(),
+    });
+    if (processedHistory.value.length > 30) {
+      processedHistory.value = processedHistory.value.slice(0, 30);
+    }
   } catch (err: any) {
     console.error('電子書處理失敗:', err);
     message.error(`處理失敗: ${err.message}`);
@@ -1376,10 +1410,7 @@ function resetAll() {
     customFontUrl.value = '';
   }
   customFontFile.value = null;
-  
-  settings.value.fontFamily = 'noto-sans';
-  settings.value.fontEmbedMode = 'full';
-  settings.value.writingMode = 'horizontal';
+  // User settings are persisted in localStorage via useStorage
   
   let styleEl1 = document.getElementById('hr-preview-custom-font-style');
   if (styleEl1) styleEl1.remove();
@@ -1461,6 +1492,42 @@ onUnmounted(() => {
         <span class="text-sm text-gray-400 mt-2 text-center">
           支援本機繁簡體轉換、標點符號轉換、橫排直排轉換、字體滿血嵌入及封面替換
         </span>
+      </div>
+
+      <!-- Processed History List -->
+      <div v-if="processedHistory.length > 0" class="mt-8 space-y-3">
+        <div class="flex items-center justify-between">
+          <h4 class="text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            最近處理歷史紀錄（已自動記憶偏好設定）
+          </h4>
+          <c-button size="small" tertiary @click="clearHistory">清空歷史紀錄</c-button>
+        </div>
+        <div class="space-y-2 max-h-60 overflow-y-auto pr-1">
+          <div
+            v-for="item in processedHistory"
+            :key="item.id"
+            class="p-3 bg-gray-50 dark:bg-zinc-800/40 rounded-xl border border-gray-100 dark:border-zinc-800 flex items-center justify-between text-xs"
+          >
+            <div class="space-y-1 truncate pr-2">
+              <div class="font-semibold text-gray-800 dark:text-gray-200 truncate">
+                {{ item.outputFileName }}
+              </div>
+              <div class="text-gray-400 flex items-center gap-2">
+                <span>{{ new Date(item.timestamp).toLocaleString() }}</span>
+                <span>•</span>
+                <span>{{ item.writingMode === 'vertical' ? '直排' : '橫排' }}</span>
+                <span>•</span>
+                <span>{{ FONT_MAP[item.fontFamily]?.name || item.fontFamily }}</span>
+              </div>
+            </div>
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
+              已完成
+            </span>
+          </div>
+        </div>
       </div>
     </div>
 
