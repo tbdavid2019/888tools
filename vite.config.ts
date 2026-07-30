@@ -64,14 +64,14 @@ export default defineConfig({
     markdown(),
     svgLoader(),
     VitePWA({
-      disable: true,
       registerType: 'autoUpdate',
       strategies: 'generateSW',
       manifest: {
-        name: 'IT Tools',
-        description: 'Aggregated set of useful tools for developers.',
+        name: 'DAVID888 TOOL 工具箱',
+        short_name: 'DAVID888 TOOL',
+        description: '整合文字處理、影音剪輯、格式轉換與日常辦公工具的綜合工具箱。',
         display: 'standalone',
-        lang: 'fr-FR',
+        lang: 'zh-TW',
         start_url: `${baseUrl}?utm_source=pwa&utm_medium=pwa`,
         orientation: 'any',
         theme_color: '#18a058',
