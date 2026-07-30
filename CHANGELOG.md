@@ -8,10 +8,8 @@ All notable changes to this project will be documented in this file. See [standa
 - **home/tools**: 新增「最近使用的工具 (Recently Used Tools)」首頁自動記憶與標題高對比顯示。
   - **自動造訪追蹤**：於 Vue Router 全域 `afterEach` 鉤子與 `ToolCard` 點擊事件自動補捉所有工具頁面路由，寫入 `localStorage` (`recentToolsPath`)，造訪過即會在首頁自動浮現「最近使用的工具」專區。
   - **標題清晰度修復**：修復「全部工具」、「最愛工具」、「最近使用的工具」標題在 Bing 背景桌布與淺/深色模式下的文字對比度 (`text-shadow` 陰影與深色字體)，解決標題文字看不清的問題。
-- **epub-editor**: 新增歷史檔案持久化與快取下載、自訂字型 IndexedDB 持久化與元數據零破壞保護。
-  - **歷史檔案再次下載與刪除**：採用 IndexedDB (`hr_epub_editor_db`) 本地儲存已轉換完成的 `.epub` 二進制 Blob 檔案，在「最近處理歷史紀錄」面板提供「再次下載」與「刪除」按鈕，重新開啟瀏覽器亦可直接重新下載過往書籍。
-  - **自訂字型跨頁面持久化**：使用 IndexedDB 自動儲存使用者上傳的自訂字體檔 (`.ttf`, `.otf`, `.woff`, `.woff2`)，重新整理或重新進頁面後會自動載入並套用自訂字體，無需每次重新選取檔案。
-  - **排版與偏好記憶**：使用 `useStorage` 自動保存使用者選擇的字型 (`fontFamily`)、直橫排模式 (`writingMode`)、簡轉繁選項 (`convertMode`) 與標點轉換設定。
+- **fonts**: 整合預設中英文高質感字體 (`GenJyuuGothic-Medium.woff2` 源柔黑體與 `JetBrainsMono-Medium.woff2`)。
+  - 將源柔黑體 (`GenJyuuGothic-Medium.woff2`) 加入專案 `public/fonts/` 目錄並設定全站 `@font-face` 預設字型族群，同時將其加入 `epub-editor` 的內建嵌入字型選項中。
 
 ### Bug Fixes
 - **epub-editor**: 完全對齊 HelloRuru/tools 官方標準實作，修正直排 EPUB 翻頁方向 (`page-progression-direction="rtl"`)、輸出檔名命名與 OPF 元數據維護。

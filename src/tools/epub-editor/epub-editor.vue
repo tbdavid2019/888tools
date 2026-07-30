@@ -148,6 +148,7 @@ const INDENT_MAP: Record<string, string> = {
 
 const FONT_MAP: Record<string, { family: string; name: string; file: string; ext: string; mime: string; format: string }> = {
   'noto-sans': { family: '"NotoSansCJKtc", "Noto Sans TC", "Microsoft JhengHei", sans-serif', name: '思源黑體', file: '/fonts/NotoSansCJKtc-Regular.otf', ext: 'otf', mime: 'font/otf', format: 'opentype' },
+  'gen-jyuu': { family: '"Gen Jyuu Gothic", "Noto Sans TC", sans-serif', name: '源柔黑體', file: '/fonts/GenJyuuGothic-Medium.woff2', ext: 'woff2', mime: 'font/woff2', format: 'woff2' },
   'noto-serif': { family: '"NotoSerifCJKtc", "Noto Serif TC", "PMingLiU", serif', name: '思源宋體', file: '/fonts/NotoSerifCJKtc-Regular.otf', ext: 'otf', mime: 'font/otf', format: 'opentype' },
   'guankiap': { family: '"GuanKiapTsingKhai", "GuanKiapTsingKhai TW", "DFKai-SB", "BiauKai", serif', name: '原俠正楷', file: '/fonts/GuanKiapTsingKhai-TW.ttf', ext: 'ttf', mime: 'font/ttf', format: 'truetype' },
   'huninn': { family: '"jf-openhuninn", "Microsoft JhengHei", sans-serif', name: 'jf 粉圓', file: '/fonts/jf-openhuninn.ttf', ext: 'ttf', mime: 'font/ttf', format: 'truetype' },

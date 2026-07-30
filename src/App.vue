@@ -64,12 +64,20 @@ syncRef(
   font-weight: 500;
 }
 
+@font-face {
+  font-family: 'Gen Jyuu Gothic';
+  src: url('/fonts/GenJyuuGothic-Medium.woff2') format('woff2');
+  font-display: swap;
+  font-style: normal;
+  font-weight: 500;
+}
+
 body {
   min-height: 100%;
   margin: 0;
   padding: 0;
   background-color: transparent !important;
-  font-family: 'Maple Mono', 'JetBrains Mono', 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+  font-family: 'JetBrains Mono', 'Gen Jyuu Gothic', 'Maple Mono', 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
   font-size: 16.5px;
   line-height: 1.55;
 }
@@ -79,13 +87,13 @@ html {
   margin: 0;
   padding: 0;
   background-color: transparent !important;
-  font-family: 'Maple Mono', 'JetBrains Mono', 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+  font-family: 'JetBrains Mono', 'Gen Jyuu Gothic', 'Maple Mono', 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
   font-size: 16.5px;
 }
 
 #app,
 .n-config-provider {
-  font-family: 'Maple Mono', 'JetBrains Mono', 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+  font-family: 'JetBrains Mono', 'Gen Jyuu Gothic', 'Maple Mono', 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
 }
 
 * {
