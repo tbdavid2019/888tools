@@ -38,4 +38,18 @@ const router = createRouter({
   ],
 });
 
+router.afterEach((to) => {
+  if (to.meta?.isTool && to.path) {
+    try {
+      // Dynamic import to prevent circular dependency during router initialization
+      import('./tools/tools.store').then(({ useToolStore }) => {
+        const toolStore = useToolStore();
+        toolStore.addToolToRecent(to.path);
+      });
+    } catch (e) {
+      console.warn('Failed to record recent tool:', e);
+    }
+  }
+});
+
 export default router;

@@ -5,8 +5,9 @@ All notable changes to this project will be documented in this file. See [standa
 ## Version 2026.07.30
 
 ### Features
-- **home/tools**: 新增「最近使用的工具 (Recently Used Tools)」首頁自動記憶區塊。
-  - 自動記錄使用者造訪過的所有工具路由至 `localStorage` (`recentToolsPath`)，並於首頁熱門/最愛工具區下方顯示「最近使用的工具」快速導覽卡片，支援一鍵清空紀錄。
+- **home/tools**: 新增「最近使用的工具 (Recently Used Tools)」首頁自動記憶與標題高對比顯示。
+  - **自動造訪追蹤**：於 Vue Router 全域 `afterEach` 鉤子與 `ToolCard` 點擊事件自動補捉所有工具頁面路由，寫入 `localStorage` (`recentToolsPath`)，造訪過即會在首頁自動浮現「最近使用的工具」專區。
+  - **標題清晰度修復**：修復「全部工具」、「最愛工具」、「最近使用的工具」標題在 Bing 背景桌布與淺/深色模式下的文字對比度 (`text-shadow` 陰影與深色字體)，解決標題文字看不清的問題。
 - **epub-editor**: 新增歷史檔案持久化與快取下載、自訂字型 IndexedDB 持久化與元數據零破壞保護。
   - **歷史檔案再次下載與刪除**：採用 IndexedDB (`hr_epub_editor_db`) 本地儲存已轉換完成的 `.epub` 二進制 Blob 檔案，在「最近處理歷史紀錄」面板提供「再次下載」與「刪除」按鈕，重新開啟瀏覽器亦可直接重新下載過往書籍。
   - **自訂字型跨頁面持久化**：使用 IndexedDB 自動儲存使用者上傳的自訂字體檔 (`.ttf`, `.otf`, `.woff`, `.woff2`)，重新整理或重新進頁面後會自動載入並套用自訂字體，無需每次重新選取檔案。

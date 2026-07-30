@@ -189,10 +189,17 @@ function onUpdateFavoriteTools() {
 
 .section-title {
   margin-top: 28px;
-  margin-bottom: 10px;
-  color: rgb(163 163 163);
-  font-size: 1.1rem;
-  font-weight: 650;
+  margin-bottom: 12px;
+  color: #1f2937;
+  font-size: 1.25rem;
+  font-weight: 700;
   letter-spacing: 0.02em;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+
+  :deep(.dark) &,
+  html.dark & {
+    color: #f3f4f6;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  }
 }
 </style>
