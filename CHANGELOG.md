@@ -7,15 +7,16 @@ All notable changes to this project will be documented in this file. See [standa
 ### Features
 - **home/tools**: 新增「最近使用的工具 (Recently Used Tools)」首頁自動記憶區塊。
   - 自動記錄使用者造訪過的所有工具路由至 `localStorage` (`recentToolsPath`)，並於首頁熱門/最愛工具區下方顯示「最近使用的工具」快速導覽卡片，支援一鍵清空紀錄。
-- **epub-editor**: 新增 `localStorage` 本地偏好設定持久化與「最近處理歷史紀錄」面板。
-  - **排版與字型偏好記憶**：使用 `useStorage` 自動保存使用者選擇的字型 (`fontFamily`)、直橫排模式 (`writingMode`)、簡轉繁選項 (`convertMode`) 與標點轉換設定，每次開啟或重新整理頁面皆會自動載入上次選擇。
-  - **最近處理歷史紀錄**：完成轉換時自動記錄產出的檔名、書籍標題、轉換時間與排版參數，並於上傳區提供「最近處理歷史紀錄」面板與清空歷史功能。
+- **epub-editor**: 新增歷史檔案持久化與快取下載、自訂字型 IndexedDB 持久化與元數據零破壞保護。
+  - **歷史檔案再次下載與刪除**：採用 IndexedDB (`hr_epub_editor_db`) 本地儲存已轉換完成的 `.epub` 二進制 Blob 檔案，在「最近處理歷史紀錄」面板提供「再次下載」與「刪除」按鈕，重新開啟瀏覽器亦可直接重新下載過往書籍。
+  - **自訂字型跨頁面持久化**：使用 IndexedDB 自動儲存使用者上傳的自訂字體檔 (`.ttf`, `.otf`, `.woff`, `.woff2`)，重新整理或重新進頁面後會自動載入並套用自訂字體，無需每次重新選取檔案。
+  - **排版與偏好記憶**：使用 `useStorage` 自動保存使用者選擇的字型 (`fontFamily`)、直橫排模式 (`writingMode`)、簡轉繁選項 (`convertMode`) 與標點轉換設定。
 
 ### Bug Fixes
-- **epub-editor**: 完全對齊 HelloRuru/tools 官方標準實作，修正直排 EPUB 翻頁方向 (`page-progression-direction="rtl"`) 與輸出檔名命名邏輯。
-  - **檔名命名修正**：改為直接基於上傳的原始 EPUB 檔名 (`file.name`) 進行簡轉繁與後綴拼接（如 `原檔名（繁・詞彙・直排）.epub`），不再使用 OPF 內部 XML 的 `<dc:title>` 替代，解決檔名與原檔名不符的問題。
+- **epub-editor**: 完全對齊 HelloRuru/tools 官方標準實作，修正直排 EPUB 翻頁方向 (`page-progression-direction="rtl"`)、輸出檔名命名與 OPF 元數據維護。
+  - **OPF 元數據零破壞保護**：完全移除 `updateOpfMetadata` 對 OPF XML 的 DOMParser 重新解析與導出，保留原書所有 `<dc:title>`、`<dc:creator>` 等內部結構不被污染破壞。
+  - **檔名命名修正**：改為直接基於上傳的原始 EPUB 檔名 (`file.name`) 進行簡轉繁與後綴拼接（如 `原檔名（繁・詞彙・直排）.epub`）。
   - **OPF 重構**：重構 `updatePackageDirection` 邏輯，精準只於 OPF 的 `<spine>` 元素注入 `page-progression-direction="rtl"`，不再污染根層 `<package>` 標籤（避免因相容性破壞 EPUB2 閱讀器解析）。
-  - 將 OPF 處理步驟與元數據整合，確保產出的 `.epub` 檔案能在 Readmoo、Apple Books、Kobo、Readium、BookWalker 等各款閱讀器中按左鍵/左滑正確翻至下一頁。
 
 ## Version 2026.07.28
 

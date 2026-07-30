@@ -10,6 +10,15 @@ import { useStorage } from '@vueuse/core';
 import { translate } from '@/plugins/i18n.plugin';
 import { config } from '@/config';
 import { convertOpenCC } from '@/services/opencc.service';
+import {
+  clearAllHistoryBlobs,
+  clearCustomFont,
+  deleteHistoryBlob,
+  getHistoryBlob,
+  loadCustomFont,
+  saveCustomFont,
+  saveHistoryBlob
+} from './epub-storage';
 
 const message = useMessage();
 
@@ -62,9 +71,33 @@ export interface ProcessedHistoryItem {
 
 const processedHistory = useStorage<ProcessedHistoryItem[]>('epub-editor:history', []);
 
-function clearHistory() {
+async function clearHistory() {
+  await clearAllHistoryBlobs();
   processedHistory.value = [];
-  message.success('已清空轉換歷史紀錄');
+  message.success('已清空轉換歷史紀錄與快取檔案');
+}
+
+async function removeHistoryItem(id: string) {
+  await deleteHistoryBlob(id);
+  processedHistory.value = processedHistory.value.filter(h => h.id !== id);
+  message.success('已刪除該筆紀錄');
+}
+
+async function downloadHistoryItem(item: ProcessedHistoryItem) {
+  const blob = await getHistoryBlob(item.id);
+  if (!blob) {
+    message.error('此歷史快取檔案已被清理或不存在，無法下載');
+    return;
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = item.outputFileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+  message.success('已開始下載歷史紀錄檔案：' + item.outputFileName);
 }
 
 // Custom Font File
@@ -878,14 +911,13 @@ async function injectStyleIntoCSS(zip: JSZip, customFontInfo: any) {
   }
 }
 
-// Update Spine direction and metadata in OPF
+// Update Spine direction in OPF
 async function updateSpineDirection(zip: JSZip) {
   const opfFile = opfPath.value || Object.keys(zip.files).find(f => f.toLowerCase().endsWith('.opf'));
   if (!opfFile || !zip.files[opfFile]) return;
 
   let content = await zip.files[opfFile].async('string');
   content = updatePackageDirection(content, settings.value.writingMode);
-  content = updateOpfMetadata(content);
   zip.file(opfFile, content);
 
   const opfEntry = fileEntries.value.find(e => e.name === opfFile);
@@ -1035,25 +1067,6 @@ async function injectCoverIntoEpub(zip: JSZip) {
   }
 
   zip.file(opfFile, opfContent);
-}
-
-// Update Book Metadata inside content.opf
-function updateOpfMetadata(opfText: string): string {
-  const parser = new DOMParser();
-  const xmlDoc = parser.parseFromString(opfText, 'text/xml');
-  
-  const titleNode = xmlDoc.getElementsByTagName('dc:title')[0] || xmlDoc.getElementsByTagName('title')[0];
-  if (titleNode) {
-    titleNode.textContent = bookTitle.value;
-  }
-  
-  const creatorNode = xmlDoc.getElementsByTagName('dc:creator')[0] || xmlDoc.getElementsByTagName('creator')[0];
-  if (creatorNode) {
-    creatorNode.textContent = bookAuthor.value;
-  }
-
-  const serializer = new XMLSerializer();
-  return serializer.serializeToString(xmlDoc);
 }
 
 // Full execution and download
@@ -1299,9 +1312,12 @@ async function processEpub() {
     document.body.removeChild(a);
     message.success('EPUB 電子書處理完成並已開始下載！');
 
-    // Record in local history
+    // Record in local history & IndexedDB
+    const historyId = Date.now().toString(36) + Math.random().toString(36).substring(2, 6);
+    await saveHistoryBlob(historyId, blob);
+
     processedHistory.value.unshift({
-      id: Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
+      id: historyId,
       originalFileName: file.value.name,
       outputFileName: finalFilename,
       title: bookTitle.value || originalName,
@@ -1312,7 +1328,11 @@ async function processEpub() {
       timestamp: Date.now(),
     });
     if (processedHistory.value.length > 30) {
+      const removed = processedHistory.value.slice(30);
       processedHistory.value = processedHistory.value.slice(0, 30);
+      for (const item of removed) {
+        deleteHistoryBlob(item.id);
+      }
     }
   } catch (err: any) {
     console.error('電子書處理失敗:', err);
@@ -1381,7 +1401,7 @@ function restoreOriginalCover() {
   message.info('已復原為原電子書封面');
 }
 
-function handleCustomFontUpload(event: any) {
+async function handleCustomFontUpload(event: any) {
   const f = event.target.files && event.target.files[0];
   if (!f) return;
   const lo = (f.name || '').toLowerCase();
@@ -1390,8 +1410,10 @@ function handleCustomFontUpload(event: any) {
     return;
   }
   customFontFile.value = f;
-  message.success('字體載入成功，已套用至預覽');
+  await saveCustomFont(f);
+  message.success('已讀取並自動儲存自訂字型：' + f.name);
 }
+
 function resetAll() {
   file.value = null;
   zipInstance.value = null;
@@ -1409,20 +1431,11 @@ function resetAll() {
     URL.revokeObjectURL(newCoverPreviewUrl.value);
     newCoverPreviewUrl.value = '';
   }
-  if (customFontUrl.value) {
-    URL.revokeObjectURL(customFontUrl.value);
-    customFontUrl.value = '';
-  }
-  customFontFile.value = null;
-  // User settings are persisted in localStorage via useStorage
   
-  let styleEl1 = document.getElementById('hr-preview-custom-font-style');
-  if (styleEl1) styleEl1.remove();
-  let styleEl2 = document.getElementById('hr-preview-standard-fonts-style');
-  if (styleEl2) styleEl2.remove();
+  // Note: custom font and user settings remain stored in IndexedDB/localStorage
 }
 
-onMounted(() => {
+onMounted(async () => {
   const base = config.app.baseUrl.replace(/\/$/, '');
   const styleEl = document.createElement('style');
   styleEl.id = 'hr-preview-standard-fonts-style';
@@ -1449,6 +1462,15 @@ onMounted(() => {
     }
   `;
   document.head.appendChild(styleEl);
+
+  // Restore saved custom font if available
+  const savedCustomFont = await loadCustomFont();
+  if (savedCustomFont) {
+    customFontFile.value = savedCustomFont;
+    if (settings.value.fontFamily === 'custom') {
+      await injectCustomFontForPreview();
+    }
+  }
 
   previewResizeObserver = new ResizeObserver(syncPreviewPagination);
   if (previewViewport.value) previewResizeObserver.observe(previewViewport.value);
@@ -1527,9 +1549,14 @@ onUnmounted(() => {
                 <span>{{ FONT_MAP[item.fontFamily]?.name || item.fontFamily }}</span>
               </div>
             </div>
-            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
-              已完成
-            </span>
+            <div class="flex items-center gap-2 shrink-0">
+              <c-button size="small" secondary @click="downloadHistoryItem(item)">
+                再次下載
+              </c-button>
+              <c-button size="small" tertiary danger @click="removeHistoryItem(item.id)">
+                刪除
+              </c-button>
+            </div>
           </div>
         </div>
       </div>
