@@ -1266,11 +1266,15 @@ async function processEpub() {
       progressPercent.value = p;
     });
 
-    const cleanTitle = (bookTitle.value || file.value.name.replace(/\.epub$/i, '')).trim();
-    let outputName = cleanTitle;
+    const originalName = file.value.name.replace(/\.epub$/i, '').trim();
+    let outputName = originalName;
     if (settings.value.convertMode !== 'off') {
       const direction = settings.value.convertMode === 'twp' ? 's2twp' : 's2tw';
-      outputName = convertOpenCC(cleanTitle, direction);
+      try {
+        outputName = convertOpenCC(originalName, direction);
+      } catch {
+        outputName = originalName;
+      }
     }
 
     const suffixes = [];
@@ -1300,7 +1304,7 @@ async function processEpub() {
       id: Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
       originalFileName: file.value.name,
       outputFileName: finalFilename,
-      title: cleanTitle,
+      title: bookTitle.value || originalName,
       author: bookAuthor.value || '未知',
       writingMode: settings.value.writingMode,
       fontFamily: settings.value.fontFamily,

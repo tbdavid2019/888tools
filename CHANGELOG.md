@@ -12,8 +12,9 @@ All notable changes to this project will be documented in this file. See [standa
   - **最近處理歷史紀錄**：完成轉換時自動記錄產出的檔名、書籍標題、轉換時間與排版參數，並於上傳區提供「最近處理歷史紀錄」面板與清空歷史功能。
 
 ### Bug Fixes
-- **epub-editor**: 完全對齊 HelloRuru/tools 官方標準實作，修正直排 EPUB 翻頁方向 (`page-progression-direction="rtl"`)。
-  - 重構 `updatePackageDirection` 邏輯，精準只於 OPF 的 `<spine>` 元素注入 `page-progression-direction="rtl"`，不再污染根層 `<package>` 標籤（避免因相容性破壞 EPUB2 閱讀器解析）。
+- **epub-editor**: 完全對齊 HelloRuru/tools 官方標準實作，修正直排 EPUB 翻頁方向 (`page-progression-direction="rtl"`) 與輸出檔名命名邏輯。
+  - **檔名命名修正**：改為直接基於上傳的原始 EPUB 檔名 (`file.name`) 進行簡轉繁與後綴拼接（如 `原檔名（繁・詞彙・直排）.epub`），不再使用 OPF 內部 XML 的 `<dc:title>` 替代，解決檔名與原檔名不符的問題。
+  - **OPF 重構**：重構 `updatePackageDirection` 邏輯，精準只於 OPF 的 `<spine>` 元素注入 `page-progression-direction="rtl"`，不再污染根層 `<package>` 標籤（避免因相容性破壞 EPUB2 閱讀器解析）。
   - 將 OPF 處理步驟與元數據整合，確保產出的 `.epub` 檔案能在 Readmoo、Apple Books、Kobo、Readium、BookWalker 等各款閱讀器中按左鍵/左滑正確翻至下一頁。
 
 ## Version 2026.07.28
