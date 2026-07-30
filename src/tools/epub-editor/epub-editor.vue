@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useMessage } from 'naive-ui';
 import JSZip from 'jszip';
+import { decodeWithEncoding, detectEncoding } from '../txt-to-epub/encodingDetector';
+import { clampPreviewPage, getPreviewPageCount } from './preview-pagination';
 import { translate } from '@/plugins/i18n.plugin';
 import { config } from '@/config';
 import { convertOpenCC } from '@/services/opencc.service';
-import { detectEncoding, decodeWithEncoding } from '../txt-to-epub/encodingDetector';
 
 const message = useMessage();
 
@@ -62,6 +63,10 @@ function clickFileInput(input: HTMLInputElement | null) {
 // Live Preview Sample Text
 const previewTitle = ref('即時排版預覽');
 const previewText = ref('載入 EPUB 電子書後，這裡將會呈現第一個內容章節的實際渲染結果。您可以調整左側的排版、字型、直橫排等參數，效果會即時更新。');
+const previewViewport = ref<HTMLElement | null>(null);
+const previewPage = ref(0);
+const previewPageCount = ref(1);
+let previewResizeObserver: ResizeObserver | null = null;
 
 // Constants
 const SIZE_MAP: Record<string, string> = {
@@ -151,6 +156,67 @@ const computedPreviewFontFamily = computed(() => {
     return '"EpubEditorPreviewCustom", sans-serif';
   }
   return FONT_MAP[font]?.family || 'sans-serif';
+});
+
+function syncPreviewPagination() {
+  const viewport = previewViewport.value;
+  if (!viewport) return;
+
+  previewPageCount.value = getPreviewPageCount(viewport.scrollWidth, viewport.clientWidth);
+  if (viewport.clientWidth <= 0) {
+    previewPage.value = 0;
+    return;
+  }
+
+  const offset = Math.abs(viewport.scrollLeft);
+  previewPage.value = clampPreviewPage(Math.round(offset / viewport.clientWidth), previewPageCount.value);
+}
+
+function getVerticalScrollDirection(viewport: HTMLElement) {
+  const originalOffset = viewport.scrollLeft;
+  viewport.scrollLeft = -1;
+  const supportsNegativeOffset = viewport.scrollLeft < 0;
+  viewport.scrollLeft = originalOffset;
+  return supportsNegativeOffset ? -1 : 1;
+}
+
+function goToPreviewPage(page: number) {
+  const viewport = previewViewport.value;
+  if (!viewport) return;
+
+  const nextPage = clampPreviewPage(page, previewPageCount.value);
+  const offset = nextPage * viewport.clientWidth;
+  const isVertical = settings.value.writingMode === 'vertical';
+
+  viewport.scrollTo({
+    left: isVertical ? getVerticalScrollDirection(viewport) * offset : offset,
+    behavior: 'smooth',
+  });
+  previewPage.value = nextPage;
+}
+
+function handlePreviewKeydown(event: KeyboardEvent) {
+  if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+
+  const isVertical = settings.value.writingMode === 'vertical';
+  const nextKey = isVertical ? 'ArrowLeft' : 'ArrowRight';
+  event.preventDefault();
+  goToPreviewPage(previewPage.value + (event.key === nextKey ? 1 : -1));
+}
+
+watch([previewTitle, previewText, () => settings.value.writingMode, () => settings.value.fontFamily, () => settings.value.fontSize, () => settings.value.lineHeight, () => settings.value.textIndent], async () => {
+  previewPage.value = 0;
+  await nextTick();
+  previewViewport.value?.scrollTo({ left: 0 });
+  syncPreviewPagination();
+});
+
+watch(previewViewport, (viewport, previousViewport) => {
+  if (previousViewport) previewResizeObserver?.unobserve(previousViewport);
+  if (viewport) {
+    previewResizeObserver?.observe(viewport);
+    nextTick(syncPreviewPagination);
+  }
 });
 
 // Watch custom font file to update preview sub-setting
@@ -1372,9 +1438,14 @@ onMounted(() => {
     }
   `;
   document.head.appendChild(styleEl);
+
+  previewResizeObserver = new ResizeObserver(syncPreviewPagination);
+  if (previewViewport.value) previewResizeObserver.observe(previewViewport.value);
+  nextTick(syncPreviewPagination);
 });
 
 onUnmounted(() => {
+  previewResizeObserver?.disconnect();
   if (newCoverPreviewUrl.value) URL.revokeObjectURL(newCoverPreviewUrl.value);
   if (customFontUrl.value) URL.revokeObjectURL(customFontUrl.value);
   let styleEl1 = document.getElementById('hr-preview-custom-font-style');
@@ -1639,7 +1710,14 @@ onUnmounted(() => {
         <n-tabs v-model:value="activeTab" type="line" animated>
           <!-- Tab 1: Live Preview -->
           <n-tab-pane name="preview" tab="即時排版預覽">
-            <div class="preview-frame border border-gray-200 dark:border-zinc-800 rounded-2xl max-h-[520px] overflow-auto relative">
+            <div
+              ref="previewViewport"
+              class="preview-frame border border-gray-200 dark:border-zinc-800 rounded-2xl max-h-[520px] overflow-auto relative"
+              tabindex="0"
+              aria-label="EPUB 排版預覽"
+              @scroll="syncPreviewPagination"
+              @keydown="handlePreviewKeydown"
+            >
               <div 
                 class="preview-content w-full"
                 :class="{ 'vertical': settings.writingMode === 'vertical' }"
@@ -1659,8 +1737,19 @@ onUnmounted(() => {
                 </p>
               </div>
             </div>
+            <div v-if="settings.writingMode === 'vertical'" class="preview-pagination mt-3" aria-label="直排預覽翻頁控制">
+              <c-button size="small" tertiary :disabled="previewPage === 0" @click="goToPreviewPage(previewPage - 1)">
+                上一頁
+              </c-button>
+              <span class="text-xs text-gray-500 dark:text-gray-400 tabular-nums" aria-live="polite">
+                第 {{ previewPage + 1 }} / {{ previewPageCount }} 頁
+              </span>
+              <c-button size="small" tertiary :disabled="previewPage >= previewPageCount - 1" @click="goToPreviewPage(previewPage + 1)">
+                下一頁
+              </c-button>
+            </div>
             <div class="text-xs text-gray-400 mt-2 text-center">
-              * 直排模式下預覽支援向右橫向滾動。實體輸出將完美寫入翻頁 Progression 指令。
+              * 直排預覽可用按鈕或鍵盤 ←／→ 翻頁；實體輸出會寫入右至左翻頁指令。
             </div>
           </n-tab-pane>
 
@@ -1747,6 +1836,7 @@ onUnmounted(() => {
 <style scoped>
 .preview-frame {
   background: #fafafa;
+  scroll-behavior: smooth;
 }
 .dark .preview-frame {
   background: #18181c;
@@ -1783,6 +1873,12 @@ onUnmounted(() => {
   overflow-x: auto;
   overflow-y: hidden;
   display: block;
+}
+.preview-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
 }
 .preview-content.vertical h1 {
   text-align: center;
