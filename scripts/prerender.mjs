@@ -100,15 +100,15 @@ async function main() {
 
     // A. Update title
     if (urlPath !== '/') {
-      html = html.replace('<title>DAVID888 TOOL 工具箱</title>', `<title>${title} - DAVID888 TOOL 工具箱</title>`);
-      html = html.replace('<meta itemprop="name" content="DAVID888 TOOL 工具箱" />', `<meta itemprop="name" content="${title} - DAVID888 TOOL 工具箱" />`);
-      html = html.replace('<meta property="og:title" content="DAVID888 TOOL 工具箱" />', `<meta property="og:title" content="${title} - DAVID888 TOOL 工具箱" />`);
-      html = html.replace('<meta name="twitter:title" content="DAVID888 TOOL 工具箱" />', `<meta name="twitter:title" content="${title} - DAVID888 TOOL 工具箱" />`);
-      html = html.replace('<meta name="twitter:image:alt" content="DAVID888 TOOL 工具箱" />', `<meta name="twitter:image:alt" content="${title} - DAVID888 TOOL 工具箱" />`);
+      html = html.replace('<title>888 TOOL</title>', `<title>${title} - 888 TOOL</title>`);
+      html = html.replace('<meta itemprop="name" content="888 TOOL" />', `<meta itemprop="name" content="${title} - 888 TOOL" />`);
+      html = html.replace('<meta property="og:title" content="888 TOOL" />', `<meta property="og:title" content="${title} - 888 TOOL" />`);
+      html = html.replace('<meta name="twitter:title" content="888 TOOL" />', `<meta name="twitter:title" content="${title} - 888 TOOL" />`);
+      html = html.replace('<meta name="twitter:image:alt" content="888 TOOL" />', `<meta name="twitter:image:alt" content="${title} - 888 TOOL" />`);
     }
 
     // B. Update description (replaceAll occurrences of default description)
-    const defaultDesc = 'DAVID888 TOOL 工具箱 - 整合文字處理、影音剪輯、格式轉換、生活密碼與日常辦公的綜合工具箱，無廣告、安全隱私、完全在瀏覽器端運行。';
+    const defaultDesc = '888 TOOL - 整合文字處理、影音剪輯、格式轉換、生活密碼與日常辦公的綜合工具箱，無廣告、安全隱私、完全在瀏覽器端運行。';
     html = html.replaceAll(defaultDesc, description);
 
     // C. Update canonical & og:url URLs
@@ -125,10 +125,10 @@ async function main() {
     const fallbackHtml = `
     <div id="app">
       <div style="padding: 20px; max-width: 800px; margin: 0 auto; font-family: sans-serif; line-height: 1.6;">
-        <h1>${title === 'DAVID888 TOOL 工具箱' ? title : title + ' - DAVID888 TOOL 工具箱'}</h1>
+        <h1>${title === '888 TOOL' ? title : title + ' - 888 TOOL'}</h1>
         <p>${description}</p>
         <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.15); margin: 20px 0;" />
-        <h3>DAVID888 TOOL - 熱門綜合工具列表</h3>
+        <h3>888 TOOL - 熱門綜合工具列表</h3>
         <ul>
           ${globalToolsListHtml}
         </ul>
@@ -149,7 +149,7 @@ async function main() {
         "@type": "WebSite",
         "@id": "https://tool.david888.com/#website",
         "url": "https://tool.david888.com/",
-        "name": "DAVID888 TOOL 工具箱",
+        "name": "888 TOOL",
         "description": "整合文字處理、影音剪輯、格式轉換、生活密碼與日常辦公的綜合工具箱，無廣告、安全隱私、完全在瀏覽器端運行。",
         "potentialAction": {
           "@type": "SearchAction",
@@ -159,7 +159,7 @@ async function main() {
       },
       {
         "@type": "ItemList",
-        "name": "DAVID888 TOOL - 工具列表",
+        "name": "888 TOOL - 工具列表",
         "numberOfItems": tools.length,
         "itemListElement": tools.map((t, idx) => ({
           "@type": "ListItem",
@@ -171,7 +171,7 @@ async function main() {
       }
     ]
   };
-  const homeHtml = processPage('/', 'DAVID888 TOOL 工具箱', '整合文字處理、影音剪輯、格式轉換、生活密碼與日常辦公的綜合工具箱，無廣告、安全隱私、完全在瀏覽器端運行。', homeJsonLd);
+  const homeHtml = processPage('/', '888 TOOL', '整合文字處理、影音剪輯、格式轉換、生活密碼與日常辦公的綜合工具箱，無廣告、安全隱私、完全在瀏覽器端運行。', homeJsonLd);
   await saveHtml('/', homeHtml);
 
   // -- 2. Process About Page (/about) --
@@ -179,11 +179,11 @@ async function main() {
   const aboutJsonLd = {
     "@context": "https://schema.org",
     "@type": "AboutPage",
-    "name": "關於 DAVID888 TOOL 工具箱",
-    "description": "DAVID888 TOOL 工具箱（Tool.David888.com）是一款整合文字處理、影音剪輯、格式轉換、生活密碼與日常辦公的綜合工具箱。預設繁體中文，無廣告，加載迅速，完全在瀏覽器端運行，安全隱私保護。",
+    "name": "關於 888 TOOL",
+    "description": "888 TOOL（Tool.David888.com）是一款整合文字處理、影音剪輯、格式轉換、生活密碼與日常辦公的綜合工具箱。預設繁體中文，無廣告，加載迅速，完全在瀏覽器端運行，安全隱私保護。",
     "url": "https://tool.david888.com/about"
   };
-  const aboutHtml = processPage('/about', '關於我們', 'DAVID888 TOOL 工具箱（Tool.David888.com）是一款整合文字處理、影音剪輯、格式轉換、生活密碼與日常辦公的綜合工具箱。預設繁體中文，無廣告，加載迅速，完全在瀏覽器端運行，安全隱私保護。', aboutJsonLd);
+  const aboutHtml = processPage('/about', '關於我們', '888 TOOL（Tool.David888.com）是一款整合文字處理、影音剪輯、格式轉換、生活密碼與日常辦公的綜合工具箱。預設繁體中文，無廣告，加載迅速，完全在瀏覽器端運行，安全隱私保護。', aboutJsonLd);
   await saveHtml('/about', aboutHtml);
 
   // -- 3. Process each Tool Page --

@@ -138,7 +138,7 @@ watch(
     margin-bottom: 5px;
 
     ::v-deep(.n-menu-item-content-header) {
-      font-size: 17px;
+      font-size: 18px;
       line-height: 1.55;
       font-weight: 550;
     }
@@ -149,7 +149,7 @@ watch(
     }
 
     ::v-deep(.n-menu-item-content) {
-      min-height: 38px;
+      min-height: 42px;
     }
 
     ::v-deep(.n-menu-item-content--selected) {
@@ -218,7 +218,7 @@ watch(
 }
 
 .menu-category {
-  margin-top: 14px;
+  margin-top: 16px;
   margin-left: 8px;
   display: flex;
   cursor: pointer;
@@ -228,7 +228,8 @@ watch(
 
 .menu-category-label {
   margin-left: 10px;
-  font-size: 17px;
+  font-size: 18px;
+  line-height: 1.55;
   font-weight: 650;
   letter-spacing: 0.02em;
 }

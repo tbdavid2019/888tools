@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## Version 2026.07.30
+
+### Features
+- **home/tools**: 新增「最近使用的工具 (Recently Used Tools)」首頁自動記憶與標題高對比顯示。
+  - **自動造訪追蹤**：於 Vue Router 全域 `afterEach` 鉤子與 `ToolCard` 點擊事件自動補捉所有工具頁面路由，寫入 `localStorage` (`recentToolsPath`)，造訪過即會在首頁自動浮現「最近使用的工具」專區。
+  - **標題清晰度修復**：修復「全部工具」、「最愛工具」、「最近使用的工具」標題在 Bing 背景桌布與淺/深色模式下的文字對比度 (`text-shadow` 陰影與深色字體)，解決標題文字看不清的問題。
+- **fonts**: 整合預設中英文高質感字體 (`GenJyuuGothic-Medium.woff2` 源柔黑體與 `JetBrainsMono-Medium.woff2`)。
+  - 將源柔黑體 (`GenJyuuGothic-Medium.woff2`) 加入專案 `public/fonts/` 目錄並設定全站 `@font-face` 預設字型族群，同時將其加入 `epub-editor` 的內建嵌入字型選項中。
+
+### Bug Fixes
+- **epub-editor**: 完全對齊 HelloRuru/tools 官方標準實作，修正直排 EPUB 翻頁方向 (`page-progression-direction="rtl"`)、輸出檔名命名與 OPF 元數據維護。
+  - **OPF 元數據零破壞保護**：完全移除 `updateOpfMetadata` 對 OPF XML 的 DOMParser 重新解析與導出，保留原書所有 `<dc:title>`、`<dc:creator>` 等內部結構不被污染破壞。
+  - **檔名命名修正**：改為直接基於上傳的原始 EPUB 檔名 (`file.name`) 進行簡轉繁與後綴拼接（如 `原檔名（繁・詞彙・直排）.epub`）。
+  - **OPF 重構**：重構 `updatePackageDirection` 邏輯，精準只於 OPF 的 `<spine>` 元素注入 `page-progression-direction="rtl"`，不再污染根層 `<package>` 標籤（避免因相容性破壞 EPUB2 閱讀器解析）。
+
 ## Version 2026.07.28
 
 ### Bug Fixes

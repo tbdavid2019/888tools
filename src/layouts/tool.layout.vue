@@ -5,6 +5,7 @@ import type { HeadObject } from '@vueuse/head';
 
 import BaseLayout from './base.layout.vue';
 import FavoriteButton from '@/components/FavoriteButton.vue';
+import ToolCard from '@/components/ToolCard.vue';
 import type { Tool } from '@/tools/tools.types';
 import { useToolStore } from '@/tools/tools.store';
 import { useStyleStore } from '@/stores/style.store';
@@ -16,6 +17,18 @@ const toolStore = useToolStore();
 const styleStore = useStyleStore();
 const activePalette = computed(() => (styleStore.isDarkTheme ? kanagawaDarkPalette : kanagawaLightPalette));
 
+onMounted(() => {
+  if (route.path) {
+    toolStore.addToolToRecent(route.path);
+  }
+});
+
+watch(() => route.path, (newPath) => {
+  if (newPath) {
+    toolStore.addToolToRecent(newPath);
+  }
+});
+
 const layoutBackgroundColor = computed(() => {
   if (!styleStore.isBingWallpaperEnabled) {
     return 'transparent';
@@ -24,10 +37,8 @@ const layoutBackgroundColor = computed(() => {
   return `rgba(${activePalette.value.glassBackgroundRgb}, ${opacity})`;
 });
 
-const { locale } = useI18n();
 const siteTitleSuffix = computed(() => {
-  const isZh = locale.value.startsWith('zh');
-  return isZh ? 'DAVID888 TOOL 工具箱' : 'DAVID888 TOOL';
+  return '888 TOOL';
 });
 
 const head = computed<HeadObject>(() => ({
@@ -55,10 +66,16 @@ const head = computed<HeadObject>(() => ({
 }));
 useHead(head);
 const { t } = useI18n();
+const { locale } = useI18n();
 
 const i18nKey = computed<string>(() => route.path.trim().replace('/', ''));
 const toolTitle = computed<string>(() => t(`tools.${i18nKey.value}.title`, String(route.meta.name)));
 const toolDescription = computed<string>(() => t(`tools.${i18nKey.value}.description`, String(route.meta.description)));
+const isZh = computed(() => locale.value.startsWith('zh'));
+const recommendedTools = computed(() => [...toolStore.tools]
+  .filter(tool => tool.path !== route.path)
+  .sort(() => Math.random() - 0.5)
+  .slice(0, 4));
 
 const contentMaxWidth = computed(() => '1180px');
 const contentFlexBasis = computed(() => '520px');
@@ -90,6 +107,23 @@ const contentFlexBasis = computed(() => '520px');
       <slot />
     </div>
 
+    <section class="recommended-tools" aria-labelledby="recommended-tools-title">
+      <div class="recommended-tools-heading">
+        <div>
+          <h2 id="recommended-tools-title">
+            {{ isZh ? '隨機推薦工具' : 'Recommended Tools' }}
+          </h2>
+          <p>
+            {{ isZh ? '再試試這些工具，探索更多可能。' : 'Explore a few more tools you may find useful.' }}
+          </p>
+        </div>
+        <span class="recommended-tools-badge">{{ isZh ? '為你挑選' : 'Picked for you' }}</span>
+      </div>
+
+      <div class="recommended-tools-grid">
+        <ToolCard v-for="tool in recommendedTools" :key="tool.path" :tool="tool" />
+      </div>
+    </section>
   </BaseLayout>
 </template>
 
@@ -167,6 +201,56 @@ const contentFlexBasis = computed(() => '520px');
   }
 }
 
+.recommended-tools {
+  width: 100%;
+  max-width: v-bind('contentMaxWidth');
+  margin: 28px auto 0;
+  padding: 24px 0 12px;
+}
+
+.recommended-tools-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+
+  h2 {
+    margin: 0;
+    color: v-bind('activePalette.heading');
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  p {
+    margin: 5px 0 0;
+    color: v-bind('activePalette.textMuted');
+    font-size: 15px;
+  }
+}
+
+.recommended-tools-badge {
+  flex: 0 0 auto;
+  border: 1px solid v-bind('activePalette.overlayBorder');
+  border-radius: 999px;
+  padding: 6px 12px;
+  color: v-bind('activePalette.textMuted');
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.recommended-tools-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.recommended-tools-grid :deep(.tool-card) {
+  min-height: 220px;
+}
+
 @media (max-width: 700px) {
   .tool-content {
     gap: 12px;
@@ -195,5 +279,29 @@ const contentFlexBasis = computed(() => '520px');
     }
   }
 
+  .recommended-tools {
+    margin-top: 20px;
+    padding-top: 18px;
+  }
+
+  .recommended-tools-heading {
+    align-items: flex-start;
+    flex-direction: column;
+
+    h2 {
+      font-size: 22px;
+    }
+  }
+
+  .recommended-tools-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+}
+
+@media (max-width: 480px) {
+  .recommended-tools-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

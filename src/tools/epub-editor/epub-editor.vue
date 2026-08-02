@@ -1,11 +1,24 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useMessage } from 'naive-ui';
 import JSZip from 'jszip';
+import { decodeWithEncoding, detectEncoding } from '../txt-to-epub/encodingDetector';
+import { updatePackageDirection } from './package-direction';
+import { getPreviewChapterIndex, parsePreviewChapter, type PreviewChapter } from './preview-chapters';
+import { clampPreviewPage, getPreviewPageCount } from './preview-pagination';
+import { useStorage } from '@vueuse/core';
 import { translate } from '@/plugins/i18n.plugin';
 import { config } from '@/config';
 import { convertOpenCC } from '@/services/opencc.service';
-import { detectEncoding, decodeWithEncoding } from '../txt-to-epub/encodingDetector';
+import {
+  clearAllHistoryBlobs,
+  clearCustomFont,
+  deleteHistoryBlob,
+  getHistoryBlob,
+  loadCustomFont,
+  saveCustomFont,
+  saveHistoryBlob
+} from './epub-storage';
 
 const message = useMessage();
 
@@ -32,9 +45,9 @@ const opfPath = ref('');
 // Tab settings
 const activeTab = ref<'preview' | 'editor' | 'metadata'>('preview');
 
-// Conversion and layout settings
-const settings = ref({
-  convertMode: 'twp', // 'twp' (詞彙) | 'tw' (純字) | 'off' (關閉)
+// Conversion and layout settings (persisted in localStorage)
+const settings = useStorage('epub-editor:settings', {
+  convertMode: 'twp' as 'twp' | 'tw' | 'off',
   convertPunctuation: true,
   writingMode: 'horizontal' as 'horizontal' | 'vertical',
   fontFamily: 'noto-sans', // 'noto-sans' | 'noto-serif' | 'guankiap' | 'huninn' | 'default' | 'custom'
@@ -43,6 +56,49 @@ const settings = ref({
   lineHeight: 'normal', // 'compact' | 'normal' | 'relaxed' | 'loose'
   textIndent: 'two', // 'none' | 'one' | 'two'
 });
+
+export interface ProcessedHistoryItem {
+  id: string;
+  originalFileName: string;
+  outputFileName: string;
+  title: string;
+  author: string;
+  writingMode: 'horizontal' | 'vertical';
+  fontFamily: string;
+  convertMode: string;
+  timestamp: number;
+}
+
+const processedHistory = useStorage<ProcessedHistoryItem[]>('epub-editor:history', []);
+
+async function clearHistory() {
+  await clearAllHistoryBlobs();
+  processedHistory.value = [];
+  message.success('已清空轉換歷史紀錄與快取檔案');
+}
+
+async function removeHistoryItem(id: string) {
+  await deleteHistoryBlob(id);
+  processedHistory.value = processedHistory.value.filter(h => h.id !== id);
+  message.success('已刪除該筆紀錄');
+}
+
+async function downloadHistoryItem(item: ProcessedHistoryItem) {
+  const blob = await getHistoryBlob(item.id);
+  if (!blob) {
+    message.error('此歷史快取檔案已被清理或不存在，無法下載');
+    return;
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = item.outputFileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+  message.success('已開始下載歷史紀錄檔案：' + item.outputFileName);
+}
 
 // Custom Font File
 const customFontFile = ref<File | null>(null);
@@ -62,6 +118,12 @@ function clickFileInput(input: HTMLInputElement | null) {
 // Live Preview Sample Text
 const previewTitle = ref('即時排版預覽');
 const previewText = ref('載入 EPUB 電子書後，這裡將會呈現第一個內容章節的實際渲染結果。您可以調整左側的排版、字型、直橫排等參數，效果會即時更新。');
+const previewChapters = ref<PreviewChapter[]>([]);
+const previewChapterIndex = ref(0);
+const previewViewport = ref<HTMLElement | null>(null);
+const previewPage = ref(0);
+const previewPageCount = ref(1);
+let previewResizeObserver: ResizeObserver | null = null;
 
 // Constants
 const SIZE_MAP: Record<string, string> = {
@@ -86,6 +148,7 @@ const INDENT_MAP: Record<string, string> = {
 
 const FONT_MAP: Record<string, { family: string; name: string; file: string; ext: string; mime: string; format: string }> = {
   'noto-sans': { family: '"NotoSansCJKtc", "Noto Sans TC", "Microsoft JhengHei", sans-serif', name: '思源黑體', file: '/fonts/NotoSansCJKtc-Regular.otf', ext: 'otf', mime: 'font/otf', format: 'opentype' },
+  'gen-jyuu': { family: '"Gen Jyuu Gothic", "Noto Sans TC", sans-serif', name: '源柔黑體', file: '/fonts/GenJyuuGothic-Medium.woff2', ext: 'woff2', mime: 'font/woff2', format: 'woff2' },
   'noto-serif': { family: '"NotoSerifCJKtc", "Noto Serif TC", "PMingLiU", serif', name: '思源宋體', file: '/fonts/NotoSerifCJKtc-Regular.otf', ext: 'otf', mime: 'font/otf', format: 'opentype' },
   'guankiap': { family: '"GuanKiapTsingKhai", "GuanKiapTsingKhai TW", "DFKai-SB", "BiauKai", serif', name: '原俠正楷', file: '/fonts/GuanKiapTsingKhai-TW.ttf', ext: 'ttf', mime: 'font/ttf', format: 'truetype' },
   'huninn': { family: '"jf-openhuninn", "Microsoft JhengHei", sans-serif', name: 'jf 粉圓', file: '/fonts/jf-openhuninn.ttf', ext: 'ttf', mime: 'font/ttf', format: 'truetype' },
@@ -151,6 +214,77 @@ const computedPreviewFontFamily = computed(() => {
     return '"EpubEditorPreviewCustom", sans-serif';
   }
   return FONT_MAP[font]?.family || 'sans-serif';
+});
+
+function syncPreviewPagination() {
+  const viewport = previewViewport.value;
+  if (!viewport) return;
+
+  previewPageCount.value = getPreviewPageCount(viewport.scrollWidth, viewport.clientWidth);
+  if (viewport.clientWidth <= 0) {
+    previewPage.value = 0;
+    return;
+  }
+
+  const offset = Math.abs(viewport.scrollLeft);
+  previewPage.value = clampPreviewPage(Math.round(offset / viewport.clientWidth), previewPageCount.value);
+}
+
+function getVerticalScrollDirection(viewport: HTMLElement) {
+  const originalOffset = viewport.scrollLeft;
+  viewport.scrollLeft = -1;
+  const supportsNegativeOffset = viewport.scrollLeft < 0;
+  viewport.scrollLeft = originalOffset;
+  return supportsNegativeOffset ? -1 : 1;
+}
+
+function goToPreviewPage(page: number) {
+  const viewport = previewViewport.value;
+  if (!viewport) return;
+
+  const nextPage = clampPreviewPage(page, previewPageCount.value);
+  const offset = nextPage * viewport.clientWidth;
+  const isVertical = settings.value.writingMode === 'vertical';
+
+  viewport.scrollTo({
+    left: isVertical ? getVerticalScrollDirection(viewport) * offset : offset,
+    behavior: 'smooth',
+  });
+  previewPage.value = nextPage;
+}
+
+function handlePreviewKeydown(event: KeyboardEvent) {
+  if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+
+  const isVertical = settings.value.writingMode === 'vertical';
+  const nextKey = isVertical ? 'ArrowLeft' : 'ArrowRight';
+  event.preventDefault();
+  goToPreviewPage(previewPage.value + (event.key === nextKey ? 1 : -1));
+}
+
+function selectPreviewChapter(index: number) {
+  const chapterIndex = getPreviewChapterIndex(previewChapterIndex.value, index - previewChapterIndex.value, previewChapters.value.length);
+  const chapter = previewChapters.value[chapterIndex];
+  if (!chapter) return;
+
+  previewChapterIndex.value = chapterIndex;
+  previewTitle.value = chapter.title;
+  previewText.value = chapter.text;
+}
+
+watch([previewTitle, previewText, () => settings.value.writingMode, () => settings.value.fontFamily, () => settings.value.fontSize, () => settings.value.lineHeight, () => settings.value.textIndent], async () => {
+  previewPage.value = 0;
+  await nextTick();
+  previewViewport.value?.scrollTo({ left: 0 });
+  syncPreviewPagination();
+});
+
+watch(previewViewport, (viewport, previousViewport) => {
+  if (previousViewport) previewResizeObserver?.unobserve(previousViewport);
+  if (viewport) {
+    previewResizeObserver?.observe(viewport);
+    nextTick(syncPreviewPagination);
+  }
 });
 
 // Watch custom font file to update preview sub-setting
@@ -337,12 +471,12 @@ async function handleFileUpload(uploadedFile: File) {
       coverAction.value = 'keep';
     }
 
-    // Extract Preview Sample Text
+    // Extract every content document so the preview can move between chapters.
     progressStage.value = '生成即時排版預覽...';
     progressPercent.value = 95;
-    const sample = await extractPreviewSample(zip);
-    previewTitle.value = sample.title;
-    previewText.value = sample.text;
+    previewChapters.value = await extractPreviewChapters(zip);
+    previewChapterIndex.value = 0;
+    selectPreviewChapter(0);
 
     progressPercent.value = 100;
     message.success('EPUB 解析成功！');
@@ -444,8 +578,8 @@ async function detectCover(zip: JSZip): Promise<{ path: string; mimeType: string
   return null;
 }
 
-// Extract Preview Sample Text from EPUB Content file
-async function extractPreviewSample(zip: JSZip): Promise<{ title: string; text: string }> {
+// Extract every content document for the interactive preview.
+async function extractPreviewChapters(zip: JSZip): Promise<PreviewChapter[]> {
   const allFiles = Object.keys(zip.files);
   const fileNames = allFiles.filter(f => {
     if (zip.files[f].dir) return false;
@@ -454,37 +588,20 @@ async function extractPreviewSample(zip: JSZip): Promise<{ title: string; text: 
   }).sort();
 
   const skipPatterns = /(cover|nav|toc|colophon|copyright|titlepage|frontmatter)/i;
-  const candidate = fileNames.find(f => !skipPatterns.test(f.split('/').pop() || '')) || fileNames[0];
-  if (!candidate) return { title: '即時預覽', text: '此電子書未包含符合條件的內容網頁檔案。' };
+  const candidates = fileNames.filter(filename => !skipPatterns.test(filename.split('/').pop() || ''));
+  const contentFiles = candidates.length > 0 ? candidates : fileNames;
+  const chapters: PreviewChapter[] = [];
 
-  const u8 = await zip.files[candidate].async('uint8array');
-  const html = decodeContent(u8);
-  
-  const titleMatch = html.match(/<(?:h1|h2)[^>]*>([\s\S]*?)<\/(?:h1|h2)>/i);
-  let title = titleMatch ? titleMatch[1] : '';
-  title = title.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
-
-  const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
-  const bodyHtml = bodyMatch ? bodyMatch[1] : html;
-  const pMatches = bodyHtml.match(/<p[^>]*>([\s\S]*?)<\/p>/gi) || [];
-  const paragraphs: string[] = [];
-  let totalChars = 0;
-  for (const p of pMatches) {
-    const text = p
-      .replace(/<br\s*\/?>/gi, '\n')
-      .replace(/<[^>]+>/g, '')
-      .replace(/&nbsp;/g, ' ')
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&quot;/g, '"')
-      .trim();
-    if (!text) continue;
-    paragraphs.push(text);
-    totalChars += text.length;
-    if (totalChars > 650) break;
+  for (const filename of contentFiles) {
+    const u8 = await zip.files[filename].async('uint8array');
+    const fallbackTitle = filename.split('/').pop()?.replace(/\.[^.]+$/, '') || '預覽章節';
+    const chapter = parsePreviewChapter(decodeContent(u8), fallbackTitle);
+    if (chapter.text) chapters.push(chapter);
   }
-  return { title: title || '預覽章節', text: paragraphs.join('\n') };
+
+  return chapters.length > 0
+    ? chapters
+    : [{ title: '即時預覽', text: '此電子書未包含符合條件的內容網頁檔案。' }];
 }
 
 // Font helpers
@@ -797,30 +914,17 @@ async function injectStyleIntoCSS(zip: JSZip, customFontInfo: any) {
 
 // Update Spine direction in OPF
 async function updateSpineDirection(zip: JSZip) {
-  const isVertical = settings.value.writingMode === 'vertical';
-  const opfFile = Object.keys(zip.files).find(f => f.toLowerCase().endsWith('.opf'));
-  if (!opfFile) return;
+  const opfFile = opfPath.value || Object.keys(zip.files).find(f => f.toLowerCase().endsWith('.opf'));
+  if (!opfFile || !zip.files[opfFile]) return;
 
-  const content = await zip.files[opfFile].async('string');
-  let newContent = content;
+  let content = await zip.files[opfFile].async('string');
+  content = updatePackageDirection(content, settings.value.writingMode);
+  zip.file(opfFile, content);
 
-  if (isVertical) {
-    // Upgrade EPUB version to 3.0 so readers respect page-progression-direction
-    newContent = newContent.replace(/(<package[^>]+version=["'])2\.[0-9](["'][^>]*>)/i, '$13.0$2');
+  const opfEntry = fileEntries.value.find(e => e.name === opfFile);
+  if (opfEntry) {
+    opfEntry.currentContent = content;
   }
-
-  // Remove existing page-progression-direction from spine (to prevent duplicates/conflicts)
-  newContent = newContent.replace(/\s*page-progression-direction="[^"]*"/g, '');
-
-  if (isVertical) {
-    // Add page-progression-direction="rtl" to spine
-    newContent = newContent.replace(/<spine([^>]*)>/i, '<spine$1 page-progression-direction="rtl">');
-  } else {
-    // For horizontal, standard readers assume LTR if omitted, but we can explicitly set it
-    // if we wanted to. However, omitting is fine for LTR.
-  }
-
-  zip.file(opfFile, newContent);
 }
 
 // Collect codepoints for subsetting
@@ -964,25 +1068,6 @@ async function injectCoverIntoEpub(zip: JSZip) {
   }
 
   zip.file(opfFile, opfContent);
-}
-
-// Update Book Metadata inside content.opf
-function updateOpfMetadata(opfText: string): string {
-  const parser = new DOMParser();
-  const xmlDoc = parser.parseFromString(opfText, 'text/xml');
-  
-  const titleNode = xmlDoc.getElementsByTagName('dc:title')[0] || xmlDoc.getElementsByTagName('title')[0];
-  if (titleNode) {
-    titleNode.textContent = bookTitle.value;
-  }
-  
-  const creatorNode = xmlDoc.getElementsByTagName('dc:creator')[0] || xmlDoc.getElementsByTagName('creator')[0];
-  if (creatorNode) {
-    creatorNode.textContent = bookAuthor.value;
-  }
-
-  const serializer = new XMLSerializer();
-  return serializer.serializeToString(xmlDoc);
 }
 
 // Full execution and download
@@ -1164,19 +1249,10 @@ async function processEpub() {
     progressPercent.value = 80;
     await injectStyleIntoCSS(zip, finalFontInfo);
 
-    // 4. Set spine page progression direction (vertical / horizontal)
-    progressStage.value = '設定翻頁方向...';
+    // 4. Set spine page progression direction and metadata (vertical / horizontal)
+    progressStage.value = '設定翻頁方向與元數據...';
     progressPercent.value = 83;
     await updateSpineDirection(zip);
-
-    // 5. Save opf metadata modifications
-    if (opfPath.value) {
-      const opfEntry = fileEntries.value.find(e => e.name === opfPath.value);
-      if (opfEntry) {
-        opfEntry.currentContent = updateOpfMetadata(opfEntry.currentContent);
-        zip.file(opfPath.value, opfEntry.currentContent);
-      }
-    }
 
     // 6. Cover image
     if (coverAction.value !== 'keep') {
@@ -1204,11 +1280,15 @@ async function processEpub() {
       progressPercent.value = p;
     });
 
-    const cleanTitle = (bookTitle.value || file.value.name.replace(/\.epub$/i, '')).trim();
-    let outputName = cleanTitle;
+    const originalName = file.value.name.replace(/\.epub$/i, '').trim();
+    let outputName = originalName;
     if (settings.value.convertMode !== 'off') {
       const direction = settings.value.convertMode === 'twp' ? 's2twp' : 's2tw';
-      outputName = convertOpenCC(cleanTitle, direction);
+      try {
+        outputName = convertOpenCC(originalName, direction);
+      } catch {
+        outputName = originalName;
+      }
     }
 
     const suffixes = [];
@@ -1231,9 +1311,30 @@ async function processEpub() {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 10000);
-
     message.success('EPUB 電子書處理完成並已開始下載！');
+
+    // Record in local history & IndexedDB
+    const historyId = Date.now().toString(36) + Math.random().toString(36).substring(2, 6);
+    await saveHistoryBlob(historyId, blob);
+
+    processedHistory.value.unshift({
+      id: historyId,
+      originalFileName: file.value.name,
+      outputFileName: finalFilename,
+      title: bookTitle.value || originalName,
+      author: bookAuthor.value || '未知',
+      writingMode: settings.value.writingMode,
+      fontFamily: settings.value.fontFamily,
+      convertMode: settings.value.convertMode,
+      timestamp: Date.now(),
+    });
+    if (processedHistory.value.length > 30) {
+      const removed = processedHistory.value.slice(30);
+      processedHistory.value = processedHistory.value.slice(0, 30);
+      for (const item of removed) {
+        deleteHistoryBlob(item.id);
+      }
+    }
   } catch (err: any) {
     console.error('電子書處理失敗:', err);
     message.error(`處理失敗: ${err.message}`);
@@ -1301,7 +1402,7 @@ function restoreOriginalCover() {
   message.info('已復原為原電子書封面');
 }
 
-function handleCustomFontUpload(event: any) {
+async function handleCustomFontUpload(event: any) {
   const f = event.target.files && event.target.files[0];
   if (!f) return;
   const lo = (f.name || '').toLowerCase();
@@ -1310,8 +1411,10 @@ function handleCustomFontUpload(event: any) {
     return;
   }
   customFontFile.value = f;
-  message.success('字體載入成功，已套用至預覽');
+  await saveCustomFont(f);
+  message.success('已讀取並自動儲存自訂字型：' + f.name);
 }
+
 function resetAll() {
   file.value = null;
   zipInstance.value = null;
@@ -1329,23 +1432,11 @@ function resetAll() {
     URL.revokeObjectURL(newCoverPreviewUrl.value);
     newCoverPreviewUrl.value = '';
   }
-  if (customFontUrl.value) {
-    URL.revokeObjectURL(customFontUrl.value);
-    customFontUrl.value = '';
-  }
-  customFontFile.value = null;
   
-  settings.value.fontFamily = 'noto-sans';
-  settings.value.fontEmbedMode = 'full';
-  settings.value.writingMode = 'horizontal';
-  
-  let styleEl1 = document.getElementById('hr-preview-custom-font-style');
-  if (styleEl1) styleEl1.remove();
-  let styleEl2 = document.getElementById('hr-preview-standard-fonts-style');
-  if (styleEl2) styleEl2.remove();
+  // Note: custom font and user settings remain stored in IndexedDB/localStorage
 }
 
-onMounted(() => {
+onMounted(async () => {
   const base = config.app.baseUrl.replace(/\/$/, '');
   const styleEl = document.createElement('style');
   styleEl.id = 'hr-preview-standard-fonts-style';
@@ -1372,9 +1463,23 @@ onMounted(() => {
     }
   `;
   document.head.appendChild(styleEl);
+
+  // Restore saved custom font if available
+  const savedCustomFont = await loadCustomFont();
+  if (savedCustomFont) {
+    customFontFile.value = savedCustomFont;
+    if (settings.value.fontFamily === 'custom') {
+      await injectCustomFontForPreview();
+    }
+  }
+
+  previewResizeObserver = new ResizeObserver(syncPreviewPagination);
+  if (previewViewport.value) previewResizeObserver.observe(previewViewport.value);
+  nextTick(syncPreviewPagination);
 });
 
 onUnmounted(() => {
+  previewResizeObserver?.disconnect();
   if (newCoverPreviewUrl.value) URL.revokeObjectURL(newCoverPreviewUrl.value);
   if (customFontUrl.value) URL.revokeObjectURL(customFontUrl.value);
   let styleEl1 = document.getElementById('hr-preview-custom-font-style');
@@ -1414,6 +1519,47 @@ onUnmounted(() => {
         <span class="text-sm text-gray-400 mt-2 text-center">
           支援本機繁簡體轉換、標點符號轉換、橫排直排轉換、字體滿血嵌入及封面替換
         </span>
+      </div>
+
+      <!-- Processed History List -->
+      <div v-if="processedHistory.length > 0" class="mt-8 space-y-3">
+        <div class="flex items-center justify-between">
+          <h4 class="text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            最近處理歷史紀錄（已自動記憶偏好設定）
+          </h4>
+          <c-button size="small" tertiary @click="clearHistory">清空歷史紀錄</c-button>
+        </div>
+        <div class="space-y-2 max-h-60 overflow-y-auto pr-1">
+          <div
+            v-for="item in processedHistory"
+            :key="item.id"
+            class="p-3 bg-gray-50 dark:bg-zinc-800/40 rounded-xl border border-gray-100 dark:border-zinc-800 flex items-center justify-between text-xs"
+          >
+            <div class="space-y-1 truncate pr-2">
+              <div class="font-semibold text-gray-800 dark:text-gray-200 truncate">
+                {{ item.outputFileName }}
+              </div>
+              <div class="text-gray-400 flex items-center gap-2">
+                <span>{{ new Date(item.timestamp).toLocaleString() }}</span>
+                <span>•</span>
+                <span>{{ item.writingMode === 'vertical' ? '直排' : '橫排' }}</span>
+                <span>•</span>
+                <span>{{ FONT_MAP[item.fontFamily]?.name || item.fontFamily }}</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <c-button size="small" secondary @click="downloadHistoryItem(item)">
+                再次下載
+              </c-button>
+              <c-button size="small" tertiary danger @click="removeHistoryItem(item.id)">
+                刪除
+              </c-button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1639,7 +1785,14 @@ onUnmounted(() => {
         <n-tabs v-model:value="activeTab" type="line" animated>
           <!-- Tab 1: Live Preview -->
           <n-tab-pane name="preview" tab="即時排版預覽">
-            <div class="preview-frame border border-gray-200 dark:border-zinc-800 rounded-2xl max-h-[520px] overflow-auto relative">
+            <div
+              ref="previewViewport"
+              class="preview-frame border border-gray-200 dark:border-zinc-800 rounded-2xl max-h-[520px] overflow-auto relative"
+              tabindex="0"
+              aria-label="EPUB 排版預覽"
+              @scroll="syncPreviewPagination"
+              @keydown="handlePreviewKeydown"
+            >
               <div 
                 class="preview-content w-full"
                 :class="{ 'vertical': settings.writingMode === 'vertical' }"
@@ -1659,8 +1812,30 @@ onUnmounted(() => {
                 </p>
               </div>
             </div>
+            <div v-if="previewChapters.length > 1" class="preview-chapter-pagination mt-3" aria-label="預覽章節控制">
+              <c-button size="small" tertiary :disabled="previewChapterIndex === 0" @click="selectPreviewChapter(previewChapterIndex - 1)">
+                上一章
+              </c-button>
+              <span class="text-xs text-gray-500 dark:text-gray-400 tabular-nums" aria-live="polite">
+                章節 {{ previewChapterIndex + 1 }} / {{ previewChapters.length }}
+              </span>
+              <c-button size="small" tertiary :disabled="previewChapterIndex >= previewChapters.length - 1" @click="selectPreviewChapter(previewChapterIndex + 1)">
+                下一章
+              </c-button>
+            </div>
+            <div v-if="settings.writingMode === 'vertical'" class="preview-pagination mt-3" aria-label="直排預覽翻頁控制">
+              <c-button size="small" tertiary :disabled="previewPage === 0" @click="goToPreviewPage(previewPage - 1)">
+                上一頁
+              </c-button>
+              <span class="text-xs text-gray-500 dark:text-gray-400 tabular-nums" aria-live="polite">
+                第 {{ previewPage + 1 }} / {{ previewPageCount }} 頁
+              </span>
+              <c-button size="small" tertiary :disabled="previewPage >= previewPageCount - 1" @click="goToPreviewPage(previewPage + 1)">
+                下一頁
+              </c-button>
+            </div>
             <div class="text-xs text-gray-400 mt-2 text-center">
-              * 直排模式下預覽支援向右橫向滾動。實體輸出將完美寫入翻頁 Progression 指令。
+              * 直排預覽可用按鈕或鍵盤 ←／→ 翻頁；實體輸出會寫入右至左翻頁指令。
             </div>
           </n-tab-pane>
 
@@ -1747,6 +1922,7 @@ onUnmounted(() => {
 <style scoped>
 .preview-frame {
   background: #fafafa;
+  scroll-behavior: smooth;
 }
 .dark .preview-frame {
   background: #18181c;
@@ -1783,6 +1959,18 @@ onUnmounted(() => {
   overflow-x: auto;
   overflow-y: hidden;
   display: block;
+}
+.preview-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+.preview-chapter-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
 }
 .preview-content.vertical h1 {
   text-align: center;

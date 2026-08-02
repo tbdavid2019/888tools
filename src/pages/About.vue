@@ -3,7 +3,7 @@ import { useHead } from '@vueuse/head';
 import { config } from '@/config';
 
 useHead({
-  title: 'About - Tool.David888.com',
+  title: 'About - 888 TOOL',
   link: [
     {
       rel: 'canonical',
