@@ -213,7 +213,14 @@ const contentFlexBasis = computed(() => '520px');
   align-items: flex-end;
   justify-content: space-between;
   gap: 16px;
+  padding: 16px 20px;
   margin-bottom: 14px;
+  background-color: v-bind('activePalette.surface');
+  border: 1px solid v-bind('activePalette.overlayBorder');
+  border-radius: 18px;
+  box-shadow: v-bind('activePalette.shadow');
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 
   h2 {
     margin: 0;
