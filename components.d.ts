@@ -223,6 +223,7 @@ declare module '@vue/runtime-core' {
     PercentageCalculator: typeof import('./src/tools/percentage-calculator/percentage-calculator.vue')['default']
     PhoneParserAndFormatter: typeof import('./src/tools/phone-parser-and-formatter/phone-parser-and-formatter.vue')['default']
     PostWriter: typeof import('./src/tools/post-writer/post-writer.vue')['default']
+    PwaInstallPrompt: typeof import('./src/components/PwaInstallPrompt.vue')['default']
     QrChecker: typeof import('./src/tools/qr-checker/qr-checker.vue')['default']
     QrCodeGenerator: typeof import('./src/tools/qr-code-generator/qr-code-generator.vue')['default']
     RandomPortGenerator: typeof import('./src/tools/random-port-generator/random-port-generator.vue')['default']

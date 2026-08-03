@@ -5,6 +5,7 @@ import { darkThemeOverrides, lightThemeOverrides } from './themes';
 import { layouts } from './layouts';
 import { useStyleStore } from './stores/style.store';
 import BingBackground from './components/BingBackground.vue';
+import PwaInstallPrompt from './components/PwaInstallPrompt.vue';
 import { kanagawaDarkPalette, kanagawaLightPalette } from './theme/palette';
 
 const route = useRoute();
@@ -41,6 +42,7 @@ syncRef(
           <component :is="layout">
             <RouterView />
           </component>
+          <PwaInstallPrompt />
         </NNotificationProvider>
       </NMessageProvider>
     </div>
