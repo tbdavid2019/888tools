@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## Version 2026.08.09
+
+### Features
+- **seo/llms.txt**: 新增 `/llms.txt` 自動生成機制。
+  - 在 `scripts/generate-discovery.mjs` 中整合 LLM Discovery ([llmstxt.org](https://llmstxt.org/)) 規範，每次 `pnpm build` 時自動掃描全站所有工具與語系說明，生成符合 Markdown 規範的 `public/llms.txt` 網站導覽檔，大幅提升 AI LLM、AI Agent 與 AI 搜尋引擎對全站工具的檢索與推薦能力。
+
 ## Version 2026.07.30
 
 ### Features

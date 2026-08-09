@@ -31,6 +31,7 @@
 
 - **靜態預渲染 (SSG / Prerendering)**：為解決單頁應用 (SPA / CSR) 對搜尋引擎爬蟲抓取不友善、SEO 分數低的問題，打包階段會使用 Playwright 模擬 Chromium 瀏覽器（繁體中文語系/台北時區）預渲染全站所有 114 個工具路由頁面，並生成獨立的靜態 `index.html`。
 - **結構化資料 (JSON-LD)**：預渲染網頁時會自動在 `<head>` 中注入 structured data。首頁會注入 `WebSite` 與 `ItemList`；各工具頁會注入專屬的 `SoftwareApplication` 描述；About 頁會注入 `AboutPage` 描述，用以支援豐富網頁摘要 (Rich Snippets)。
+- **/llms.txt**：符合 [llmstxt.org](https://llmstxt.org/) 規範，由 build 階段自動掃描全站工具與 Descriptions 生成 Markdown 格式的 LLM 網站導覽檔，提供 AI Agent 與 AI 搜尋引擎檢索。
 - `/sitemap.xml`：由 build 階段自動根據首頁、About 與工具 routes 生成，不需手動維護 URL 清單。
 - `/robots.txt`：由 build 階段自動生成，包含 `Sitemap:` 與 `Content-Signal:`。
 - `/.well-known/api-catalog`：以 `application/linkset+json` 輸出 API catalog。

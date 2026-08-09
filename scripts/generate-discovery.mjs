@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import YAML from 'yaml';
 
 import { resolveSiteConfig, toAbsoluteUrl } from '../site.config.js';
 
@@ -11,26 +12,78 @@ const wellKnownDir = path.join(publicDir, '.well-known');
 
 const staticRoutes = ['/', '/about'];
 
-async function readToolRoutes() {
+async function readTools() {
   const toolsDir = path.join(rootDir, 'src', 'tools');
   const fileNames = await readFile(path.join(rootDir, 'src', 'tools', 'index.ts'), 'utf8');
   const matches = [...fileNames.matchAll(/from '\.\/([^']+)'/g)];
   const toolDirs = [...new Set(matches.map(match => match[1]))];
 
-  const routes = await Promise.all(toolDirs.map(async (toolDir) => {
+  let toolsData = {};
+  try {
+    const enYamlContent = await readFile(path.join(rootDir, 'locales', 'en.yml'), 'utf8');
+    const parsedYaml = YAML.parse(enYamlContent);
+    toolsData = parsedYaml?.tools || {};
+  }
+  catch (err) {
+    console.warn('Warning: Failed to load locales/en.yml for tool titles/descriptions:', err.message);
+  }
+
+  const tools = [];
+
+  for (const toolDir of toolDirs) {
     const indexPath = path.join(toolsDir, toolDir, 'index.ts');
 
     try {
       const source = await readFile(indexPath, 'utf8');
       const pathMatch = source.match(/path:\s*'([^']+)'/);
-      return pathMatch?.[1] ?? null;
+      if (!pathMatch)
+        continue;
+
+      const route = pathMatch[1];
+
+      let title = '';
+      const nameTranslateMatch = source.match(/name:\s*translate\(['"]tools\.([^'"]+)\.title['"]\)/);
+      const nameLiteralMatch = source.match(/name:\s*['"`](.*?)['"`]/);
+      if (nameTranslateMatch) {
+        title = toolsData[nameTranslateMatch[1]]?.title || nameTranslateMatch[1];
+      }
+      else if (nameLiteralMatch) {
+        title = nameLiteralMatch[1];
+      }
+      else if (toolsData[toolDir]?.title) {
+        title = toolsData[toolDir].title;
+      }
+      else {
+        title = toolDir;
+      }
+
+      let description = '';
+      const descTranslateMatch = source.match(/description:\s*translate\(['"]tools\.([^'"]+)\.description['"]\)/);
+      const descLiteralMatch = source.match(/description:\s*['"`](.*?)['"`]/);
+      if (descTranslateMatch) {
+        description = toolsData[descTranslateMatch[1]]?.description || '';
+      }
+      else if (descLiteralMatch) {
+        description = descLiteralMatch[1];
+      }
+      else if (toolsData[toolDir]?.description) {
+        description = toolsData[toolDir].description;
+      }
+
+      tools.push({
+        dir: toolDir,
+        route,
+        title: title.trim(),
+        description: description.trim(),
+      });
     }
     catch {
-      return null;
+      // Ignore directories without valid index.ts
     }
-  }));
+  }
 
-  return routes.filter(Boolean);
+  tools.sort((a, b) => a.title.localeCompare(b.title));
+  return tools;
 }
 
 function escapeXml(value) {
@@ -77,9 +130,36 @@ function buildRobots(config) {
   ].join('\n');
 }
 
+function buildLlmsTxt(tools, config) {
+  const lines = [
+    '# 888tools',
+    '',
+    '> Collection of handy online tools for developers, privacy-friendly and open-source.',
+    '',
+    '## Tools',
+    '',
+  ];
+
+  for (const tool of tools) {
+    const url = toAbsoluteUrl(tool.route, config.origin);
+    const desc = tool.description ? `: ${tool.description}` : '';
+    lines.push(`- [${tool.title}](${url})${desc}`);
+  }
+
+  lines.push('');
+  lines.push('## Optional');
+  lines.push('');
+  lines.push(`- [Sitemap](${toAbsoluteUrl('/sitemap.xml', config.origin)})`);
+  lines.push(`- [API Catalog](${config.apiCatalogUrl})`);
+  lines.push('');
+
+  return lines.join('\n');
+}
+
 async function main() {
   const config = resolveSiteConfig(process.env);
-  const toolRoutes = await readToolRoutes();
+  const tools = await readTools();
+  const toolRoutes = tools.map(t => t.route);
   const allRoutes = [...new Set([...staticRoutes, ...toolRoutes])].sort();
   const sitemapUrls = allRoutes.map(route => toAbsoluteUrl(route, config.origin));
 
@@ -87,6 +167,8 @@ async function main() {
   await writeFile(path.join(publicDir, 'robots.txt'), buildRobots(config), 'utf8');
   await writeFile(path.join(publicDir, 'sitemap.xml'), buildSitemap(sitemapUrls), 'utf8');
   await writeFile(path.join(wellKnownDir, 'api-catalog'), buildApiCatalog(config), 'utf8');
+  await writeFile(path.join(publicDir, 'llms.txt'), buildLlmsTxt(tools, config), 'utf8');
 }
 
 await main();
+
