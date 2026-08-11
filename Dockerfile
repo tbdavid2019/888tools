@@ -5,7 +5,7 @@ ENV NPM_CONFIG_LOGLEVEL warn
 ENV CI true
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
-RUN npm install -g pnpm && pnpm i --frozen-lockfile
+RUN npm install -g pnpm@9.11.0 && pnpm i --frozen-lockfile
 COPY . .
 RUN pnpm build
 
