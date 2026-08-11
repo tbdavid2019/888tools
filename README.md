@@ -241,18 +241,18 @@ pnpm preview
 
 ## Docker 打包
 
-```
-docker build -t tool333 .
-docker run -d -p 80:80 tool333
+```bash
+docker build -t 888tools .
+docker run -d -p 80:80 888tools
 
-docker build -t tbdavid2019/tool333:latest .
-docker push tbdavid2019/tool333:latest
+docker build -t tbdavid2019/888tools:latest .
+docker push tbdavid2019/888tools:latest
 ```
 
 ## Docker 運行
 
-```
-docker run -d -p 80:80  tbdavid2019/tool333
+```bash
+docker run -d -p 80:80 tbdavid2019/888tools
 ```
 
 ## Contribute
