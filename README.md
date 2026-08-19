@@ -104,6 +104,14 @@
 
 ## Changelog
 
+### 2026-08-19
+
+- **W3C WebMCP 瀏覽器原生 AI Agent 支援**：領先支援 W3C WebMCP 標準（Chrome 146+ 與 Cloudflare BrowserRun），透過 `document.modelContext` 原生暴露 17+ 款純前端開發者工具。
+  - AI Agent 進入 `tool.david888.com` 後，可直接透過標準 JSON Schema 參數呼叫工具函式，無需脆弱的 DOM 爬取或模擬點擊。
+  - 支援工具包含：同文堂繁簡轉換、UUID/ULID 生成、Base64 編解碼、Hash 雜湊、命名案例轉換、Slug 生成、JSON 格式化/壓縮、JWT 解析、Linux Chmod 計算、SafeLink 還原、URL 編解碼、BIP39 助記詞、密碼強度分析、Lorem Ipsum 與 RSA 金鑰生成等。
+  - 運算 100% 在訪客瀏覽器沙箱內 0 延遲、0 伺服器開銷完成，資料安全不落地。
+  - 封裝 `useWebMcp` composable 與全域 `webmcpPlugin`，並同步更新 `/llms.txt`、`SKILL.md` 與 `index.html` 元標籤。
+
 ### 2026-07-13
 
 - P2P 網頁即時密聊新增訊息撤回：文字、圖片與檔案在發送後 2 分鐘內可由發送者撤回，並同步更新所有目前在線的聊天室成員。

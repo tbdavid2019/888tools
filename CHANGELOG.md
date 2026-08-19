@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## Version 2026.08.19
+
+### Features
+- **webmcp**: 全面支援 W3C WebMCP (Web Model Context Protocol) 瀏覽器原生 AI Agent 執行標準。
+  - **原生標準對接**：符合 W3C 草案規範與 Chrome 146+ 的 `document.modelContext` 原生標準，讓 AI Agent（如 Cloudflare BrowserRun、Browser-use、Stagehand、Chrome 內建 AI 等）進入站點後，可直接以 RPC Tool Call 呼叫前端工具函式，無需 DOM 爬取或模擬點擊。
+  - **17+ 款純前端工具支援**：涵蓋同文堂繁簡轉換 (`convert_chinese_text`)、UUID (`generate_uuid`)、ULID (`generate_ulid`)、Base64 編解碼 (`base64_encode`/`base64_decode`)、雜湊計算 (`hash_text`)、命名轉換 (`convert_text_case`)、Slug 生成 (`slugify_string`)、JSON 格式化/壓縮 (`format_or_minify_json`)、JWT 解析 (`inspect_jwt`)、Chmod 權限計算 (`calculate_chmod`)、BIP39 助記詞 (`generate_bip39_mnemonic`)、RSA 金鑰 (`generate_rsa_keypair`)、SafeLink 解碼 (`decode_safelink`)、URL 編解碼 (`url_encode_decode`)、密碼強度分析 (`analyze_password_strength`)、Lorem Ipsum (`generate_lorem_ipsum`) 與全站工具檢索 (`list_888_tools`)。
+  - **零伺服器開銷與 100% 本地隱私**：所有工具直接在訪客瀏覽器沙箱內 0 延遲完成計算，運算資料完全不落地。
+  - **全域外掛與 Composable 支援**：提供 `src/plugins/webmcp.plugin.ts` 全域自動載入與 `useWebMcp` composable，並於 `index.html` 注入 `<meta name="webmcp:enabled" content="true" />`。
+  - **AI 發現檔與技能更新**：同步更新 `public/llms.txt`、`SKILL.md` 與 `README.md`，完整描述 WebMCP 工具呼叫與 Cloudflare Dashboard Edge WebMCP 啟用步驟。
+
 ## Version 2026.08.09
 
 ### Features
