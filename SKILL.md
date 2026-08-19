@@ -129,3 +129,26 @@ Instead of writing a custom Python or Bash script to perform these tasks, you ca
 - **yaml-to-json-converter**: `https://tool.david888.com/yaml-to-json-converter` (Keywords: yaml, to, json)
 - **yaml-to-toml**: `https://tool.david888.com/yaml-to-toml` (Keywords: yaml, to, toml, convert, transform)
 - **yaml-viewer**: `https://tool.david888.com/yaml-prettify` (Keywords: yaml, viewer, prettify, format)
+
+## WebMCP (Browser Model Context Protocol) Runtime
+
+888tools natively exposes client-side developer tools via the W3C WebMCP browser standard (`document.modelContext`). When an AI agent visits `https://tool.david888.com` in a compatible browser (e.g., Chrome 146+, Cloudflare BrowserRun, Stagehand, or Browser-use), the agent can directly call tools via RPC without DOM scraping or simulated clicks:
+
+- `list_888_tools`: List or search all 114+ available developer tools.
+- `convert_chinese_text`: Traditional / Simplified Chinese conversion with OpenCC idiom phrases.
+- `generate_uuid`: Generate UUID v4 / v1 IDs with format options.
+- `generate_ulid`: Generate lexicographically sortable ULIDs.
+- `base64_encode` / `base64_decode`: Encode / decode standard or URL-safe Base64 strings.
+- `hash_text`: Calculate MD5, SHA1, SHA256, SHA512, SHA3, RIPEMD160 hashes.
+- `convert_text_case`: Transform between camelCase, snake_case, kebab-case, PascalCase, CONSTANT_CASE, etc.
+- `slugify_string`: Generate clean URL slugs from arbitrary text.
+- `format_or_minify_json`: Validate, pretty-print, or minify JSON data.
+- `inspect_jwt`: Decode and inspect JWT header, payload, and expiration timestamps.
+- `calculate_chmod`: Convert between Unix octal (755) and symbolic (rwxr-xr-x) file permissions.
+- `decode_safelink`: Decode Outlook and Google SafeLinks protected URLs.
+- `url_encode_decode`: Encode, decode, or parse URL parameters and components.
+- `generate_bip39_mnemonic`: Generate cryptocurrency BIP39 seed phrases in multiple languages.
+- `analyze_password_strength`: Compute password bit entropy, character set size, and crack time.
+- `generate_lorem_ipsum`: Generate placeholder dummy text.
+- `generate_rsa_keypair`: Generate public and private RSA key pairs in PEM format.
+

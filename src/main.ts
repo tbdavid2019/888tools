@@ -6,6 +6,7 @@ import { registerSW } from 'virtual:pwa-register';
 import shadow from 'vue-shadow-dom';
 import { plausible } from './plugins/plausible.plugin';
 import { installGoogleAnalytics } from './plugins/google-analytics.plugin';
+import { webmcpPlugin } from './plugins/webmcp.plugin';
 
 import 'virtual:uno.css';
 
@@ -26,6 +27,7 @@ app.use(router);
 installGoogleAnalytics(router);
 app.use(naive);
 app.use(plausible);
+app.use(webmcpPlugin);
 app.use(shadow);
 
 app.mount('#app');

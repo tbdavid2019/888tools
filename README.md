@@ -100,6 +100,7 @@
 | 50  | P2P 網頁即時密聊新增限時撤回：文字與檔案發送後 2 分鐘內可同步撤回所有目前在線成員，維持 WebRTC 直連與不落地儲存設計（https://tool.david888.com/p2p-chat ） |
 | 51  | P2P 密聊改用固定 Room ID 搭配 Cloudflare Durable Object signaling：房間不再綁定房主或單一 Peer ID，重整後可用同一網址重新加入；撤回訊息改用系統訊息樣式與虛線框顯示（https://tool.david888.com/p2p-chat ） |
 | 52  | P2P 密聊 Telegram 經典塗鴉背景新增模糊與半透明遮罩，降低背景圖案對訊息文字的干擾，並避免背景層產生額外捲軸（https://tool.david888.com/p2p-chat ） |
+| 53  | 全面支援 W3C WebMCP (Web Model Context Protocol) 瀏覽器原生 AI Agent 執行標準，透過 `document.modelContext` 暴露 17+ 款純前端工具（含同文堂繁簡轉換、UUID、Hash、Base64、JSON 格式化、JWT 解析、BIP39 等），支援 Chrome 146+ 與 Cloudflare BrowserRun 直連呼叫 |
 
 ## Changelog
 
@@ -207,6 +208,40 @@ curl -o ~/.config/opencode/skills/it-tools/SKILL.md https://raw.githubuserconten
 ```
 
 安裝完成後，你的 AI 工具就會自動學習到：當你需要產生 UUID、轉換 Base64 或編寫 Regex 時，它可以直接將 `tool.david888.com` 對應的工具連結推薦給你！
+
+## WebMCP 支援 (Web Model Context Protocol)
+
+888tools 領先支援 W3C **WebMCP 瀏覽器原生標準**（實驗性支援於 Chrome 146+、Cloudflare BrowserRun、Stagehand 與 Browser-use 等 AI Agent 執行環境）。
+
+### 運作原理
+
+傳統 AI Agent 訪問網頁時，必須透過視訊辨識或 DOM 爬取模擬人類點擊與輸入，容易因為 UI 改版而損壞。
+
+WebMCP 讓網站可以透過原生 `document.modelContext.registerTool(...)` 暴露標準化工具介面。當 AI Agent 進入 `tool.david888.com` 時，可以直接傳遞 JSON 參數呼叫工具核心函式，**在訪客瀏覽器沙箱內以 0 延遲、0 伺服器開銷、100% 本地隱私完成運算**。
+
+### 目前已內建的 WebMCP 工具（17+ 款）
+
+1. **`list_888_tools`**：檢索全站 114+ 款開發者工具清單、分類與路徑
+2. **`convert_chinese_text`**：同文堂繁簡轉換（支援 OpenCC 台灣常用詞彙對照）
+3. **`generate_uuid`**：UUID v4 / v1 生成器（支援數量、大小寫、去除連字號）
+4. **`generate_ulid`**：ULID 排序唯一識別碼生成器
+5. **`base64_encode` / `base64_decode`**：標準與 URL-safe Base64 編解碼
+6. **`hash_text`**：MD5、SHA1、SHA256、SHA512、SHA3、RIPEMD160 雜湊計算
+7. **`convert_text_case`**：camelCase、snake_case、kebab-case、PascalCase 等命名格式轉換
+8. **`slugify_string`**：乾淨安全的 URL 網址別名生成
+9. **`format_or_minify_json`**：JSON 格式化、縮排排版、單行壓縮與校驗
+10. **`inspect_jwt`**：JWT Token Header 與 Payload 解析與有效期限檢查
+11. **`calculate_chmod`**：Linux 八進位（755）與符號化（rwxr-xr-x）權限轉換
+12. **`decode_safelink`**：Outlook 與 Google SafeLinks 保護連結還原
+13. **`url_encode_decode`**：URL 與查詢參數編解碼與解析
+14. **`generate_bip39_mnemonic`**：BIP39 加密貨幣 12~24 字助記詞與熵值生成
+15. **`analyze_password_strength`**：密碼位元熵、字元集複雜度與破解時間估算
+16. **`generate_lorem_ipsum`**：Lorem Ipsum 假文段落與 HTML 生成
+17. **`generate_rsa_keypair`**：RSA 512~4096 位元公私鑰 PEM 生成
+
+### 如何在 Cloudflare 開啟 Edge WebMCP Bridge
+
+若網域託管於 Cloudflare，可前往 Cloudflare Dashboard ➜ 選擇網域 ➜ **Agent Readiness > WebMCP** ➜ 一鍵開啟。Cloudflare 將自動在邊緣注入 `/.webmcp/bridge.js` 並啟用 C2PA 圖片中繼資料掃描工具。
 
 ## Functionalities and roadmap
 

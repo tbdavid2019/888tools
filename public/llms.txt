@@ -1,6 +1,11 @@
 # 888tools
 
 > Collection of handy online tools for developers, privacy-friendly and open-source.
+> Supports WebMCP (W3C document.modelContext) browser agent tool execution.
+
+## WebMCP Agent Runtime
+
+888tools natively exposes client-side developer tools via the WebMCP browser standard (`document.modelContext`). AI agents can directly invoke tools (such as OpenCC Chinese conversion, UUID generation, Base64 encode/decode, Hash calculation, JSON formatting, JWT inspection, etc.) in visitor browser runtimes.
 
 ## Tools
 

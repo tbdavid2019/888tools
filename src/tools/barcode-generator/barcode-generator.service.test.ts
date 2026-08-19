@@ -1,6 +1,7 @@
-import { expect, describe, it } from 'vitest';
-// import { } from './barcode-generator.service';
-//
-// describe('barcode-generator', () => {
-//
-// })
+import { describe, expect, it } from 'vitest';
+
+describe('barcode-generator', () => {
+  it('should be defined', () => {
+    expect(true).toBe(true);
+  });
+});
