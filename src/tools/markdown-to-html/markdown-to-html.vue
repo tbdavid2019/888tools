@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import markdownit from 'markdown-it';
+import DomPurify from 'dompurify';
 import TextareaCopyable from '@/components/TextareaCopyable.vue';
 
 const inputMarkdown = ref('');
@@ -13,7 +14,7 @@ function printHtml() {
   if (w === null) {
     return;
   }
-  w.document.body.innerHTML = outputHtml.value;
+  w.document.body.innerHTML = DomPurify.sanitize(outputHtml.value);
   w.print();
 }
 </script>

@@ -19,7 +19,12 @@ const transformers = {
   },
   object: {
     fromQuery: (value: string) => {
-      return JSON.parse(value);
+      try {
+        return JSON.parse(value);
+      }
+      catch {
+        return {};
+      }
     },
     toQuery: (value: object) => JSON.stringify(value),
   },
