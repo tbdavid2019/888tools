@@ -6,9 +6,10 @@ All notable changes to this project will be documented in this file. See [standa
 
 ### Features
 - **epub-editor**: 新增電子書頁面留白（邊距）自訂設定與中文垂直書寫（直排）排版留白最佳化。
-  - **自訂頁面邊距 (Page Margins)**：支援「無留白 (0)」、「極窄 (0.3em/0.5em，推薦直排)」、「適中 (1.0em/1.2em)」、「寬鬆 (1.8em/2.0em)」預設檔與自訂上下/左右邊距滑桿，精準控制 EPUB `@page` 與 `body` 的 padding/margin，避免在 Apple Books、Kobo、Kindle 等閱讀器中與原生 UI 邊界雙重疊加產生過多留白。
-  - **直排排版優化 (Vertical Layout Optimization)**：自動消除橫排轉換直排時 `<p>` 段落的物理 `margin-top/bottom` 空隙，讓每行直排文字頂天立地、充實延展；解除外層容器 `max-width` 拘束，避免直排換頁截斷與左右留白過大。
-  - **即時預覽與歷史記錄同步**：右側即時排版預覽面板動態連動留白與段落間距設定，翻頁計算即時同步更新，轉換歷史紀錄亦完整保存頁面留白設定。
+  - **自訂頁面邊距 (Page Margins)**：支援「無留白 (0)」、「極窄 (0.3em/0.5em，推薦直排)」、「適中 (1.0em/1.2em)」、「寬鬆 (1.8em/2.0em)」預設檔與自訂上下/左右邊距滑桿。將 `@page` margin 與 `html` padding 歸零，只在 `body` 套用一次留白；閱讀器自身邊界仍由閱讀器設定決定。
+  - **直排排版優化 (Vertical Layout Optimization)**：清除 `<p>` 四邊 margin、調整標題間距，僅解除 `body` 與直接子層排版容器的 `max-width` 限制，保留圖片等內容元素的尺寸限制。
+  - **即時預覽與歷史記錄同步**：預覽與輸出共用直排段落、標題間距，無留白預覽不再額外補 padding。預覽為文字排版示意，實際頁數受原書與閱讀器影響。新轉換紀錄保存留白模式、自訂數值及直排優化設定，舊自訂紀錄標示未保存數值。
+  - **既有設定相容**：讀取舊 localStorage 設定時合併新欄位預設值，保留使用者已有選項。
 
 ## Version 2026.08.19
 

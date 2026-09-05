@@ -39,15 +39,16 @@ describe('style-generator', () => {
     it('generates vertical CSS with @page and body margin rules', () => {
       const css = generateStyleOverrides(baseOptions, 'OEBPS/styles.css', null);
       expect(css).toContain('writing-mode: vertical-rl !important;');
-      expect(css).toContain('@page {\n  margin: 0.3em 0.5em !important;\n}');
-      expect(css).toContain('html, body {\n  margin: 0 !important;\n  padding: 0.3em 0.5em !important;');
+      expect(css).toContain('@page {\n  margin: 0 !important;\n}');
+      expect(css).toContain('html, body {\n  margin: 0 !important;\n  padding: 0 !important;');
+      expect(css).toContain('body {\n  padding: 0.3em 0.5em !important;');
       expect(css).toContain('max-width: none !important;');
-      expect(css).toContain('margin-top: 0 !important;\n  margin-bottom: 0 !important;');
+      expect(css).toContain('p {\n  margin: 0 !important;');
     });
 
     it('generates zero margin when preset is none', () => {
       const css = generateStyleOverrides({ ...baseOptions, pageMargin: 'none' }, 'OEBPS/styles.css', null);
-      expect(css).toContain('@page {\n  margin: 0 0 !important;\n}');
+      expect(css).toContain('@page {\n  margin: 0 !important;\n}');
       expect(css).toContain('padding: 0 0 !important;');
     });
 
@@ -58,7 +59,7 @@ describe('style-generator', () => {
         null
       );
       expect(css).toContain('writing-mode: horizontal-tb !important;');
-      expect(css).toContain('@page {\n  margin: 1.0em 1.2em !important;\n}');
+      expect(css).toContain('body {\n  padding: 1.0em 1.2em !important;\n}');
       expect(css).not.toContain('直排排版優化');
     });
 

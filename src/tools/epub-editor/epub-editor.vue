@@ -25,6 +25,8 @@ import {
   LINE_HEIGHT_MAP,
   MARGIN_PRESET_MAP,
   SIZE_MAP,
+  VERTICAL_HEADING_MARGIN,
+  VERTICAL_PARAGRAPH_MARGIN,
   generateStyleOverrides,
   relativePathFromCss,
   resolveMargins,
@@ -70,7 +72,7 @@ const settings = useStorage('epub-editor:settings', {
   customMarginVertical: 0.3,
   customMarginHorizontal: 0.5,
   optimizeVerticalLayout: true,
-});
+}, undefined, { mergeDefaults: true });
 
 export interface ProcessedHistoryItem {
   id: string;
@@ -82,7 +84,20 @@ export interface ProcessedHistoryItem {
   fontFamily: string;
   convertMode: string;
   pageMargin?: string;
+  customMarginVertical?: number;
+  customMarginHorizontal?: number;
+  optimizeVerticalLayout?: boolean;
   timestamp: number;
+}
+
+function historyMarginLabel(item: ProcessedHistoryItem): string {
+  if (item.pageMargin === 'custom') {
+    if (item.customMarginVertical == null || item.customMarginHorizontal == null) {
+      return '自訂（舊紀錄未保存數值）';
+    }
+    return `自訂：上下 ${item.customMarginVertical}em / 左右 ${item.customMarginHorizontal}em`;
+  }
+  return MARGIN_PRESET_MAP[item.pageMargin || '']?.label || item.pageMargin || '';
 }
 
 const processedHistory = useStorage<ProcessedHistoryItem[]>('epub-editor:history', []);
@@ -147,11 +162,12 @@ const computedPreviewPadding = computed(() => {
     settings.value.customMarginVertical,
     settings.value.customMarginHorizontal
   );
-  if (v === '0' && h === '0') {
-    return '4px 8px';
-  }
   return `${v} ${h}`;
 });
+
+const optimizePreviewVerticalLayout = computed(() =>
+  settings.value.writingMode === 'vertical' && settings.value.optimizeVerticalLayout !== false
+);
 
 // OpenCC Punctuation mapping
 const PUNCTUATION_MAP: Record<string, string> = {
@@ -1274,6 +1290,9 @@ async function processEpub() {
       fontFamily: settings.value.fontFamily,
       convertMode: settings.value.convertMode,
       pageMargin: settings.value.pageMargin,
+      customMarginVertical: settings.value.customMarginVertical,
+      customMarginHorizontal: settings.value.customMarginHorizontal,
+      optimizeVerticalLayout: settings.value.optimizeVerticalLayout,
       timestamp: Date.now(),
     });
     if (processedHistory.value.length > 30) {
@@ -1498,7 +1517,7 @@ onUnmounted(() => {
                 <span>{{ FONT_MAP[item.fontFamily]?.name || item.fontFamily }}</span>
                 <template v-if="item.pageMargin">
                   <span>•</span>
-                  <span>{{ MARGIN_PRESET_MAP[item.pageMargin]?.label || item.pageMargin }}</span>
+                  <span>{{ historyMarginLabel(item) }}</span>
                 </template>
               </div>
             </div>
@@ -1802,21 +1821,20 @@ onUnmounted(() => {
                   padding: computedPreviewPadding,
                 }"
               >
-                <h1>{{ processedPreviewTitle }}</h1>
+                <h1 :style="optimizePreviewVerticalLayout ? { textAlign: 'center', margin: VERTICAL_HEADING_MARGIN } : {}">{{ processedPreviewTitle }}</h1>
                 <p 
                   v-for="(p, idx) in processedPreviewParagraphs" 
                   :key="idx"
                   :style="{
                     textIndent: INDENT_MAP[settings.textIndent] || '2em',
-                    ...(settings.writingMode === 'vertical' && settings.optimizeVerticalLayout !== false
-                      ? { marginTop: '0', marginBottom: '0' }
-                      : (settings.writingMode === 'vertical' && !settings.optimizeVerticalLayout ? { marginTop: '0.8em', marginBottom: '0.8em' } : {}))
+                    ...(optimizePreviewVerticalLayout ? { margin: VERTICAL_PARAGRAPH_MARGIN } : {})
                   }"
                 >
                   {{ p }}
                 </p>
               </div>
             </div>
+            <p class="mt-2 text-xs text-gray-400">預覽為文字排版示意；原書樣式、圖片與閱讀器設定會影響實際留白及頁數。</p>
             <div v-if="previewChapters.length > 1" class="preview-chapter-pagination mt-3" aria-label="預覽章節控制">
               <c-button size="small" tertiary :disabled="previewChapterIndex === 0" @click="selectPreviewChapter(previewChapterIndex - 1)">
                 上一章
@@ -1979,12 +1997,9 @@ onUnmounted(() => {
   gap: 0.75rem;
 }
 .preview-content.vertical h1 {
-  text-align: center;
-  margin: 0 0 0 1.2em;
   height: 100%;
 }
 .preview-content.vertical p {
-  margin: 0 0.8em;
   height: 100%;
 }
 </style>

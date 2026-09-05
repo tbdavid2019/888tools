@@ -30,6 +30,10 @@ export const INDENT_MAP: Record<string, string> = {
   two: '2em',
 };
 
+// Shared with the preview so optimized paragraph and heading spacing stay in sync.
+export const VERTICAL_PARAGRAPH_MARGIN = '0';
+export const VERTICAL_HEADING_MARGIN = '0 0.6em 0 1.2em';
+
 export const MARGIN_PRESET_MAP: Record<string, { v: string; h: string; label: string }> = {
   none: { v: '0', h: '0', label: '無留白 (滿版)' },
   compact: { v: '0.3em', h: '0.5em', label: '極窄 (推薦直排)' },
@@ -127,14 +131,17 @@ h1, h2, h3, h4, h5, h6 { font-family: "${realFamily}", "CustomUserFont", sans-se
     css += `p { text-indent: 0; }\n`;
   }
 
-  // 邊界與留白設定 (Page and Body Margins / Paddings)
+  // Apply author-defined spacing once, on body. Reader UI margins remain reader-controlled.
   css += `@page {
-  margin: ${marginV} ${marginH} !important;
+  margin: 0 !important;
 }
 html, body {
   margin: 0 !important;
-  padding: ${marginV} ${marginH} !important;
+  padding: 0 !important;
   box-sizing: border-box !important;
+}
+body {
+  padding: ${marginV} ${marginH} !important;
 }
 body > div, body > section, body > article, body > main {
   box-sizing: border-box !important;
@@ -152,21 +159,14 @@ body > div, body > section, body > article, body > main {
     if (options.optimizeVerticalLayout !== false) {
       css += `/* 直排排版優化：清除原橫排段落上下留白與容器寬度拘束 */
 p {
-  margin-top: 0 !important;
-  margin-bottom: 0 !important;
-  margin-left: 0 !important;
-  margin-right: 0 !important;
+  margin: ${VERTICAL_PARAGRAPH_MARGIN} !important;
 }
 h1, h2, h3, h4, h5, h6 {
   text-align: center !important;
-  margin-top: 0 !important;
-  margin-bottom: 0 !important;
-  margin-left: 1.2em !important;
-  margin-right: 0.6em !important;
+  margin: ${VERTICAL_HEADING_MARGIN} !important;
 }
-body, body * {
+body, body > div, body > section, body > article, body > main {
   max-width: none !important;
-  max-height: none !important;
 }
 `;
     }
