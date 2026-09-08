@@ -501,6 +501,10 @@ tools:
       clear: 清空
     note: 映射来源于同文堂油猴脚本，无需外部请求。
 
+  file-type-detector:
+    title: AI 文件类型识别器
+    description: 使用 Google Magika 深度学习神经网络模型，以高达 99% 准确率本地识别 200+ 种文件格式、MIME Type 与防范扩展名伪装。
+
   ipv4-range-expander:
     title: IPv4范围扩展器
     description: 给定起始和结束IPv4地址，此工具使用其CIDR表示法计算有效的IPv4网络。
