@@ -32,6 +32,7 @@ import {
   resolveMargins,
   type StyleGeneratorOptions,
 } from './style-generator';
+import { normalizeZipTimestamps, repairKindleEpub } from './kindle-fixer';
 
 const message = useMessage();
 
@@ -72,7 +73,10 @@ const settings = useStorage('epub-editor:settings', {
   customMarginVertical: 0.3,
   customMarginHorizontal: 0.5,
   optimizeVerticalLayout: true,
+  fixKindleCompatibility: true,
 }, undefined, { mergeDefaults: true });
+
+const kindleRepairSummary = ref<string | null>(null);
 
 export interface ProcessedHistoryItem {
   id: string;
@@ -443,6 +447,37 @@ async function handleFileUpload(uploadedFile: File) {
   try {
     const zip = await JSZip.loadAsync(uploadedFile);
     zipInstance.value = zip;
+
+    // Check & repair Kindle compatibility before extracting files
+    if (settings.value.fixKindleCompatibility) {
+      progressStage.value = '檢測並修復 Kindle 相容性...';
+      const report = await repairKindleEpub(zip);
+      if (report.hasRepairs) {
+        const parts: string[] = [];
+        if (report.fixedExtensionlessFiles.length > 0) {
+          parts.push(`補全 ${report.fixedExtensionlessFiles.length} 個章節副檔名`);
+        }
+        if (report.fixedDeadLinks.length > 0) {
+          parts.push(`移除 ${report.fixedDeadLinks.length} 個目錄死連結`);
+        }
+        if (report.fixedOpfItems.length > 0) {
+          parts.push(`校正 ${report.fixedOpfItems.length} 項 OPF 清單`);
+        }
+        if (report.normalizedTimestampsCount > 0) {
+          parts.push(`正規化 ${report.normalizedTimestampsCount} 個時間戳`);
+        }
+        if (report.fixedXmlDeclarations.length > 0) {
+          parts.push(`補充 ${report.fixedXmlDeclarations.length} 處 XML 宣告`);
+        }
+        kindleRepairSummary.value = parts.join('、');
+        message.info(`已為此書自動完成 Kindle 相容性修復：${kindleRepairSummary.value}`);
+      } else {
+        kindleRepairSummary.value = null;
+      }
+    } else {
+      kindleRepairSummary.value = null;
+    }
+
     fileEntries.value = [];
     
     let parsedCount = 0;
@@ -522,6 +557,76 @@ function parseMetadata(opfContent: string) {
 
   bookTitle.value = titleNode ? titleNode.textContent || '' : '';
   bookAuthor.value = creatorNode ? creatorNode.textContent || '' : '';
+}
+
+async function reloadFileEntries() {
+  if (!zipInstance.value) return;
+  const zip = zipInstance.value;
+  fileEntries.value = [];
+  for (const [filename, entry] of Object.entries(zip.files)) {
+    if (entry.dir) continue;
+    const ext = filename.toLowerCase();
+    if (
+      ext.endsWith('.xhtml') || 
+      ext.endsWith('.html') || 
+      ext.endsWith('.htm') || 
+      ext.endsWith('.ncx') || 
+      ext.endsWith('.opf') ||
+      ext.endsWith('.css')
+    ) {
+      const buffer = await entry.async('arraybuffer');
+      const encoding = detectEncoding(buffer);
+      const textContent = decodeWithEncoding(buffer, encoding);
+
+      fileEntries.value.push({
+        name: filename,
+        type: ext.substring(ext.lastIndexOf('.')),
+        originalContent: textContent,
+        currentContent: textContent,
+      });
+
+      if (ext.endsWith('.opf')) {
+        opfPath.value = filename;
+        parseMetadata(textContent);
+      }
+    }
+  }
+
+  previewChapters.value = await extractPreviewChapters(zip);
+  previewChapterIndex.value = 0;
+  if (previewChapters.value.length > 0) {
+    selectPreviewChapter(0);
+  }
+}
+
+async function runManualKindleRepair() {
+  if (!zipInstance.value) {
+    message.warning('請先載入 EPUB 電子書');
+    return;
+  }
+  isProcessing.value = true;
+  progressStage.value = '正在執行 Kindle 相容性檢測與修復...';
+  try {
+    const report = await repairKindleEpub(zipInstance.value);
+    await reloadFileEntries();
+    if (report.hasRepairs) {
+      const parts: string[] = [];
+      if (report.fixedExtensionlessFiles.length > 0) parts.push(`補全 ${report.fixedExtensionlessFiles.length} 個章節副檔名`);
+      if (report.fixedDeadLinks.length > 0) parts.push(`移除 ${report.fixedDeadLinks.length} 個目錄死連結`);
+      if (report.fixedOpfItems.length > 0) parts.push(`校正 ${report.fixedOpfItems.length} 項 OPF 清單`);
+      if (report.normalizedTimestampsCount > 0) parts.push(`正規化 ${report.normalizedTimestampsCount} 個時間戳`);
+      if (report.fixedXmlDeclarations.length > 0) parts.push(`補充 ${report.fixedXmlDeclarations.length} 處 XML 宣告`);
+      kindleRepairSummary.value = parts.join('、');
+      message.success(`修復完成：${kindleRepairSummary.value}`);
+    } else {
+      kindleRepairSummary.value = '此電子書結構健康，未發現 Kindle 相容性問題';
+      message.info('檢測完成：未發現 Kindle 相容性問題');
+    }
+  } catch (err: any) {
+    message.error(`修復失敗: ${err.message}`);
+  } finally {
+    isProcessing.value = false;
+  }
 }
 
 function selectFile(name: string) {
@@ -1228,8 +1333,13 @@ async function processEpub() {
     progressStage.value = '重新封裝成 EPUB...';
     progressPercent.value = 92;
 
+    if (settings.value.fixKindleCompatibility) {
+      await repairKindleEpub(zip);
+    }
+    normalizeZipTimestamps(zip);
+
     if (!zip.files['mimetype']) {
-      zip.file('mimetype', 'application/epub+zip', { compression: 'STORE' });
+      zip.file('mimetype', 'application/epub+zip', { compression: 'STORE', date: new Date(0) });
     }
 
     const blob = await zip.generateAsync({
@@ -1399,6 +1509,8 @@ function resetAll() {
     URL.revokeObjectURL(newCoverPreviewUrl.value);
     newCoverPreviewUrl.value = '';
   }
+  
+  kindleRepairSummary.value = null;
   
   // Note: custom font and user settings remain stored in IndexedDB/localStorage
 }
@@ -1728,6 +1840,39 @@ onUnmounted(() => {
               <span class="text-[11px] text-gray-400">清除原橫排段落上下空隙與容器寬度拘束，讓文字完整填滿</span>
             </div>
             <n-switch v-model:value="settings.optimizeVerticalLayout" size="small" />
+          </div>
+        </div>
+
+        <!-- Card: Kindle 相容性修復 (Send to Kindle 相容) -->
+        <div class="p-5 bg-gray-50 dark:bg-zinc-800/30 rounded-2xl border border-gray-100 dark:border-zinc-800 space-y-4">
+          <h3 class="text-base font-bold flex items-center justify-between border-b border-gray-100 dark:border-zinc-800 pb-3">
+            <span class="flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+              Kindle 相容性防錯修復
+            </span>
+            <n-switch v-model:value="settings.fixKindleCompatibility" size="small" />
+          </h3>
+
+          <div class="text-xs text-gray-500 dark:text-gray-400 space-y-1">
+            <p>自動補齊章節副檔名、清理 NCX/NAV 目錄死連結、修正 OPF 清單參照，並正規化 ZIP 損壞時間戳，徹底預防 Amazon Send to Kindle 發生 <span class="font-mono text-primary font-semibold">E999 內部錯誤</span>。</p>
+          </div>
+
+          <div v-if="kindleRepairSummary" class="p-3 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800/40 rounded-xl text-xs text-green-700 dark:text-green-300 flex items-start gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            <div class="flex-1">
+              <span class="font-bold">已套用修復：</span>
+              <span>{{ kindleRepairSummary }}</span>
+            </div>
+          </div>
+
+          <div v-if="zipInstance" class="pt-1">
+            <c-button size="small" secondary class="w-full" :disabled="isProcessing" @click="runManualKindleRepair">
+              立即健檢與修復此書
+            </c-button>
           </div>
         </div>
 
