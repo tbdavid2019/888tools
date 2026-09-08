@@ -10,6 +10,7 @@
 ## Tools
 
 - [AI Background Remover](https://tool.david888.com/remove-background): Remove image background automatically with AI.
+- [AI File Type Detector](https://tool.david888.com/file-type-detector): Detect 200+ file formats and MIME types with >99% accuracy using Google Magika AI model in the browser.
 - [AI Lyric Player](https://tool.david888.com/lyric-player): Recognize or align lyrics with a browser-side Whisper model, with LRC upload, editing, and export.
 - [ASCII Art Text Generator](https://tool.david888.com/ascii-text-drawer): Create ASCII art text with many fonts and styles.
 - [Audio Editor](https://tool.david888.com/audio-editor): Edit audio files (trim, filters, effects) with visual waveform, completely client-side.
