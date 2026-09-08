@@ -92,6 +92,7 @@ declare module '@vue/runtime-core' {
     EtaCalculator: typeof import('./src/tools/eta-calculator/eta-calculator.vue')['default']
     FancyTextGenerator: typeof import('./src/tools/fancy-text-generator/fancy-text-generator.vue')['default']
     FavoriteButton: typeof import('./src/components/FavoriteButton.vue')['default']
+    FileTypeDetector: typeof import('./src/tools/file-type-detector/file-type-detector.vue')['default']
     FindColor: typeof import('./src/tools/find-color/find-color.vue')['default']
     FlipCard: typeof import('./src/tools/online-clock/FlipCard.vue')['default']
     FormatTransformer: typeof import('./src/components/FormatTransformer.vue')['default']

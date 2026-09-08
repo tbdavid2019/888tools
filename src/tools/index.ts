@@ -1,4 +1,5 @@
 import { tool as base64FileConverter } from './base64-file-converter';
+import { tool as fileTypeDetector } from './file-type-detector';
 import { tool as base64StringConverter } from './base64-string-converter';
 import { tool as basicAuthGenerator } from './basic-auth-generator';
 import { tool as barcodeGenerator } from './barcode-generator';
@@ -184,6 +185,7 @@ export const toolsByCategory: ToolCategory[] = [
   {
     name: 'development',
     components: [
+      fileTypeDetector,
       gitMemo,
       randomPortGenerator,
       crontabGenerator,

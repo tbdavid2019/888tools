@@ -3,6 +3,7 @@ import { ref, computed, watch } from 'vue';
 import { useMessage } from 'naive-ui';
 import { translate } from '@/plugins/i18n.plugin';
 import { useCopy } from '@/composable/copy';
+import { detectFile } from '@/services/magika/magika.service';
 import {
   readFileWithAutoEncoding,
   getEncodingLabel,
@@ -113,8 +114,24 @@ const textIndentOptions = [
 // Handle drag and drop or manual selection of txt file
 async function handleFileUpload(uploadedFile: File) {
   if (!uploadedFile.name.endsWith('.txt')) {
-    message.error('請上傳 .txt 文字檔案');
-    return;
+    try {
+      const detection = await detectFile(uploadedFile);
+      if (detection.label === 'epub' || detection.mimeType === 'application/epub+zip') {
+        message.warning('檢測到您上傳的是標準 EPUB 電子書，建議直接使用「EPUB 編輯器」進行排版或編輯！', { duration: 6000 });
+        return;
+      } else if (detection.label === 'pdf') {
+        message.warning('檢測到此檔案為 PDF 文件，請先複製文字或轉換為純文字後再匯入。', { duration: 6000 });
+        return;
+      } else if (detection.isText || ['markdown', 'html', 'json', 'yaml', 'xml', 'txt'].includes(detection.label)) {
+        message.info(`AI 智慧識別為純文字檔案（${detection.name}），繼續載入！`);
+      } else {
+        message.error(`檔案格式不符：檢測為 ${detection.name} (${detection.mimeType})，請上傳 .txt 或文字檔案。`);
+        return;
+      }
+    } catch {
+      message.error('請上傳 .txt 文字檔案');
+      return;
+    }
   }
   file.value = uploadedFile;
   try {
@@ -317,8 +334,8 @@ function resetAll() {
     <div v-if="currentStep === 1">
       <div class="max-w-2xl mx-auto py-8">
         <c-file-upload
-          accept=".txt"
-          title="拖曳 TXT 小說/書籍檔案至此，或點擊選取檔案"
+          accept=".txt,.text,.md,text/plain,*"
+          title="拖曳 TXT / 文字書籍檔案至此，或點擊選取檔案"
           @file-upload="handleFileUpload"
         />
         <div class="mt-4 text-center text-sm text-gray-500">

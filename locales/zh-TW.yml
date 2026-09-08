@@ -541,6 +541,10 @@ tools:
     title: 圖片壓縮
     description: 壓縮圖片（PNG, JPG, WEBP）並支援畫質調整與前後對比。
 
+  file-type-detector:
+    title: AI 檔案類型辨識器
+    description: 使用 Google Magika 深度學習神經網路模型，以高達 99% 準確率本地辨識 200+ 種檔案格式、MIME Type 與副檔名偽裝。
+
   pdf-tools:
     title: PDF 工具箱
     description: PDF 實用工具合集：合併、分割、旋轉與壓縮。

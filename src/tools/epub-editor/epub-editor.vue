@@ -2,6 +2,7 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useMessage } from 'naive-ui';
 import JSZip from 'jszip';
+import { detectFile } from '@/services/magika/magika.service';
 import { decodeWithEncoding, detectEncoding } from '../txt-to-epub/encodingDetector';
 import { updatePackageDirection } from './package-direction';
 import { getPreviewChapterIndex, parsePreviewChapter, type PreviewChapter } from './preview-chapters';
@@ -435,8 +436,24 @@ async function injectCustomFontForPreview() {
 // Upload and Parse EPUB
 async function handleFileUpload(uploadedFile: File) {
   if (!uploadedFile.name.toLowerCase().endsWith('.epub')) {
-    message.error('請選擇 .epub 格式的電子書');
-    return;
+    try {
+      const detection = await detectFile(uploadedFile);
+      if (detection.label === 'epub' || detection.mimeType === 'application/epub+zip') {
+        message.info(`AI 智慧識別：此檔案為標準 EPUB 電子書（副檔名為 ${uploadedFile.name.split('.').pop() || '無'}），正在解析...`);
+      } else if (detection.isText || detection.label === 'txt' || detection.label === 'markdown') {
+        message.warning(`檢測到此檔案為純文字（${detection.name}），建議使用「TXT 轉 EPUB 電子書」工具製作成 EPUB！`, { duration: 6000 });
+        return;
+      } else if (detection.label === 'pdf') {
+        message.warning('檢測到此檔案為 PDF 文件，EPUB 編輯器僅支援標準 EPUB 電子書。', { duration: 6000 });
+        return;
+      } else {
+        message.error(`檔案格式不符：檢測為 ${detection.name} (${detection.mimeType})，請選擇 .epub 格式電子書。`);
+        return;
+      }
+    } catch {
+      message.error('請選擇 .epub 格式的電子書');
+      return;
+    }
   }
 
   file.value = uploadedFile;
@@ -1585,7 +1602,7 @@ onUnmounted(() => {
         <input
           ref="fileInput"
           type="file"
-          accept=".epub"
+          accept=".epub,application/epub+zip,*"
           class="hidden"
           @change="(e: any) => e.target.files[0] && handleFileUpload(e.target.files[0])"
         />

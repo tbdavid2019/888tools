@@ -545,6 +545,10 @@ tools:
     title: Image Compressor
     description: Compress images (PNG, JPG, WEBP) with visual comparison and quality control.
 
+  file-type-detector:
+    title: AI File Type Detector
+    description: Detect 200+ file formats and MIME types with >99% accuracy using Google Magika AI model in the browser.
+
   pdf-tools:
     title: PDF Tools
     description: Collection of tools to manipulate PDF files (merge, split, rotate, and compress).
