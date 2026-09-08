@@ -79,8 +79,8 @@ tools:
     editor: '編輯區'
 
   password-strength-analyser:
-    title: 密碼強度分析儀
-    description: 使用此密碼強度分析器和破解時間估計工具來發現密碼的強度。
+    title: 密碼強度分析器
+    description: 評估密碼複雜度、破解時間估算與安全建議。
 
   chronometer:
     title: 計時器
@@ -195,8 +195,8 @@ tools:
     syncError: 校時失敗
     offset: '偏差: {value}秒'
   token-generator:
-    title: Token 生成器
-    description: 使用您想要的字元、大寫或小寫字母、數字和/或符號生成隨機字串。
+    title: 隨機 Token 產生器
+    description: 自訂字元集、長度與符號，快速產生隨機安全金鑰或 Token。
 
     uppercase: '大寫 (ABC...)'
     lowercase: '小寫 (abc...)'
@@ -213,16 +213,16 @@ tools:
     description: 輕鬆計算從一個值到另一個值的百分比，或從百分比到值的百分比。
 
   svg-placeholder-generator:
-    title: SVG 占位符生成器
-    description: 生成 svg 圖像以用作應用程式中的占位符。
+    title: SVG 佔位圖產生器
+    description: 產生自訂尺寸、文字與色彩的 SVG 佔位圖片。
 
   json-to-csv:
     title: JSON 轉 CSV
     description: 使用自動標頭偵測將JSON轉換為CSV。
 
   camera-recorder:
-    title: 攝像機記錄器
-    description: 從網路攝影機或照相機拍攝照片或錄製影片。
+    title: 相機錄影工具
+    description: 使用視訊鏡頭或相機進行拍照、錄製影片並匯出。
 
   keycode-info:
     title: Keycode 資訊
@@ -233,15 +233,15 @@ tools:
     description: 輕鬆複製和貼上Emoji表情符號，並獲得每個表情符號的unicode和code points值.
 
   color-converter:
-    title: Color 選擇器
-    description: 在不同格式（十六進位、rgb、hsl和css名稱）之間轉換顏色
+    title: 顏色格式轉換器
+    description: 在 HEX、RGB、HSL 與 CSS 顏色名稱之間互相轉換。
   bcrypt:
-    title: 加密
-    description: 使用bcrypt對文字字串進行哈希和比較。Bcrypt是一個基於Blowfish密碼的密碼哈希函數。
+    title: Bcrypt 密碼雜湊與驗證
+    description: 使用 Bcrypt 演算法進行單向密碼雜湊與比對驗證。
 
   crontab-generator:
-    title: Crontab 表達式生成
-    description: 驗證並生成crontab，並獲取cron排程的可讀描述。
+    title: Crontab 排程表達式產生器
+    description: 視覺化編輯與產生 Cron 排程表達式，並提供人類可讀解讀。
 
   http-status-codes:
     title: HTTP 狀態碼
@@ -252,28 +252,28 @@ tools:
     description: 線上格式化和美化您的 SQL 查詢（它支援各種 SQL 方言）。
 
   benchmark-builder:
-    title: 基準生成器
-    description: 簡單的線上基準構建器可以輕鬆比較任務的執行時間。
+    title: JS 效能基準測試 (Benchmark)
+    description: 在瀏覽器中快速比較多段 JavaScript 程式碼片段的執行效能。
 
   git-memo:
     title: Git 備忘錄
     description: Git是一種去中心化的版本管理軟體。使用此備忘單，您可以快速存取最常見的git命令.
 
   slugify-string:
-    title: 打亂字串
-    description: 確保字串 url、檔名和 id 安全。
+    title: 網址別名產生器 (Slugify)
+    description: 將文字字串轉換為適合網址 (URL)、檔案名稱與識別碼的安全 Slug 格式。
 
   encryption:
     title: 加密/解密文字
     description: 使用加密演算法（如AES、TripleDES、Rabbit或RC4）加密和解密文字明文。
 
   random-port-generator:
-    title: 隨機埠生成
-    description: 生成「已知」埠範圍（0-1023）之外的隨機埠號。
+    title: 隨機連接埠產生器 (Port)
+    description: 隨機產生系統保留埠（0-1023）之外的高位連接埠號。
 
   yaml-prettify:
-    title: YAML美化和格式化
-    description: 將YAML字串修飾為友善的可讀格式。
+    title: YAML 格式化與美化
+    description: 將 YAML 字串排版為層級分明、便於閱讀的格式。
 
   eta-calculator:
     title: ETA 計算器
@@ -288,8 +288,8 @@ tools:
     description: 使用金鑰和您喜歡的哈希函數計算基於哈希的訊息驗證碼（HMAC）。
 
   bip39-generator:
-    title: BIP39密碼生成器
-    description: 從現有或隨機助記詞生成BIP39密碼片語，或從密碼片語獲取助記詞。
+    title: BIP39 助記詞產生器
+    description: 依照 BIP39 規範產生隨機錢包助記詞或從種子片語推導。
 
   base64-file-converter:
     title: Base64 檔案轉換器
@@ -311,8 +311,8 @@ tools:
     description: 計算數學表示式的計算器。您可以使用sqrt、cos、sin、abs等函數。
 
   json-to-yaml-converter:
-    title: JSON到YAML轉換器
-    description: 線上轉換將JSON轉換為YAML。
+    title: JSON 轉 YAML
+    description: 將 JSON 格式字串快速轉換為 YAML 格式。
 
   url-parser:
     title: Url分析器
@@ -327,52 +327,52 @@ tools:
     description: 從使用者代理字串中偵測和分析瀏覽器、引擎、作業系統、CPU和裝置類型/型號。
 
   numeronym-generator:
-    title: 數字名稱生成器
-    description: 數字名是一個用數字構成縮寫的詞。例如，「i18n」是「國際化」的名詞，其中18表示單詞中第一個i和最後一個n之間的字母數。
+    title: 數字縮寫產生器 (i18n / a11y)
+    description: 將單詞轉換為首尾字母加中間字元數的數字縮寫 (如 internationalization -> i18n)。
 
   case-converter:
     title: 大小寫轉換
     description: 更改字串的大小寫並在不同格式之間進行選擇
 
   html-entities:
-    title: 轉義html實體
-    description: 轉義或unescape html實體（將<、>、&、「和\'替換為其html版本）
+    title: HTML 實體跳脫編碼
+    description: 跳脫或還原 HTML 特殊實體字元（如 <, >, &, ", ' 等）。
 
   json-prettify:
-    title: JSON美化和格式化
-    description: 將JSON字串修飾為友善的可讀格式。
+    title: JSON 格式化與美化
+    description: 將 JSON 字串排版為結構清晰、便於閱讀的格式。
 
   docker-run-to-docker-compose-converter:
-    title: Docker Run 到 docker-compose 轉換器
-    description: 將 docker run 命令列轉換為 docker-compose 檔案!
+    title: Docker Run 轉 Compose
+    description: 將單行 docker run 命令轉換為清晰的 docker-compose.yml 服務設定。
 
   mac-address-lookup:
-    title: MAC地址查找
-    description: 透過裝置的MAC地址查找裝置的供應商和製造商。
+    title: MAC 位址查詢 (OUI)
+    description: 依據 MAC 位址前綴查詢網卡設備的製造商與供應商資訊。
 
   mime-types:
-    title: mime類型
-    description: 將mime類型轉換為副檔名，反之亦然。
+    title: MIME 類型速查表
+    description: 查詢副檔名對應的標準 MIME 類型與內容格式。
 
   toml-to-json:
     title: TOML 到 JSON
     description: 解析TOML並將其轉換為JSON。
 
   lorem-ipsum-generator:
-    title: Lorem ipsum生成器
-    description: Lorem ipsum是一種占位符文字，通常用於展示文件或字體的視覺形式，而不依賴於有意義的內容
+    title: Lorem Ipsum 假字產生器
+    description: 快速產生用於排版設計測試的拉丁文或中文假字占位段落。
 
   qrcode-generator:
-    title: QR二維碼生成器
-    description: 生成並下載url或文字的QR代碼，並自訂背景和前景顏色。
+    title: QR Code 產生器
+    description: 產生並下載網址或文字的 QR Code，支援自訂顏色與外觀。
 
   qr-checker:
-    title: QR二維碼掃描器
-    description: 使用圖片或相機掃描並解析二維碼。
+    title: QR Code 掃描器
+    description: 透過上傳圖片或鏡頭掃描解析 QR Code 內容。
 
   wifi-qrcode-generator:
-    title: WiFi QR二維碼生成器
-    description: 生成和下載QR碼以快速連接到WiFi網路。
+    title: WiFi QR Code 產生器
+    description: 產生 WiFi 快速連線 QR Code，手機一掃即可連上網路。
 
   xml-formatter:
     title: XML 格式化
@@ -387,8 +387,8 @@ tools:
     description: 使用此線上的chmod計算器計算chmod權限和命令。
 
   rsa-key-pair-generator:
-    title: RSA金鑰對生成器
-    description: 生成新的隨機RSA私鑰和公鑰pem憑證。
+    title: RSA 金鑰對產生器
+    description: 在瀏覽器本地安全生成 RSA 公鑰與私鑰 PEM 金鑰對。
 
   html-wysiwyg-editor:
     title: HTML所見即所得編輯器
@@ -399,8 +399,8 @@ tools:
     description: 解析YAML並將其轉換為TOML。
 
   mac-address-generator:
-    title: MAC 地址生成器
-    description: 輸入數量和前綴。MAC地址將以您選擇的大小寫（大寫或小寫）生成
+    title: MAC 位址產生器
+    description: 自訂前綴與大小寫格式，大量產生隨機 MAC 位址。
 
   json-diff:
     title: JSON 差異比較
@@ -414,24 +414,24 @@ tools:
     description: 將日期和時間轉換為各種不同的格式
 
   phone-parser-and-formatter:
-    title: 電話分析器和格式化程式
-    description: 解析、驗證和格式化電話號碼。獲取有關電話號碼的資訊，如國家/地區代碼、類型等。
+    title: 電話號碼解析與格式化
+    description: 解析各國國際電話號碼，驗證有效性並標準化為 E.164 或國家格式。
 
   ipv4-subnet-calculator:
-    title: IPv4子網計算器
-    description: 解析IPv4 CIDR區塊，並獲取有關子網路的所有所需資訊。
+    title: IPv4 子網路計算器
+    description: 解析 CIDR 遮罩，計算子網路、廣播位址與可用主機範圍。
 
   og-meta-generator:
-    title: 開放式圖形元生成器
-    description: 為您的網站生成開放式圖形和社交html元標記。
+    title: Open Graph 社群標籤產生器
+    description: 為網站生成 Open Graph (OG) 與社群分享 Meta 標籤。
 
   ipv6-ula-generator:
-    title: IPv6 ULA生成器
-    description: 根據RFC4193在網路上生成您自己的本地不可路由IP地址。
+    title: IPv6 ULA 本地位址產生器
+    description: 根據 RFC 4193 產生私有區域網路專屬的不可路由 IPv6 ULA 位址。
 
   hash-text:
-    title: Hash 文字
-    description: '使用所需的函數哈希文字字串：MD5、SHA1、SHA256、SHA224、SHA512、SHA384、SHA3或RIPEMD160'
+    title: 雜湊計算器 (Hash)
+    description: '計算文字字串的 MD5、SHA-1、SHA-256、SHA-512、RIPEMD160 等雜湊值。'
 
   json-to-toml:
     title: JSON 轉 TOML
@@ -442,36 +442,36 @@ tools:
     description: 獲取有關當前裝置的資訊（螢幕大小、像素比率、使用者代理…）
 
   pdf-signature-checker:
-    title: PDF簽名檢查器
-    description: '驗證PDF檔案的簽名。簽名的PDF檔案包含一個或多個簽名，可用於確定檔案的內容在簽名後是否已被更改。'
+    title: PDF 數位簽章驗證
+    description: '驗證 PDF 文件中的數位簽章有效性，確認簽署後是否遭到修改。'
 
   json-minify:
     title: JSON 壓縮
     description: 透過刪除不必要的空白來縮小和壓縮JSON。
 
   ulid-generator:
-    title: ULID 生成器
-    description: 生成隨機的通用唯一字典可排序識別符（ULID）。
+    title: ULID 字典序識別碼產生器
+    description: 產生具備時間毫秒排序且通用唯一的 ULID 識別碼。
 
   string-obfuscator:
     title: 字串混淆器
     description: 混淆字串（如秘密、IBAN 或令牌），使其可共用和可識別，而不洩露其內容。
 
   base-converter:
-    title: 整數基轉換器
-    description: 在不同的基數（十進位、十六進位、二進位、八進位、base64…）之間轉換數字
+    title: 進位制轉換器 (2/8/10/16進位)
+    description: 在二進位、八進位、十進位、十六進位與自訂基數之間快速轉換數值。
 
   yaml-to-json-converter:
-    title: YAML到JSON轉換器
-    description: 使用此線上轉換器將YAML轉換為JSON。
+    title: YAML 轉 JSON
+    description: 將 YAML 格式文件快速轉換為 JSON 格式。
 
   uuid-generator:
-    title: UUIDs 生成器
-    description: 通用唯一識別碼（UUID）是一個128位數字，用於識別電腦系統中的資訊。可能的UUID數量為16^32，即2^128或約3.4x10^38（這是一個很大的數字！）。
+    title: UUID 產生器
+    description: 產生隨機且符合 RFC 4122 標準的 UUID (v4) 識別碼。
 
   ipv4-address-converter:
-    title: Ipv4地址轉換器
-    description: 在ipv6中，將ip地址轉換為十進位、二進位、十六進位或事件
+    title: IPv4 位址格式轉換
+    description: 將 IPv4 位址在十進位、二進位、十六進位與點分十進位間轉換。
 
   text-statistics:
     title: 文字統計
@@ -482,8 +482,8 @@ tools:
     description: 將文字轉換為北約拼音字母以進行口頭傳播。
 
   basic-auth-generator:
-    title: 基本身分驗證生成器
-    description: 從使用者名稱和密碼生成 base64 基本身分驗證標頭。
+    title: HTTP Basic Auth 標頭產生器
+    description: 從帳號與密碼產生 Base64 編碼的 Authorization 認證標頭。
 
   text-to-unicode:
     title: 文字轉 Unicode
@@ -514,36 +514,36 @@ tools:
     description: 直接在瀏覽器中編輯 EPUB 的中繼資料、章節、樣式與字型。
 
   ipv4-range-expander:
-    title: IPv4範圍擴展器
-    description: 給定起始和結束IPv4地址，此工具使用其CIDR表示法計算有效的IPv4網路。
+    title: IPv4 網段範圍展開器
+    description: 輸入起始與結束 IP 位址，自動計算並展開對應的 CIDR 網段。
 
   text-diff:
     title: 文字比較
     description: 比較兩個文字並查看它們之間的差異。
 
   otp-generator:
-    title: OTP代碼生成器
-    description: 為多因素身分驗證生成和驗證基於時間的OTP（一次性密碼）。
+    title: OTP 驗證碼產生器
+    description: 產生與驗證雙重認證 (2FA) 基於時間的一次性密碼 (TOTP)。
 
   url-encoder:
-    title: 編碼/解碼url格式的字串
-    description: 編碼為url編碼格式（也稱為「百分比編碼」）或從中解碼。
+    title: URL 網址編碼與解碼
+    description: 將字串進行 URL 百分比編碼 (Percent-encoding) 或從中解碼。
 
   text-to-binary:
-    title: 文字到 ASCII 二進位
-    description: 將文字轉換為其 ASCII 二進位表示形式，反之亦然。
+    title: 文字轉二進位 (ASCII)
+    description: 將文字轉換為 ASCII 二進位表示法，或由二進位還原文字。
 
   remove-background:
-    title: AI 圖片去背
-    description: 使用 AI 自動移除圖片背景。
+    title: 圖片去背
+    description: 自動移除圖片背景，純前端本地運算保護隱私。
 
   image-compression:
     title: 圖片壓縮
     description: 壓縮圖片（PNG, JPG, WEBP）並支援畫質調整與前後對比。
 
   file-type-detector:
-    title: AI 檔案類型辨識器
-    description: 使用 Google Magika 深度學習神經網路模型，以高達 99% 準確率本地辨識 200+ 種檔案格式、MIME Type 與副檔名偽裝。
+    title: 檔案格式分析器
+    description: 使用 Google Magika 深度分析技術，以高達 99% 準確率本地辨識 200+ 種檔案格式、MIME Type 與副檔名偽裝。
 
   pdf-tools:
     title: PDF 工具箱
@@ -566,8 +566,8 @@ tools:
     description: 編輯音訊檔案（剪輯、濾鏡、特效），支援視覺化波形，完全在客戶端執行。
 
   lyric-player:
-    title: AI 歌詞播放器
-    description: 使用本機 Whisper 模型辨識或對齊歌詞，支援 LRC 上傳、編輯與匯出。
+    title: 動態歌詞播放器
+    description: 本地辨識與對齊動態歌詞，支援 LRC 上傳、編輯與即時同步播放。
 
   meeting-captions:
     title: 即時會議字幕
@@ -705,12 +705,14 @@ tools:
     description: 在瀏覽器中直接開啟並檢視 CSV、XLSX、XLS 電子表格檔案。
 
   find-color:
-    title: "潘通色票庫"
-    description: 收錄 Pantone 2024 至 2026 年度色與精選趨勢配色。提供 Light/Dark 雙模式、色碼常駐顯示、一鍵複製單色或整組色票，並支援首頁效果即時預覽。
+    title: "Pantone 趨勢色票庫"
+    description: 收錄 Pantone 2024 至 2026 年度色與精選趨勢配色。提供 Light/Dark
+      雙模式、色碼常駐顯示、一鍵複製單色或整組色票，並支援首頁效果即時預覽。
 
   post-writer:
     title: "社群貼文排版"
-    description: 全程本機處理，提供雜誌感排版與 Broetry 文體排版，自動換行、全形標點符號轉換、標題框線裝飾，并提供 FB/IG/Threads 模擬預覽與字數計算。
+    description: 全程本機處理，提供雜誌感排版與 Broetry 文體排版，自動換行、全形標點符號轉換、標題框線裝飾，并提供 FB/IG/Threads
+      模擬預覽與字數計算。
   p2p-chat:
     title: "P2P 網頁即時密聊"
     description: "基於 WebRTC 的瀏覽器端端到端加密 (E2EE) 私密聊天工具，無需伺服器中繼，訊息不經任何資料庫儲存。"
@@ -816,3 +818,30 @@ tools:
     transferDone: "檔案傳輸完成！"
     transferDecline: "對方拒絕接收此檔案。"
     transferSave: "檔案接收並下載完成！"
+  ascii-text-drawer:
+    title: ASCII 文字藝術產生器
+    description: 支援多種字型與樣式，將純文字轉換為 ASCII 藝術大字。
+  barcode-generator:
+    title: 條碼產生器
+    description: 產生 PDF417、Code 128、Data Matrix 等多種條碼格式，支援高解析度匯出。
+  email-normalizer:
+    title: Email 地址正規化
+    description: 將電子郵件地址標準化與統一格式，便於去重、比對與資料清洗。
+  json-to-xml:
+    title: JSON 轉 XML
+    description: 將 JSON 物件資料轉換為結構化 XML 格式。
+  markdown-to-html:
+    title: Markdown 轉 HTML
+    description: 將 Markdown 文件轉換為 HTML，支援即時預覽與匯出列印為 PDF。
+  regex-memo:
+    title: 正規表達式速查表 (Regex)
+    description: JavaScript 常用正規表達式語法、旗標與常用規則速查備忘手冊。
+  regex-tester:
+    title: 正規表達式測試器 (Regex)
+    description: 使用樣本文字即時測試與比對正規表達式，視覺化高亮匹配群組。
+  safelink-decoder:
+    title: SafeLink 安全連結解碼
+    description: 解析微軟 Outlook SafeLinks 防護連結，快速還原真實原始網址。
+  xml-to-json:
+    title: XML 轉 JSON
+    description: 將 XML 文件解析並轉換為易於讀取的 JSON 格式。

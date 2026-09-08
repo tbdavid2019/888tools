@@ -439,7 +439,7 @@ async function handleFileUpload(uploadedFile: File) {
     try {
       const detection = await detectFile(uploadedFile);
       if (detection.label === 'epub' || detection.mimeType === 'application/epub+zip') {
-        message.info(`AI 智慧識別：此檔案為標準 EPUB 電子書（副檔名為 ${uploadedFile.name.split('.').pop() || '無'}），正在解析...`);
+        message.info(`檔案格式分析：此檔案為標準 EPUB 電子書（副檔名為 ${uploadedFile.name.split('.').pop() || '無'}），正在解析...`);
       } else if (detection.isText || detection.label === 'txt' || detection.label === 'markdown') {
         message.warning(`檢測到此檔案為純文字（${detection.name}），建議使用「TXT 轉 EPUB 電子書」工具製作成 EPUB！`, { duration: 6000 });
         return;

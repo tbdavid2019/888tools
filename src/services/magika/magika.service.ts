@@ -37,16 +37,28 @@ export async function getMagikaInstance(): Promise<any> {
   return magikaInstancePromise;
 }
 
+async function readBlobAsArrayBuffer(blob: Blob): Promise<ArrayBuffer> {
+  if (typeof blob.arrayBuffer === 'function') {
+    return await blob.arrayBuffer();
+  }
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as ArrayBuffer);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsArrayBuffer(blob);
+  });
+}
+
 /**
  * Extract an optimized byte slice from a File/Blob.
- * Magika deep learning model only inspects the first 1024 bytes (max 4096)
+ * Magika model only inspects the first 1024 bytes (max 4096)
  * and last 1024 bytes (max 4096), so we never need to load huge files into memory.
  */
 async function extractAnalysisBytes(file: File | Blob): Promise<Uint8Array> {
   const size = file.size;
 
   if (size <= 8192) {
-    const buffer = await file.arrayBuffer();
+    const buffer = await readBlobAsArrayBuffer(file);
     return new Uint8Array(buffer);
   }
 
@@ -55,8 +67,8 @@ async function extractAnalysisBytes(file: File | Blob): Promise<Uint8Array> {
   const tailBlob = file.slice(size - 4096, size);
 
   const [headBuf, tailBuf] = await Promise.all([
-    headBlob.arrayBuffer(),
-    tailBlob.arrayBuffer(),
+    readBlobAsArrayBuffer(headBlob),
+    readBlobAsArrayBuffer(tailBlob),
   ]);
 
   const combined = new Uint8Array(8192);

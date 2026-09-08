@@ -123,7 +123,7 @@ async function handleFileUpload(uploadedFile: File) {
         message.warning('檢測到此檔案為 PDF 文件，請先複製文字或轉換為純文字後再匯入。', { duration: 6000 });
         return;
       } else if (detection.isText || ['markdown', 'html', 'json', 'yaml', 'xml', 'txt'].includes(detection.label)) {
-        message.info(`AI 智慧識別為純文字檔案（${detection.name}），繼續載入！`);
+        message.info(`格式特徵分析為純文字（${detection.name}），繼續載入！`);
       } else {
         message.error(`檔案格式不符：檢測為 ${detection.name} (${detection.mimeType})，請上傳 .txt 或文字檔案。`);
         return;

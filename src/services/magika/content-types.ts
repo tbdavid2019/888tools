@@ -185,9 +185,9 @@ export const CONTENT_TYPE_REGISTRY: Record<string, ContentTypeMeta> = {
         action: '調整圖片品質與優化檔案大小',
       },
       {
-        name: 'AI 圖片去背',
+        name: '圖片去背',
         path: '/remove-background',
-        action: '使用本地 AI 自動移除主體背景',
+        action: '自動移除主體背景',
       },
     ],
   },
@@ -206,7 +206,7 @@ export const CONTENT_TYPE_REGISTRY: Record<string, ContentTypeMeta> = {
         action: '縮減 JPG 檔案大小',
       },
       {
-        name: 'AI 圖片去背',
+        name: '圖片去背',
         path: '/remove-background',
         action: '辨識主體並去背',
       },

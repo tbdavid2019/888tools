@@ -120,7 +120,7 @@ async function loadSample(type: 'epub' | 'disguised' | 'json' | 'python') {
       mockBytes[0x81] = 0x45; // E
     } else if (type === 'json') {
       mockName = 'data_record.txt';
-      const str = JSON.stringify({ title: '888tools', features: ['AI Detection', 'EPUB Editor'], rating: 5 }, null, 2);
+      const str = JSON.stringify({ title: '888tools', features: ['Format Analysis', 'EPUB Editor'], rating: 5 }, null, 2);
       mockBytes = new TextEncoder().encode(str);
     } else {
       mockName = 'script.log';
@@ -181,7 +181,7 @@ function navigateToTool(path: string) {
     <div class="flex items-center justify-between flex-wrap gap-3 p-3 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-2xl border border-gray-200/80 dark:border-zinc-800 shadow-sm">
       <div class="flex items-center gap-2">
         <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-blue-600 text-white shrink-0">
-          Google Magika AI
+          Google Magika
         </span>
         <span class="text-xs text-gray-500 dark:text-gray-400 font-medium">
           純前端本地推論 • 隱私不外流
@@ -257,7 +257,7 @@ function navigateToTool(path: string) {
 
       <div v-if="isLoading" class="mt-4 flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400 font-bold">
         <span class="animate-spin inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full"></span>
-        <span>Magika AI 深度分析中...</span>
+        <span>Magika 深度分析中...</span>
       </div>
     </div>
 
@@ -302,7 +302,7 @@ function navigateToTool(path: string) {
           </div>
           <div class="text-amber-800 dark:text-amber-300 leading-relaxed">
             此檔案副檔名標註為 <code class="font-mono font-bold bg-amber-200/60 dark:bg-amber-900/60 px-1.5 py-0.5 rounded">{{ detection.detectedExtension || '無' }}</code>，
-            但 Magika AI 以 <strong class="font-bold">{{ detection.scorePercent }}</strong> 的信心度判定其真實格式為
+            但 Magika 以 <strong class="font-bold">{{ detection.scorePercent }}</strong> 的信心度判定其真實格式為
             <strong class="font-bold underline">{{ detection.name }}</strong> (標準副檔名為 {{ detection.extensions.join(', ') }})！
             請特別注意是否有格式偽裝。
           </div>
@@ -339,7 +339,7 @@ function navigateToTool(path: string) {
           </div>
 
           <div class="flex flex-col sm:items-end shrink-0">
-            <div class="text-xs text-gray-400 mb-0.5">AI 判定信心度</div>
+            <div class="text-xs text-gray-400 mb-0.5">判定信心度</div>
             <div class="text-2xl sm:text-3xl font-black font-mono" :class="getScoreColorClass(detection.score)">
               {{ detection.scorePercent }}
             </div>
@@ -416,7 +416,7 @@ function navigateToTool(path: string) {
         <!-- Top Probability Breakdown -->
         <div v-if="detection.topPredictions && detection.topPredictions.length > 1" class="space-y-2.5 pt-2">
           <div class="text-xs font-bold text-gray-700 dark:text-gray-300">
-            AI 候選機率分佈 (Top Predictions)
+            候選格式機率分佈 (Top Predictions)
           </div>
           <div class="space-y-2.5">
             <div

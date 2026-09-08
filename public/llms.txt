@@ -9,12 +9,10 @@
 
 ## Tools
 
-- [AI Background Remover](https://tool.david888.com/remove-background): Remove image background automatically with AI.
-- [AI File Type Detector](https://tool.david888.com/file-type-detector): Detect 200+ file formats and MIME types with >99% accuracy using Google Magika AI model in the browser.
-- [AI Lyric Player](https://tool.david888.com/lyric-player): Recognize or align lyrics with a browser-side Whisper model, with LRC upload, editing, and export.
 - [ASCII Art Text Generator](https://tool.david888.com/ascii-text-drawer): Create ASCII art text with many fonts and styles.
 - [Audio Editor](https://tool.david888.com/audio-editor): Edit audio files (trim, filters, effects) with visual waveform, completely client-side.
-- [Barcode Generator](https://tool.david888.com/barcode-generator): Advanced barcode generator supporting PDF417, Code 128, QR Code, Data Matrix and many more with full customization.
+- [Background Remover](https://tool.david888.com/remove-background): Automatically remove image backgrounds locally in your browser.
+- [Barcode Generator](https://tool.david888.com/barcode-generator): Advanced barcode generator supporting PDF417, Code 128, QR Code, Data Matrix and many more.
 - [Barcode Scanner](https://tool.david888.com/barcode-scanner): Scan 1D and 2D barcodes (EAN, UPC, Code128, etc.) using your camera or image upload
 - [Base64 file converter](https://tool.david888.com/base64-file-converter): Convert a string, file, or image into its base64 representation.
 - [Base64 string encoder/decoder](https://tool.david888.com/base64-string-converter): Simply encode and decode strings into their base64 representation.
@@ -37,7 +35,7 @@
 - [Device information](https://tool.david888.com/device-information): Get information about your current device (screen size, pixel-ratio, user agent, ...)
 - [Docker run to Docker compose converter](https://tool.david888.com/docker-run-to-docker-compose-converter): Transforms "docker run" commands into docker-compose files!
 - [Dog age calculator](https://tool.david888.com/dog-age-calculator): Convert a dog’s age to human age with size-specific formulas
-- [Email normalizer](https://tool.david888.com/email-normalizer): Normalize email addresses to a standard format for easier comparison. Useful for deduplication and data cleaning.
+- [Email Normalizer](https://tool.david888.com/email-normalizer): Normalize email addresses to a standard format for easier comparison and deduplication.
 - [Emoji picker](https://tool.david888.com/emoji-picker): Copy and paste emojis easily and get the unicode and code points value of each emoji.
 - [Encode/decode URL-formatted strings](https://tool.david888.com/url-encoder): Encode text to URL-encoded format (also known as "percent-encoded"), or decode from it.
 - [Encrypt / decrypt text](https://tool.david888.com/encryption): Encrypt clear text and decrypt ciphertext using crypto algorithms like AES, TripleDES, Rabbit or RC4.
@@ -45,6 +43,7 @@
 - [Escape HTML entities](https://tool.david888.com/html-entities): Escape or unescape HTML entities (replace characters like <,>, &, " and \' with their HTML version)
 - [ETA calculator](https://tool.david888.com/eta-calculator): An ETA (Estimated Time of Arrival) calculator to determine the approximate end time of a task, for example, the end time and duration of a file download.
 - [Fancy text generator](https://tool.david888.com/fancy-text): Convert text into multiple Unicode fancy styles for social posts or nicknames
+- [File Format Analyzer](https://tool.david888.com/file-type-detector): Detect 200+ file formats and MIME types with >99% accuracy using Google Magika in the browser.
 - [Git cheatsheet](https://tool.david888.com/git-memo): Git is a decentralized version management software. With this cheatsheet, you will have quick access to the most common git commands.
 - [Hash text](https://tool.david888.com/hash-text): Hash a text string using the function you need : MD5, SHA1, SHA256, SHA224, SHA512, SHA384, SHA3 or RIPEMD160
 - [Hmac generator](https://tool.david888.com/hmac-generator): Computes a hash-based message authentication code (HMAC) using a secret key and your favorite hashing function.
@@ -63,7 +62,7 @@
 - [JSON prettify and format](https://tool.david888.com/json-prettify): Prettify your JSON string into a friendly, human-readable format.
 - [JSON to CSV](https://tool.david888.com/json-to-csv): Convert JSON to CSV with automatic header detection.
 - [JSON to TOML](https://tool.david888.com/json-to-toml): Parse and convert JSON to TOML.
-- [JSON to XML](https://tool.david888.com/json-to-xml): Convert JSON to XML
+- [JSON to XML](https://tool.david888.com/json-to-xml): Convert JSON data into XML format.
 - [JSON to YAML converter](https://tool.david888.com/json-to-yaml-converter): Simply convert JSON to YAML with this online live converter.
 - [JWT parser](https://tool.david888.com/jwt-parser): Parse and decode your JSON Web Token (jwt) and display its content.
 - [Keycode info](https://tool.david888.com/keycode-info): Find the javascript keycode, code, location and modifiers of any pressed key.
@@ -72,7 +71,7 @@
 - [Lorem ipsum generator](https://tool.david888.com/lorem-ipsum-generator): Lorem ipsum is a placeholder text commonly used to demonstrate the visual form of a document or a typeface without relying on meaningful content
 - [MAC address generator](https://tool.david888.com/mac-address-generator): Enter the quantity and prefix. MAC addresses will be generated in your chosen case (uppercase or lowercase)
 - [MAC address lookup](https://tool.david888.com/mac-address-lookup): Find the vendor and manufacturer of a device by its MAC address.
-- [Markdown to HTML](https://tool.david888.com/markdown-to-html): Convert Markdown to Html and allow to print (as PDF)
+- [Markdown to HTML](https://tool.david888.com/markdown-to-html): Convert Markdown to HTML and allow printing or exporting as PDF.
 - [Math evaluator](https://tool.david888.com/math-evaluator): A calculator for evaluating mathematical expressions. You can use functions like sqrt, cos, sin, abs, etc.
 - [Mic & Camera Tester](https://tool.david888.com/mic-camera-tester): Test and preview your camera and microphone devices with visual feedback.
 - [MIME types](https://tool.david888.com/mime-types): Convert MIME types to file extensions and vice-versa.
@@ -80,7 +79,6 @@
 - [Online clock](https://tool.david888.com/online-clock): View current time with digital, analog, or flip styles plus timezone/seconds/date toggles
 - [Open graph meta generator](https://tool.david888.com/og-meta-generator): Generate open-graph and socials HTML meta tags for your website.
 - [OTP code generator](https://tool.david888.com/otp-generator): Generate and validate time-based OTP (one time password) for multi-factor authentication.
-- [Outlook Safelink decoder](https://tool.david888.com/safelink-decoder): Decode Outlook SafeLink links
 - [P2P File Transfer](https://tool.david888.com/p2p-file-transfer): Transfer files directly between devices using WebRTC.
 - [P2P Web Chat](https://tool.david888.com/p2p-chat): End-to-End Encrypted (E2EE) P2P chat tool using WebRTC, running entirely in browser with zero server storage.
 - [Pantone Palette Library](https://tool.david888.com/find-color): Pantone Color of the Year picks from 2024 to 2026 plus curated trend palettes. Includes Light/Dark previews, visible HEX codes, and one-click palette copy.
@@ -92,16 +90,18 @@
 - [QR Code checker](https://tool.david888.com/qr-checker): Scan and decode QR codes from images or your camera.
 - [QR Code generator](https://tool.david888.com/qrcode-generator): Generate and download a QR code for a URL (or just plain text), and customize the background and foreground colors.
 - [Random port generator](https://tool.david888.com/random-port-generator): Generate random port numbers outside of the range of "known" ports (0-1023).
-- [Regex cheatsheet](https://tool.david888.com/regex-memo): Javascript Regex/Regular Expression cheatsheet
-- [Regex Tester](https://tool.david888.com/regex-tester): Test your regular expressions with sample text.
+- [Regex Cheatsheet](https://tool.david888.com/regex-memo): JavaScript regular expression syntax, flags, and common pattern reference.
+- [Regex Tester](https://tool.david888.com/regex-tester): Test and debug regular expressions with real-time matching on sample text.
 - [Roman numeral converter](https://tool.david888.com/roman-numeral-converter): Convert Roman numerals to numbers and convert numbers to Roman numerals.
 - [RSA key pair generator](https://tool.david888.com/rsa-key-pair-generator): Generate a new random RSA private and public pem certificate key pair.
+- [SafeLink Decoder](https://tool.david888.com/safelink-decoder): Decode and extract the original destination URL from Outlook SafeLinks.
 - [Slugify string](https://tool.david888.com/slugify-string): Make a string url, filename and id safe.
 - [Social Post Formatter](https://tool.david888.com/post-writer): Format and beautify social media posts. Supports magazine style, broetry style, full-width punctuation conversion, and live FB/IG/Threads previews.
 - [SQL prettify and format](https://tool.david888.com/sql-prettify): Format and prettify your SQL queries online (it supports various SQL dialects).
 - [String obfuscator](https://tool.david888.com/string-obfuscator): Obfuscate a string (like a secret, an IBAN, or a token) to make it shareable and identifiable without revealing its content.
 - [SVG placeholder generator](https://tool.david888.com/svg-placeholder-generator): Generate svg images to use as a placeholder in your applications.
 - [SVG Tools](https://tool.david888.com/svg-tools): View, edit, and optimize SVG code with live preview.
+- [Synced Lyrics Player](https://tool.david888.com/lyric-player): Transcribe or align synchronized lyrics with a browser-side speech model, with LRC upload, editing, and playback.
 - [Temperature converter](https://tool.david888.com/temperature-converter): Degrees temperature conversions for Kelvin, Celsius, Fahrenheit, Rankine, Delisle, Newton, Réaumur, and Rømer.
 - [Text diff](https://tool.david888.com/text-diff): Compare two texts and see the differences between them.
 - [Text statistics](https://tool.david888.com/text-statistics): Get information about a text, the number of characters, the number of words, its size in bytes, ...
@@ -121,7 +121,7 @@
 - [WiFi QR Code generator](https://tool.david888.com/wifi-qrcode-generator): Generate and download QR codes for quick connections to WiFi networks.
 - [World clock](https://tool.david888.com/world-clock): View current time across popular cities and switch 12h/24h format
 - [XML formatter](https://tool.david888.com/xml-formatter): Prettify your XML string into a friendly, human-readable format.
-- [XML to JSON](https://tool.david888.com/xml-to-json): Convert XML to JSON
+- [XML to JSON](https://tool.david888.com/xml-to-json): Convert XML documents into JSON format.
 - [YAML prettify and format](https://tool.david888.com/yaml-prettify): Prettify your YAML string into a friendly, human-readable format.
 - [YAML to JSON converter](https://tool.david888.com/yaml-to-json-converter): Simply convert YAML to JSON with this online live converter.
 - [YAML to TOML](https://tool.david888.com/yaml-to-toml): Parse and convert YAML to TOML.

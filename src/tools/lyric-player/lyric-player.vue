@@ -449,7 +449,7 @@ onBeforeUnmount(() => {
           <template #header>
             <div class="section-title">
               <n-icon :component="Microphone" />
-              <span>AI 辨識與對齊</span>
+              <span>語音辨識與對齊</span>
             </div>
           </template>
 
@@ -473,7 +473,7 @@ onBeforeUnmount(() => {
               <n-select v-model:value="selectedLanguage" :options="languageOptions" />
             </div>
             <n-button type="primary" :disabled="!canTranscribe" :loading="isRecognizing" @click="startRecognition">
-              AI 辨識歌詞
+              語音辨識歌詞
             </n-button>
           </div>
 
@@ -510,7 +510,7 @@ onBeforeUnmount(() => {
         </template>
 
         <div v-if="!hasLyrics" class="empty-state">
-          上傳音訊後，可直接按「AI 辨識歌詞」，或先貼歌詞再做時間對齊。
+          上傳音訊後，可直接按「語音辨識歌詞」，或先貼歌詞再做時間對齊。
         </div>
 
         <div v-else class="lyrics-list">
