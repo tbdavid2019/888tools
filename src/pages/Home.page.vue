@@ -6,9 +6,20 @@ import Draggable from 'vuedraggable';
 import ColoredCard from '../components/ColoredCard.vue';
 import ToolCard from '../components/ToolCard.vue';
 import { useToolStore } from '@/tools/tools.store';
+import { useStyleStore } from '@/stores/style.store';
+import { kanagawaDarkPalette, kanagawaLightPalette } from '@/theme/palette';
 import { config } from '@/config';
 
 const toolStore = useToolStore();
+const styleStore = useStyleStore();
+const activePalette = computed(() => (styleStore.isDarkTheme ? kanagawaDarkPalette : kanagawaLightPalette));
+
+const headerBackgroundColor = computed(() => {
+  const opacity = styleStore.isDarkTheme
+    ? Math.max(styleStore.cardOpacity, 0.88)
+    : Math.max(styleStore.cardOpacity, 0.94);
+  return `rgba(${activePalette.value.glassBackgroundRgb}, ${opacity})`;
+});
 
 const { locale } = useI18n();
 
@@ -86,12 +97,14 @@ function onUpdateFavoriteTools() {
 
     <transition name="height">
       <div v-if="toolStore.favoriteTools.length > 0">
-        <h3 class="section-title">
-          {{ $t('home.categories.favoriteTools') }}
-          <c-tooltip :tooltip="$t('home.categories.favoritesDndToolTip')">
-            <n-icon :component="IconDragDrop" size="18" />
-          </c-tooltip>
-        </h3>
+        <div class="section-header">
+          <h3 class="section-title">
+            <span>{{ $t('home.categories.favoriteTools') }}</span>
+            <c-tooltip :tooltip="$t('home.categories.favoritesDndToolTip')">
+              <n-icon :component="IconDragDrop" size="18" />
+            </c-tooltip>
+          </h3>
+        </div>
         <Draggable
           :list="favoriteTools"
           class="grid grid-cols-1 gap-14px lg:grid-cols-3 md:grid-cols-3 sm:grid-cols-2 xl:grid-cols-4"
@@ -109,17 +122,17 @@ function onUpdateFavoriteTools() {
     <!-- Recently Used Tools -->
     <transition name="height">
       <div v-if="toolStore.recentTools.length > 0">
-        <h3 class="section-title flex items-center justify-between">
-          <span class="flex items-center gap-1.5">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div class="section-header">
+          <h3 class="section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5 text-primary inline-block shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            {{ locale.startsWith('zh') ? '最近使用的工具' : 'Recently Used Tools' }}
-          </span>
-          <button class="text-xs text-gray-400 hover:text-primary transition-colors font-normal cursor-pointer" @click="toolStore.clearRecentTools">
+            <span>{{ locale.startsWith('zh') ? '最近使用的工具' : 'Recently Used Tools' }}</span>
+          </h3>
+          <button class="clear-recent-btn" @click="toolStore.clearRecentTools">
             {{ locale.startsWith('zh') ? '清空紀錄' : 'Clear' }}
           </button>
-        </h3>
+        </div>
         <div class="grid grid-cols-1 gap-14px lg:grid-cols-3 md:grid-cols-3 sm:grid-cols-2 xl:grid-cols-4">
           <ToolCard v-for="tool in toolStore.recentTools" :key="tool.name" :tool="tool" />
         </div>
@@ -127,19 +140,25 @@ function onUpdateFavoriteTools() {
     </transition>
 
     <div v-if="toolStore.newTools.length > 0">
-      <h3 class="section-title">
-        {{ t('home.categories.newestTools') }}
-      </h3>
+      <div class="section-header">
+        <h3 class="section-title">
+          <span>{{ t('home.categories.newestTools') }}</span>
+        </h3>
+      </div>
       <div class="grid grid-cols-1 gap-14px lg:grid-cols-3 md:grid-cols-3 sm:grid-cols-2 xl:grid-cols-4">
         <ToolCard v-for="tool in toolStore.newTools" :key="tool.name" :tool="tool" />
       </div>
     </div>
 
-    <h3 class="section-title">
-      {{ $t('home.categories.allTools') }}
-    </h3>
-    <div class="grid grid-cols-1 gap-14px lg:grid-cols-3 md:grid-cols-3 sm:grid-cols-2 xl:grid-cols-4">
-      <ToolCard v-for="tool in toolStore.tools" :key="tool.name" :tool="tool" />
+    <div>
+      <div class="section-header">
+        <h3 class="section-title">
+          <span>{{ $t('home.categories.allTools') }}</span>
+        </h3>
+      </div>
+      <div class="grid grid-cols-1 gap-14px lg:grid-cols-3 md:grid-cols-3 sm:grid-cols-2 xl:grid-cols-4">
+        <ToolCard v-for="tool in toolStore.tools" :key="tool.name" :tool="tool" />
+      </div>
     </div>
   </div>
 </template>
@@ -180,19 +199,57 @@ function onUpdateFavoriteTools() {
   }
 }
 
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 32px;
+  margin-bottom: 14px;
+}
+
 .section-title {
-  margin-top: 28px;
-  margin-bottom: 12px;
-  color: #1f2937;
-  font-size: 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-radius: 9999px;
+  font-size: 1.15rem;
   font-weight: 700;
   letter-spacing: 0.02em;
-  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+  background-color: v-bind('headerBackgroundColor');
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid v-bind('activePalette.overlayBorder');
+  box-shadow: v-bind('activePalette.shadow');
+  color: v-bind('activePalette.heading');
+  line-height: 1.5;
+  transition: all 0.3s ease;
+}
 
-  :deep(.dark) &,
-  html.dark & {
-    color: #f3f4f6;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+.clear-recent-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 14px;
+  border-radius: 9999px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  background-color: v-bind('headerBackgroundColor');
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid v-bind('activePalette.overlayBorder');
+  box-shadow: v-bind('activePalette.shadow');
+  color: v-bind('activePalette.textMuted');
+  transition: all 0.2s ease;
+
+  &:hover {
+    color: v-bind('activePalette.button');
+    border-color: v-bind('activePalette.button');
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
   }
 }
 </style>

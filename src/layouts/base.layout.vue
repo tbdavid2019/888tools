@@ -64,9 +64,6 @@ const breadcrumbItems = computed(() => {
       <div class="sider-header">
         <RouterLink to="/" class="hero-wrapper" :class="{ collapsed: styleStore.isMenuCollapsed }">
           <div class="text-wrapper">
-            <div v-if="!styleStore.isMenuCollapsed" class="eyebrow">
-              Workspace
-            </div>
             <div class="title">
               {{ styleStore.isMenuCollapsed ? '888' : '888 TOOL' }}
             </div>
@@ -290,14 +287,6 @@ const breadcrumbItems = computed(() => {
     padding: 2px 0;
     color: #fffaf0;
     text-shadow: 0 2px 10px rgba(0, 0, 0, 0.22);
-
-    .eyebrow {
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-      color: rgba(255, 249, 242, 0.8);
-    }
 
     .title {
       font-size: clamp(17px, 1.35vw, 22px);
