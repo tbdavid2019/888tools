@@ -46,6 +46,44 @@
     />
     <meta name="twitter:image" content="banner.png?v=3" />
     <meta name="twitter:image:alt" content="888 TOOL" />
+    <script>
+      (function () {
+        var isReloading = false;
+        function autoRecover() {
+          if (isReloading) return;
+          isReloading = true;
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function (regs) {
+              for (var i = 0; i < regs.length; i++) regs[i].unregister();
+              if (window.caches) {
+                caches.keys().then(function (names) {
+                  for (var j = 0; j < names.length; j++) caches.delete(names[j]);
+                  window.location.reload(true);
+                });
+              } else {
+                window.location.reload(true);
+              }
+            }).catch(function () {
+              window.location.reload(true);
+            });
+          } else {
+            window.location.reload(true);
+          }
+        }
+
+        window.addEventListener('error', function (e) {
+          if (e.target && e.target.tagName === 'SCRIPT' && e.target.src && e.target.src.indexOf('/assets/') !== -1) {
+            console.warn('[888tools] Stale script load error, auto-recovering...', e.target.src);
+            autoRecover();
+          }
+        }, true);
+
+        window.addEventListener('vite:preloadError', function (e) {
+          console.warn('[888tools] Vite preload error, auto-recovering...', e);
+          autoRecover();
+        });
+      })();
+    </script>
   </head>
   <body>
     <div id="app"></div>
