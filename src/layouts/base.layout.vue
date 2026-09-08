@@ -62,16 +62,6 @@ const breadcrumbItems = computed(() => {
   <MenuLayout class="menu-layout" :class="{ isSmallScreen: styleStore.isSmallScreen, isCollapsed: styleStore.isMenuCollapsed }">
     <template #sider>
       <div class="sider-header">
-        <RouterLink to="/" class="hero-wrapper" :class="{ collapsed: styleStore.isMenuCollapsed }">
-          <div class="text-wrapper">
-            <div class="title">
-              {{ styleStore.isMenuCollapsed ? '888' : '888 TOOL' }}
-            </div>
-            <div v-if="!styleStore.isMenuCollapsed" class="subtitle">
-              {{ $t('home.subtitle') }}
-            </div>
-          </div>
-        </RouterLink>
 
         <c-tooltip
           :tooltip="styleStore.isMenuCollapsed ? $t('home.toggleMenu') : $t('home.toggleMenu')"
@@ -247,64 +237,10 @@ const breadcrumbItems = computed(() => {
 }
 
 .sider-content {
-  padding: 6px 14px 28px;
+  padding: 14px 14px 28px;
 
   &.collapsed {
-    padding: 4px 8px 20px;
-  }
-}
-
-.hero-wrapper {
-  position: relative;
-  display: block;
-  left: 16px;
-  right: 32px;
-  z-index: 10;
-  min-height: 62px;
-  text-decoration: none;
-  margin: 10px 32px 0 16px;
-
-  &.collapsed {
-    min-height: 50px;
-    margin: 8px 28px 0 8px;
-
-    .text-wrapper {
-      align-items: center;
-      text-align: center;
-      padding: 2px 4px;
-    }
-
-    .title {
-      font-size: 16px;
-      letter-spacing: 0.08em;
-    }
-  }
-
-  .text-wrapper {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    padding: 2px 0;
-    color: #fffaf0;
-    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.22);
-
-    .title {
-      font-size: clamp(17px, 1.35vw, 22px);
-      font-weight: 800;
-      color: #fffdf7;
-      letter-spacing: 0.03em;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .subtitle {
-      max-width: none;
-      white-space: nowrap;
-      font-size: 12px;
-      line-height: 1.4;
-      color: rgba(255, 249, 242, 0.94);
-    }
+    padding: 14px 8px 20px;
   }
 }
 
