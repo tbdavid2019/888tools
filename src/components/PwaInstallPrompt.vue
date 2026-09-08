@@ -28,13 +28,19 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <n-modal v-model:show="installPrompt.isVisible.value" :mask-closable="false">
+  <n-modal
+    v-model:show="installPrompt.isVisible.value"
+    :mask-closable="true"
+    @update:show="(val: boolean) => { if (!val) installPrompt.dismiss(); }"
+  >
     <n-card
       class="pwa-install-prompt"
       title="安裝 888 TOOL"
       :bordered="false"
       role="dialog"
       aria-modal="true"
+      closable
+      @close="installPrompt.dismiss"
     >
       <p v-if="usesManualInstructions && isAppleMobile">
         請按 Safari 的「分享」按鈕，選擇「加入主畫面」完成安裝。
