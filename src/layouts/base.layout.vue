@@ -2,7 +2,7 @@
 import { NIcon } from 'naive-ui';
 
 import { RouterLink } from 'vue-router';
-import { Dots, Home2, LayoutSidebarLeftCollapse, LayoutSidebarLeftExpand, Menu2 } from '@vicons/tabler';
+import { Home2, LayoutSidebarLeftCollapse, LayoutSidebarLeftExpand, Menu2 } from '@vicons/tabler';
 
 import { storeToRefs } from 'pinia';
 import MenuLayout from '../components/MenuLayout.vue';
@@ -79,36 +79,21 @@ const breadcrumbItems = computed(() => {
         </c-tooltip>
 
         <div class="sider-content" :class="{ collapsed: styleStore.isMenuCollapsed }">
-        <div v-if="!styleStore.isMenuCollapsed" class="sider-controls">
+        <div v-if="!styleStore.isMenuCollapsed" class="sider-controls sider-card">
           <div class="sider-controls-row">
-            <c-button to="/" circle variant="text" :aria-label="$t('home.home')">
-              <NIcon size="22" :component="Home2" />
-            </c-button>
+            <c-tooltip :tooltip="$t('home.home')" position="bottom">
+              <c-button to="/" circle variant="text" :aria-label="$t('home.home')">
+                <NIcon size="22" :component="Home2" />
+              </c-button>
+            </c-tooltip>
 
-            <c-tooltip :tooltip="$t('home.uiLib')" position="right">
-              <c-button v-if="config.app.env === 'development'" to="/c-lib" circle variant="text" :aria-label="$t('home.uiLib')">
+            <c-tooltip v-if="config.app.env === 'development'" :tooltip="$t('home.uiLib')" position="bottom">
+              <c-button to="/c-lib" circle variant="text" :aria-label="$t('home.uiLib')">
                 <icon-mdi:brush-variant text-18px />
               </c-button>
             </c-tooltip>
 
             <NavbarButtons />
-
-            <n-popover trigger="click" placement="bottom-end" :show-arrow="false">
-              <template #trigger>
-                <c-tooltip tooltip="More" position="right">
-                  <c-button circle variant="text" aria-label="More">
-                    <NIcon size="22" :component="Dots" />
-                  </c-button>
-                </c-tooltip>
-              </template>
-
-              <div class="locale-popover-content">
-                <div class="locale-popover-title">
-                  Language
-                </div>
-                <locale-selector />
-              </div>
-            </n-popover>
           </div>
 
           <command-palette />
@@ -121,36 +106,23 @@ const breadcrumbItems = computed(() => {
             </c-button>
           </c-tooltip>
 
-          <c-tooltip :tooltip="$t('home.uiLib')" position="right">
-            <c-button v-if="config.app.env === 'development'" to="/c-lib" circle variant="text" :aria-label="$t('home.uiLib')">
+          <c-tooltip v-if="config.app.env === 'development'" :tooltip="$t('home.uiLib')" position="right">
+            <c-button to="/c-lib" circle variant="text" :aria-label="$t('home.uiLib')">
               <icon-mdi:brush-variant text-18px />
             </c-button>
           </c-tooltip>
 
           <command-palette v-if="!styleStore.isSmallScreen" compact />
           <NavbarButtons />
-
-          <n-popover trigger="click" placement="right" :show-arrow="false">
-            <template #trigger>
-              <c-button circle variant="text" aria-label="More">
-                <NIcon size="20" :component="Dots" />
-              </c-button>
-            </template>
-
-            <div class="locale-popover-content">
-              <div class="locale-popover-title">
-                Language
-              </div>
-              <locale-selector />
-            </div>
-          </n-popover>
         </div>
 
-        <CollapsibleToolMenu :tools-by-category="tools" />
-
-        <div v-if="!styleStore.isMenuCollapsed" class="tool-count">
-          {{ $t('home.availableApps', { count: allToolsCount }) }}
+        <div v-if="!styleStore.isMenuCollapsed" class="sider-menu-card sider-card">
+          <CollapsibleToolMenu :tools-by-category="tools" />
+          <div class="tool-count">
+            {{ $t('home.availableApps', { count: allToolsCount }) }}
+          </div>
         </div>
+        <CollapsibleToolMenu v-else :tools-by-category="tools" />
 
         <AppearanceSettings />
       </div>
@@ -169,23 +141,7 @@ const breadcrumbItems = computed(() => {
 
         <command-palette compact />
 
-        <n-popover trigger="click" placement="bottom-end" :show-arrow="false">
-          <template #trigger>
-            <c-button circle variant="text" aria-label="More">
-              <NIcon size="22" :component="Dots" />
-            </c-button>
-          </template>
-
-          <div class="locale-popover-content">
-            <div class="locale-popover-title">
-              Language
-            </div>
-            <locale-selector />
-            <div class="mobile-popover-buttons">
-              <NavbarButtons />
-            </div>
-          </div>
-        </n-popover>
+        <NavbarButtons />
       </div>
 
       <div class="page-breadcrumb">
@@ -244,27 +200,40 @@ const breadcrumbItems = computed(() => {
   }
 }
 
+.sider-card {
+  border-radius: 20px;
+  background: v-bind('styleStore.isDarkTheme ? "rgba(42, 42, 55, 0.78)" : "rgba(220, 215, 186, 0.82)"');
+  border: 1px solid v-bind('activePalette.border');
+  box-shadow: v-bind('activePalette.shadow');
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
 .sider-controls {
   margin: 0 0 10px;
   padding: 12px;
-  border-radius: 20px;
-  background-color: v-bind('layoutBackgroundColor');
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  box-shadow: v-bind('activePalette.shadow');
-  border: 1px solid v-bind('activePalette.overlayBorder');
+}
+
+.sider-menu-card {
+  margin: 0 0 10px;
+  padding: 12px 10px 6px;
 }
 
 .sider-controls-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: space-around;
   gap: 8px;
   margin-bottom: 10px;
 }
 
 .sider-controls-collapsed {
   margin: 0 0 10px;
+  padding: 10px 6px;
+  border-radius: 20px;
+  background: v-bind('styleStore.isDarkTheme ? "rgba(42, 42, 55, 0.78)" : "rgba(220, 215, 186, 0.82)"');
+  border: 1px solid v-bind('activePalette.border');
+  box-shadow: v-bind('activePalette.shadow');
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -329,36 +298,13 @@ const breadcrumbItems = computed(() => {
   opacity: 0.45;
 }
 
-.locale-popover-content {
-  width: 180px;
-  padding: 12px;
-  border-radius: 16px;
-  background: rgba(24, 24, 32, 0.96);
-  border: 1px solid v-bind('activePalette.overlayBorder');
-  box-shadow: v-bind('activePalette.shadow');
-}
-
-.locale-popover-title {
-  margin-bottom: 8px;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: v-bind('activePalette.textMuted');
-}
-
-.mobile-popover-buttons {
-  margin-top: 10px;
-  display: flex;
-  justify-content: center;
-}
-
 .tool-count {
-  margin-top: 18px;
+  margin-top: 10px;
   text-align: center;
   font-size: 13px;
   color: v-bind('activePalette.textMuted');
-  padding: 8px 8px 18px;
+  padding: 8px 8px 6px;
+  border-top: 1px solid v-bind('styleStore.isDarkTheme ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)"');
 }
 
 .sider-container {

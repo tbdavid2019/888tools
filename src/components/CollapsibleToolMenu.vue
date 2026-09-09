@@ -38,6 +38,7 @@ function toggleCategoryCollapse({ name }: { name: string }) {
 const menuOptions = computed(() =>
   toolsByCategory.value.map(({ name, components }) => ({
     name,
+    count: components.length,
     isCollapsed: collapsedCategories.value[name] ?? true,
     tools: components.map(tool => ({
       label: makeLabel(tool),
@@ -93,28 +94,30 @@ watch(
   </div>
 
   <template v-else>
-    <div v-for="{ name, tools, isCollapsed } of menuOptions" :key="name">
-      <div class="menu-category" @click="toggleCategoryCollapse({ name })">
-        <span :class="{ 'rotate-0': isCollapsed, 'rotate-90': !isCollapsed }" text-16px lh-1 op-50 transition-transform>
-          <icon-mdi-chevron-right />
-        </span>
-
-        <span class="menu-category-label">
-          {{ name }}
-        </span>
+    <div v-for="{ name, tools, count, isCollapsed } of menuOptions" :key="name" class="category-group">
+      <div
+        class="menu-category-btn"
+        :class="{ 'is-open': !isCollapsed }"
+        @click="toggleCategoryCollapse({ name })"
+      >
+        <div class="category-left">
+          <span class="category-chevron" :class="{ 'is-rotated': !isCollapsed }">
+            <icon-mdi-chevron-right />
+          </span>
+          <span class="menu-category-label">{{ name }}</span>
+        </div>
+        <span class="category-count-pill">{{ count }}</span>
       </div>
 
       <n-collapse-transition :show="!isCollapsed">
-        <div class="menu-wrapper">
-          <div class="toggle-bar" @click="toggleCategoryCollapse({ name })" />
-
+        <div class="menu-items-container">
           <n-menu
-            class="menu"
+            class="modern-menu"
             :value="route.path"
             :collapsed-width="74"
-            :collapsed-icon-size="22"
+            :collapsed-icon-size="20"
             :options="tools"
-            :indent="8"
+            :indent="6"
             :default-expand-all="true"
           />
         </div>
@@ -128,69 +131,117 @@ watch(
   padding-top: 8px;
 }
 
-.menu-wrapper {
+.category-group {
+  margin-bottom: 4px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.menu-category-btn {
   display: flex;
-  flex-direction: row;
-  margin-bottom: 8px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  color: v-bind('activePalette.text');
+  opacity: 0.85;
 
-  .menu {
-    flex: 1;
-    margin-bottom: 5px;
+  &:hover {
+    opacity: 1;
+    background: v-bind('styleStore.isDarkTheme ? "rgba(126, 156, 216, 0.12)" : "rgba(75, 103, 161, 0.1)"');
+  }
 
-    ::v-deep(.n-menu-item-content-header) {
-      font-size: 18px;
-      line-height: 1.55;
-      font-weight: 550;
-    }
+  &.is-open {
+    opacity: 1;
+  }
+}
 
-    ::v-deep(.n-menu-item-content::before) {
-      left: 0;
-      right: 13px;
+.category-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.category-chevron {
+  display: inline-flex;
+  font-size: 16px;
+  line-height: 1;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0.6;
+
+  &.is-rotated {
+    transform: rotate(90deg);
+    opacity: 0.95;
+  }
+}
+
+.menu-category-label {
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+}
+
+.category-count-pill {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 10px;
+  background: v-bind('styleStore.isDarkTheme ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)"');
+  color: v-bind('activePalette.textMuted');
+  line-height: 1.4;
+}
+
+.menu-items-container {
+  padding-left: 8px;
+  margin: 2px 0 6px;
+
+  .modern-menu {
+    ::v-deep(.n-menu-item) {
+      margin-top: 2px;
+      margin-bottom: 2px;
     }
 
     ::v-deep(.n-menu-item-content) {
-      min-height: 42px;
+      min-height: 38px;
+      border-radius: 10px;
+      padding-left: 8px !important;
+      padding-right: 8px !important;
+      transition: all 0.15s ease;
+
+      &::before {
+        left: 0;
+        right: 0;
+        border-radius: 10px;
+      }
+    }
+
+    ::v-deep(.n-menu-item-content-header) {
+      font-size: 14px;
+      line-height: 1.45;
+      font-weight: 500;
     }
 
     ::v-deep(.n-menu-item-content--selected) {
-      color: v-bind('selectedItemTextColor');
-      font-weight: 700;
-    }
-
-    ::v-deep(.n-menu-item-content--selected::before) {
-      background-color: v-bind('selectedItemBackground') !important;
-    }
-
-    ::v-deep(.n-menu-item-content--selected .n-menu-item-content-header) {
       color: v-bind('selectedItemTextColor') !important;
       font-weight: 700;
-    }
 
-    ::v-deep(.n-menu-item-content--selected .n-menu-item-content__icon) {
-      color: v-bind('selectedItemTextColor') !important;
-    }
-  }
+      &::before {
+        background-color: v-bind('selectedItemBackground') !important;
+      }
 
-  .toggle-bar {
-    width: 24px;
-    opacity: 0.1;
-    transition: opacity ease 0.2s;
-    position: relative;
-    cursor: pointer;
+      .n-menu-item-content-header {
+        color: v-bind('selectedItemTextColor') !important;
+        font-weight: 650;
+      }
 
-    &::before {
-      width: 2px;
-      height: 100%;
-      content: ' ';
-      background-color: v-bind('activePalette.textMuted');
-      border-radius: 2px;
-      position: absolute;
-      top: 0;
-      left: 14px;
-    }
-
-    &:hover {
-      opacity: 0.5;
+      .n-menu-item-content__icon {
+        color: v-bind('selectedItemTextColor') !important;
+      }
     }
   }
 }
@@ -215,22 +266,5 @@ watch(
   ::v-deep(.n-menu-item-content--selected .n-menu-item-content__icon) {
     color: v-bind('selectedItemTextColor') !important;
   }
-}
-
-.menu-category {
-  margin-top: 16px;
-  margin-left: 8px;
-  display: flex;
-  cursor: pointer;
-  align-items: center;
-  opacity: 0.72;
-}
-
-.menu-category-label {
-  margin-left: 10px;
-  font-size: 18px;
-  line-height: 1.55;
-  font-weight: 650;
-  letter-spacing: 0.02em;
 }
 </style>
