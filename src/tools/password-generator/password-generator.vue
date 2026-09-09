@@ -86,9 +86,8 @@ function getItemLabel(item: PasswordItem) {
 }
 
 function getCategoryTitle(cat: PasswordCategory) {
-  const firstKey = cat.items[0]?.categoryKey;
-  if (firstKey) {
-    return t(`tools.password-generator.categories.${firstKey}`, isZh.value ? cat.title : cat.titleEn);
+  if (cat.key) {
+    return t(`tools.password-generator.categories.${cat.key}`, isZh.value ? cat.title : cat.titleEn);
   }
   return isZh.value ? cat.title : cat.titleEn;
 }

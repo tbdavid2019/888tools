@@ -14,6 +14,7 @@ export interface PasswordItem {
 }
 
 export interface PasswordCategory {
+  key: string;
   title: string;
   titleEn: string;
   items: PasswordItem[];
@@ -241,6 +242,7 @@ export function generateAllPasswordCategories(options: {
 
   return [
     {
+      key: 'alphaNumSym',
       title: '字母、數字與特殊符號 (Alphabets, Numbers and Symbols)',
       titleEn: 'Alphabets, Numbers and Symbols',
       items: [
@@ -249,6 +251,7 @@ export function generateAllPasswordCategories(options: {
       ],
     },
     {
+      key: 'alphaNum',
       title: '字母與數字 (Alphabets & Numbers / 無符號)',
       titleEn: 'Alphabets & Numbers',
       items: [
@@ -257,6 +260,7 @@ export function generateAllPasswordCategories(options: {
       ],
     },
     {
+      key: 'alphaSym',
       title: '字母與特殊符號 (Alphabets & Symbols)',
       titleEn: 'Alphabets & Symbols',
       items: [
@@ -264,6 +268,7 @@ export function generateAllPasswordCategories(options: {
       ],
     },
     {
+      key: 'symbols',
       title: '純特殊符號 (Symbols only)',
       titleEn: 'Symbols',
       items: [
@@ -271,6 +276,7 @@ export function generateAllPasswordCategories(options: {
       ],
     },
     {
+      key: 'alphabets',
       title: '純英文字母 (Alphabets only)',
       titleEn: 'Alphabets',
       items: [
@@ -280,6 +286,7 @@ export function generateAllPasswordCategories(options: {
       ],
     },
     {
+      key: 'numbers',
       title: '純數字 PIN (Numbers only)',
       titleEn: 'Numbers',
       items: [
@@ -288,6 +295,7 @@ export function generateAllPasswordCategories(options: {
       ],
     },
     {
+      key: 'passphrase',
       title: '好記單字密語 (Passphrase / 口令)',
       titleEn: 'Memorable Passphrase',
       items: [
