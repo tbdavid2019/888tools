@@ -153,6 +153,12 @@ const contentFlexBasis = computed(() => '520px');
   ::v-deep(& > *) {
     flex: 0 1 v-bind('contentFlexBasis');
   }
+
+  ::v-deep(& > *.w-full),
+  ::v-deep(& > [class*="w-full"]) {
+    flex: 1 1 100% !important;
+    max-width: 100% !important;
+  }
 }
 
 .tool-layout {

@@ -62,22 +62,6 @@ const breadcrumbItems = computed(() => {
   <MenuLayout class="menu-layout" :class="{ isSmallScreen: styleStore.isSmallScreen, isCollapsed: styleStore.isMenuCollapsed }">
     <template #sider>
       <div class="sider-container">
-        <c-tooltip
-          :tooltip="styleStore.isMenuCollapsed ? $t('home.toggleMenu') : $t('home.toggleMenu')"
-          position="right"
-          class="sider-toggle-tooltip"
-        >
-          <c-button
-            class="sider-toggle"
-            circle
-            variant="text"
-            :aria-label="$t('home.toggleMenu')"
-            @click="styleStore.isMenuCollapsed = !styleStore.isMenuCollapsed"
-          >
-            <NIcon size="20" :component="styleStore.isMenuCollapsed ? LayoutSidebarLeftExpand : LayoutSidebarLeftCollapse" />
-          </c-button>
-        </c-tooltip>
-
         <div class="sider-content" :class="{ collapsed: styleStore.isMenuCollapsed }">
         <div v-if="!styleStore.isMenuCollapsed" class="sider-controls sider-card">
           <div class="sider-controls-row">
@@ -94,12 +78,34 @@ const breadcrumbItems = computed(() => {
             </c-tooltip>
 
             <NavbarButtons />
+
+            <c-tooltip :tooltip="$t('home.toggleMenu')" position="bottom">
+              <c-button
+                circle
+                variant="text"
+                :aria-label="$t('home.toggleMenu')"
+                @click="styleStore.isMenuCollapsed = !styleStore.isMenuCollapsed"
+              >
+                <NIcon size="22" :component="LayoutSidebarLeftCollapse" />
+              </c-button>
+            </c-tooltip>
           </div>
 
           <command-palette />
         </div>
 
         <div v-else class="sider-controls-collapsed">
+          <c-tooltip :tooltip="$t('home.toggleMenu')" position="right">
+            <c-button
+              circle
+              variant="text"
+              :aria-label="$t('home.toggleMenu')"
+              @click="styleStore.isMenuCollapsed = !styleStore.isMenuCollapsed"
+            >
+              <NIcon size="20" :component="LayoutSidebarLeftExpand" />
+            </c-button>
+          </c-tooltip>
+
           <c-tooltip :tooltip="$t('home.home')" position="right">
             <c-button to="/" circle variant="text" :aria-label="$t('home.home')">
               <NIcon size="20" :component="Home2" />
@@ -312,25 +318,7 @@ const breadcrumbItems = computed(() => {
   height: 100%;
 }
 
-.sider-toggle-tooltip {
-  position: absolute !important;
-  top: 14px;
-  right: -14px;
-  z-index: 50;
-}
-
-.sider-toggle {
-  color: rgba(255, 249, 242, 0.94);
-  background: rgba(20, 28, 30, 0.78);
-  backdrop-filter: blur(8px);
-  border: 1px solid v-bind('activePalette.overlayBorder');
-  box-shadow: v-bind('activePalette.shadow');
-}
-
 @media (max-width: 900px) {
-  .sider-toggle-tooltip {
-    display: none;
-  }
 
   .sider-content {
     padding-top: 6px;
