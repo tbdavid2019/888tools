@@ -13,7 +13,6 @@ const { availableLocales, locale } = useI18n();
 const localeLabels: Record<string, string> = {
   'zh-TW': '繁體中文',
   en: 'English',
-  zh: '简体中文',
   de: 'Deutsch',
   es: 'Español',
   fr: 'Français',
@@ -26,8 +25,7 @@ const localeLabels: Record<string, string> = {
 
 const nextLocaleMap: Record<string, string> = {
   'zh-TW': 'en',
-  en: 'zh',
-  zh: 'zh-TW',
+  en: 'zh-TW',
 };
 
 const currentLocaleName = computed(() => localeLabels[locale.value] ?? locale.value);
@@ -35,15 +33,12 @@ const nextLocale = computed(() => nextLocaleMap[locale.value] ?? 'zh-TW');
 
 const localeTooltip = computed(() => {
   if (locale.value === 'zh-TW') {
-    return '語言：繁體中文（點擊切換為 English，右鍵可選全部語言）';
+    return '語言：繁體中文（點擊切換為 English，右鍵可選其他語言）';
   }
   if (locale.value === 'en') {
-    return 'Language: English (Click to switch to 简体中文, right-click for all)';
+    return 'Language: English (Click to switch to 繁體中文, right-click for all)';
   }
-  if (locale.value === 'zh') {
-    return '语言：简体中文（点击切换为 繁體中文，右键可选全部语言）';
-  }
-  return `語言：${currentLocaleName.value}（點擊切換為 繁體中文）`;
+  return `語言：${currentLocaleName.value}（點擊切換為 繁體中文，右鍵可選其他語言）`;
 });
 
 function cycleLocale() {

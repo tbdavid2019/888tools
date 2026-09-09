@@ -210,7 +210,16 @@ const { copy } = useClipboard();
       </n-gi>
 
       <n-gi>
-        <div ref="previewRef" id="qr-preview" class="preview-box" />
+        <div ref="previewRef" id="qr-preview" class="preview-box">
+          <div v-if="!scanning" class="preview-placeholder">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-300">鏡頭掃描即時畫面</p>
+            <p class="text-xs text-gray-400 mt-1">點擊上方「開啟相機掃描」以啟動鏡頭</p>
+          </div>
+        </div>
       </n-gi>
     </n-grid>
   </c-card>
@@ -220,9 +229,23 @@ const { copy } = useClipboard();
 .preview-box {
   width: 100%;
   aspect-ratio: 1 / 1;
-  background: #f5f5f5;
-  border: 1px dashed #d9d9d9;
-  border-radius: 8px;
+  min-height: 260px;
+  background: rgba(128, 128, 128, 0.05);
+  border: 1px dashed rgba(128, 128, 128, 0.3);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.preview-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  text-align: center;
 }
 .results {
   display: flex;

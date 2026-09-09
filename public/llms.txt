@@ -82,6 +82,7 @@
 - [P2P File Transfer](https://tool.david888.com/p2p-file-transfer): Transfer files directly between devices using WebRTC.
 - [P2P Web Chat](https://tool.david888.com/p2p-chat): End-to-End Encrypted (E2EE) P2P chat tool using WebRTC, running entirely in browser with zero server storage.
 - [Pantone Palette Library](https://tool.david888.com/find-color): Pantone Color of the Year picks from 2024 to 2026 plus curated trend palettes. Includes Light/Dark previews, visible HEX codes, and one-click palette copy.
+- [Password generator](https://tool.david888.com/password-generator): Generate multiple secure passwords across various formats (symbols, alphanumeric, grouped, PIN, passphrase) with crack time estimates and one-click copy.
 - [Password strength analyser](https://tool.david888.com/password-strength-analyser): Discover the strength of your password with this client-side-only password strength analyser and crack time estimation tool.
 - [PDF signature checker](https://tool.david888.com/pdf-signature-checker): Verify the signatures of a PDF file. A signed PDF file contains one or more signatures that may be used to determine whether the contents of the file have been altered since the file was signed.
 - [PDF Tools](https://tool.david888.com/pdf-tools): Collection of tools to manipulate PDF files (merge, split, rotate, and compress).

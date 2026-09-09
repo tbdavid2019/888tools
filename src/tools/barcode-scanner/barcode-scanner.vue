@@ -197,32 +197,32 @@ const { copy } = useClipboard();
             <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-gray-400 mb-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4v16m8-8H4" />
             </svg>
-            <p class="text-sm font-medium text-gray-700 dark:text-gray-200">Drag & drop barcode image here, or click to browse</p>
-            <p class="text-xs text-gray-400 mt-0.5">Supports clipboard paste (Ctrl+V / Cmd+V)</p>
+            <p class="text-sm font-medium text-gray-700 dark:text-gray-200">拖放條碼或 QR Code 圖片至此，或點擊選取</p>
+            <p class="text-xs text-gray-400 mt-0.5">亦支援剪貼簿直接貼上 (Ctrl+V / Cmd+V)</p>
           </div>
         </div>
 
         <div flex gap-3 items-center mb-3>
-          <c-button secondary @click="startCamera" :disabled="scanning">Start Camera Scan</c-button>
-          <c-button tertiary @click="clearAll">Clear Results</c-button>
+          <c-button secondary @click="startCamera" :disabled="scanning">開啟相機掃描</c-button>
+          <c-button tertiary @click="clearAll">清除結果</c-button>
         </div>
 
         <div v-if="availableCameras.length > 0" flex gap-2 items-center mb-2>
-          <span>Camera:</span>
+          <span>相機鏡頭:</span>
           <c-select v-model:value="cameraId" :options="availableCameras.map(c => ({ label: c.label, value: c.id }))" w-240px />
         </div>
 
         <div v-if="error" text-red-500 text-sm mb-2>{{ error }}</div>
 
-        <n-card title="Scan Results" size="small">
-          <div v-if="results.length === 0" text-neutral-500>No results yet</div>
+        <n-card title="掃描解析結果" size="small">
+          <div v-if="results.length === 0" text-neutral-500>尚無結果</div>
           <div v-else class="results">
             <div v-for="item in results" :key="item.ts" class="result-item">
               <div class="result-text">{{ item.text }}</div>
               <div class="result-meta">
                 <span>{{ item.format }}</span>
                 <span>{{ new Date(item.ts).toLocaleString() }}</span>
-                <c-button size="tiny" tertiary @click="copy(item.text)">Copy</c-button>
+                <c-button size="tiny" tertiary @click="copy(item.text)">複製</c-button>
               </div>
             </div>
           </div>
@@ -230,7 +230,16 @@ const { copy } = useClipboard();
       </n-gi>
 
       <n-gi>
-        <div ref="previewRef" id="barcode-preview" class="preview-box" />
+        <div ref="previewRef" id="barcode-preview" class="preview-box">
+          <div v-if="!scanning" class="preview-placeholder">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-300">鏡頭掃描即時畫面</p>
+            <p class="text-xs text-gray-400 mt-1">點擊上方「開啟相機掃描」以啟動鏡頭</p>
+          </div>
+        </div>
       </n-gi>
     </n-grid>
   </c-card>
@@ -240,9 +249,23 @@ const { copy } = useClipboard();
 .preview-box {
   width: 100%;
   aspect-ratio: 1 / 1;
-  background: #f5f5f5;
-  border: 1px dashed #d9d9d9;
-  border-radius: 8px;
+  min-height: 260px;
+  background: rgba(128, 128, 128, 0.05);
+  border: 1px dashed rgba(128, 128, 128, 0.3);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.preview-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  text-align: center;
 }
 .results {
   display: flex;

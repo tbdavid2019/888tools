@@ -26,9 +26,13 @@ const layoutBackgroundColor = computed(() => {
   return `rgba(${activePalette.value.glassBackgroundRgb}, ${opacity})`;
 });
 
+const storedLocale = useStorage('locale', 'zh-TW');
+if (storedLocale.value === 'zh') {
+  storedLocale.value = 'zh-TW';
+}
 syncRef(
   locale,
-  useStorage('locale', locale),
+  storedLocale,
 );
 </script>
 

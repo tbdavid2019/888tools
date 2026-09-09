@@ -148,12 +148,23 @@ const contentFlexBasis = computed(() => '520px');
     padding: 30px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     border: 1px solid v-bind('activePalette.overlayBorder');
+
+    &:has(> .c-card),
+    &:has(> * > .c-card) {
+      background-color: transparent !important;
+      border: none !important;
+      padding: 0 !important;
+      box-shadow: none !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+    }
   }
 
   ::v-deep(& > *) {
     flex: 0 1 v-bind('contentFlexBasis');
   }
 
+  ::v-deep(& > *:only-child),
   ::v-deep(& > *.w-full),
   ::v-deep(& > [class*="w-full"]) {
     flex: 1 1 100% !important;

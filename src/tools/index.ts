@@ -117,8 +117,7 @@ import { tool as svgTools } from './svg-tools';
 import { tool as csvExcelViewer } from './csv-excel-viewer';
 import { tool as txtToEpub } from './txt-to-epub';
 import { tool as epubEditor } from './epub-editor';
-
-
+import { tool as passwordGenerator } from './password-generator';
 
 export const toolsByCategory: ToolCategory[] = [
   {
@@ -127,7 +126,7 @@ export const toolsByCategory: ToolCategory[] = [
   },
   {
     name: 'crypto',
-    components: [tokenGenerator, hashText, bcrypt, uuidGenerator, ulidGenerator, cypher, bip39, hmacGenerator, rsaKeyPairGenerator, passwordStrengthAnalyser, pdfSignatureChecker],
+    components: [passwordGenerator, tokenGenerator, hashText, bcrypt, uuidGenerator, ulidGenerator, cypher, bip39, hmacGenerator, rsaKeyPairGenerator, passwordStrengthAnalyser, pdfSignatureChecker],
   },
   {
     name: 'converter',

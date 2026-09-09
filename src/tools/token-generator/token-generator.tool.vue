@@ -27,6 +27,16 @@ const { copy } = useCopy({ source: token, text: t('tools.token-generator.copied'
 <template>
   <div>
     <c-card>
+      <!-- Link to Password Generator -->
+      <div class="mb-5 p-3 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-between gap-3 text-xs">
+        <span class="text-gray-700 dark:text-gray-200">
+          💡 需要產生多種格式的安全密碼（包含符號、英數、分組、PIN、口令與破解時間預估）？
+        </span>
+        <router-link to="/password-generator" class="font-bold text-primary hover:underline whitespace-nowrap">
+          前往密碼產生器 →
+        </router-link>
+      </div>
+
       <n-form label-placement="left" label-width="140">
         <div flex justify-center>
           <div>

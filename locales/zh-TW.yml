@@ -194,6 +194,10 @@ tools:
     syncing: '校時中...'
     syncError: 校時失敗
     offset: '偏差: {value}秒'
+  password-generator:
+    title: 密碼產生器
+    description: 依據不同安全組合（符號、英數、易讀分組、純數字 PIN、好記密語）一鍵產生多組強固密碼，附帶破解時間預估與一鍵複製。
+
   token-generator:
     title: 隨機 Token 產生器
     description: 自訂字元集、長度與符號，快速產生隨機安全金鑰或 Token。
@@ -284,8 +288,8 @@ tools:
     description: 將羅馬數字轉換為數字，並將數字轉換為羅馬數字。
 
   hmac-generator:
-    title: Hmac 生成器
-    description: 使用金鑰和您喜歡的哈希函數計算基於哈希的訊息驗證碼（HMAC）。
+    title: HMAC 產生器
+    description: 使用金鑰和您喜好的雜湊函數計算基於雜湊的訊息驗證碼（HMAC）。
 
   bip39-generator:
     title: BIP39 助記詞產生器
@@ -443,7 +447,7 @@ tools:
 
   pdf-signature-checker:
     title: PDF 數位簽章驗證
-    description: '驗證 PDF 文件中的數位簽章有效性，確認簽署後是否遭到修改。'
+    description: '驗證 PDF 檔案中的數位簽章有效性，確認簽署後是否遭到修改。'
 
   json-minify:
     title: JSON 壓縮
@@ -463,7 +467,7 @@ tools:
 
   yaml-to-json-converter:
     title: YAML 轉 JSON
-    description: 將 YAML 格式文件快速轉換為 JSON 格式。
+    description: 將 YAML 格式檔案快速轉換為 JSON 格式。
 
   uuid-generator:
     title: UUID 產生器
@@ -711,7 +715,7 @@ tools:
 
   post-writer:
     title: "社群貼文排版"
-    description: 全程本機處理，提供雜誌感排版與 Broetry 文體排版，自動換行、全形標點符號轉換、標題框線裝飾，并提供 FB/IG/Threads
+    description: 全程本機處理，提供雜誌感排版與 Broetry 文體排版，自動換行、全形標點符號轉換、標題框線裝飾，並提供 FB/IG/Threads
       模擬預覽與字數計算。
   p2p-chat:
     title: "P2P 網頁即時密聊"
@@ -832,7 +836,7 @@ tools:
     description: 將 JSON 物件資料轉換為結構化 XML 格式。
   markdown-to-html:
     title: Markdown 轉 HTML
-    description: 將 Markdown 文件轉換為 HTML，支援即時預覽與匯出列印為 PDF。
+    description: 將 Markdown 檔案轉換為 HTML，支援即時預覽與匯出列印為 PDF。
   regex-memo:
     title: 正規表達式速查表 (Regex)
     description: JavaScript 常用正規表達式語法、旗標與常用規則速查備忘手冊。
@@ -844,4 +848,4 @@ tools:
     description: 解析微軟 Outlook SafeLinks 防護連結，快速還原真實原始網址。
   xml-to-json:
     title: XML 轉 JSON
-    description: 將 XML 文件解析並轉換為易於讀取的 JSON 格式。
+    description: 將 XML 檔案解析並轉換為易於讀取的 JSON 格式。

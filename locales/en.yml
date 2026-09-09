@@ -200,6 +200,10 @@ tools:
       analog: Analog
       flip: Flip clock
 
+  password-generator:
+    title: Password generator
+    description: Generate multiple secure passwords across various formats (symbols, alphanumeric, grouped, PIN, passphrase) with crack time estimates and one-click copy.
+
   token-generator:
     title: Token generator
     description: Generate random string with the chars you want, uppercase or
