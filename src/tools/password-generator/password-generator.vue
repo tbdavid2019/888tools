@@ -104,9 +104,9 @@ const filteredCategories = computed(() => {
 </script>
 
 <template>
-  <div class="password-generator-view space-y-5">
-    <!-- Top Configuration Card -->
-    <c-card class="config-card">
+  <div class="w-full password-generator-view space-y-6">
+    <!-- Top Configuration Header (Inside the big background) -->
+    <div class="config-panel p-5 rounded-2xl bg-white/80 dark:bg-zinc-900/60 border border-black/5 dark:border-white/10 shadow-sm backdrop-blur-md">
       <div class="flex flex-wrap items-center justify-between gap-4">
         <!-- Search bar -->
         <div class="flex-1 min-w-[240px] max-w-sm">
@@ -146,43 +146,44 @@ const filteredCategories = computed(() => {
       </div>
 
       <!-- Advanced controls bar -->
-      <div class="mt-4 pt-4 border-t border-gray-100 dark:border-zinc-800/80 flex flex-wrap items-center justify-between gap-4 text-xs">
+      <div class="mt-4 pt-3 flex flex-wrap items-center justify-between gap-4 text-xs border-t border-gray-200/60 dark:border-zinc-800/60">
         <div class="flex items-center gap-3">
-          <span class="text-gray-500 dark:text-gray-400">長度微調：</span>
+          <span class="font-semibold text-gray-800 dark:text-gray-200">長度微調：</span>
           <div class="w-48 flex items-center gap-2">
             <n-slider v-model:value="length" :min="6" :max="128" :step="1" />
-            <span class="font-mono font-bold w-7 text-right">{{ length }}</span>
+            <span class="font-mono font-bold w-7 text-right text-gray-900 dark:text-gray-100">{{ length }}</span>
           </div>
         </div>
 
         <div class="flex items-center gap-2">
           <n-switch v-model:value="excludeAmbiguous" size="small" />
-          <span class="cursor-pointer text-gray-700 dark:text-gray-300" @click="excludeAmbiguous = !excludeAmbiguous">
+          <span class="cursor-pointer font-medium text-gray-800 dark:text-gray-200 select-none" @click="excludeAmbiguous = !excludeAmbiguous">
             排除易混淆字元 (0, O, 1, l, I, |)
           </span>
         </div>
       </div>
-    </c-card>
+    </div>
 
-    <!-- Password Categories Section -->
+    <!-- Password Categories Section Inside The Big Background -->
     <div class="space-y-6">
       <div
         v-for="(cat, catIdx) in filteredCategories"
         :key="cat.titleEn"
         class="category-group"
       >
-        <!-- Category Header -->
-        <div class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2.5 px-1">
-          {{ cat.titleEn }}
-          <span class="opacity-60 text-[11px] font-normal ml-1.5">{{ cat.title.split('(')[0] }}</span>
+        <!-- Category Header (High contrast, clearly visible on the big background) -->
+        <div class="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-gray-900 dark:text-gray-100 mb-2.5 px-1">
+          <span class="inline-block w-2 h-4 bg-emerald-500 rounded-full" />
+          <span class="text-sm font-extrabold text-gray-900 dark:text-white">{{ cat.titleEn }}</span>
+          <span class="text-xs font-medium text-gray-600 dark:text-gray-300">· {{ cat.title.split('(')[0] }}</span>
         </div>
 
         <!-- Category Items List -->
-        <div class="space-y-2">
+        <div class="space-y-2.5">
           <div
             v-for="(item, itemIdx) in cat.items"
             :key="item.id"
-            class="password-row group relative flex items-center justify-between gap-3 p-3.5 sm:px-4 rounded-xl border border-transparent hover:border-gray-200 dark:hover:border-zinc-700/80 bg-gray-50/70 hover:bg-gray-100/90 dark:bg-zinc-800/40 dark:hover:bg-zinc-800/80 transition-all duration-150 cursor-pointer shadow-none hover:shadow-sm"
+            class="password-row group relative flex items-center justify-between gap-3 p-3.5 sm:px-4 rounded-xl border border-gray-200/90 dark:border-zinc-700/90 bg-white/95 hover:bg-white dark:bg-zinc-800/90 dark:hover:bg-zinc-800 transition-all duration-150 cursor-pointer shadow-sm hover:shadow-md"
             @click="copyPassword(item)"
           >
             <!-- Left: Strength Indicator Dot & Value -->
@@ -190,16 +191,16 @@ const filteredCategories = computed(() => {
               <!-- Dot -->
               <span
                 class="w-3.5 h-3.5 rounded-full flex-shrink-0 shadow-sm transition-transform duration-200 group-hover:scale-110"
-                :style="{ backgroundColor: item.color, boxShadow: `0 0 8px ${item.color}66` }"
+                :style="{ backgroundColor: item.color, boxShadow: `0 0 8px ${item.color}88` }"
                 :title="`強度：${item.strength}`"
               />
 
               <!-- Password Text & Label -->
               <div class="min-w-0 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 flex-1">
-                <span class="font-mono text-sm sm:text-base font-semibold text-gray-900 dark:text-zinc-100 tracking-wide select-all break-all">
+                <span class="font-mono text-sm sm:text-base font-bold text-gray-900 dark:text-zinc-100 tracking-wide select-all break-all">
                   {{ item.value }}
                 </span>
-                <span class="text-[11px] text-gray-400 dark:text-gray-500 font-normal truncate">
+                <span class="text-[11px] text-gray-500 dark:text-gray-400 font-medium truncate">
                   ({{ item.label }})
                 </span>
               </div>
@@ -208,10 +209,10 @@ const filteredCategories = computed(() => {
             <!-- Right: Crack Time & Copy Actions -->
             <div class="flex items-center gap-3 flex-shrink-0" @click.stop>
               <div class="text-right hidden sm:block">
-                <div class="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                <div class="text-xs text-gray-700 dark:text-gray-200 font-semibold">
                   {{ item.crackTimeEn }}
                 </div>
-                <div class="text-[10px] text-gray-400 dark:text-gray-500">
+                <div class="text-[10px] text-gray-500 dark:text-gray-400 font-medium">
                   {{ item.crackTime }}
                 </div>
               </div>
@@ -222,7 +223,7 @@ const filteredCategories = computed(() => {
                   <template #trigger>
                     <button
                       type="button"
-                      class="p-1.5 rounded-lg text-gray-400 hover:text-primary hover:bg-white dark:hover:bg-zinc-700 transition-colors"
+                      class="p-1.5 rounded-lg text-gray-500 hover:text-primary hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors"
                       @click="refreshSingleItem(catIdx, itemIdx)"
                     >
                       <n-icon size="16"><IconRefresh /></n-icon>
@@ -233,10 +234,10 @@ const filteredCategories = computed(() => {
 
                 <button
                   type="button"
-                  class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all shadow-sm"
+                  class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shadow-sm"
                   :class="copiedId === item.id
-                    ? 'bg-emerald-500 text-white'
-                    : 'bg-white dark:bg-zinc-700 hover:bg-primary hover:text-white text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-zinc-600'"
+                    ? 'bg-emerald-500 text-white shadow-emerald-500/20'
+                    : 'bg-white dark:bg-zinc-700 hover:bg-primary hover:text-white text-gray-800 dark:text-gray-100 border border-gray-200 dark:border-zinc-600'"
                   @click="copyPassword(item)"
                 >
                   <n-icon size="14">
