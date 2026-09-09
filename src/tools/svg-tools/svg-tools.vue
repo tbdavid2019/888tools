@@ -20,6 +20,23 @@ function openFilePicker() {
   fileInput.value?.click();
 }
 
+function loadSvgFile(file: File) {
+  const isSvg = file.type === 'image/svg+xml' || file.name.toLowerCase().endsWith('.svg');
+  if (!isSvg) {
+    message.error('Please upload a valid SVG file');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = (loadEvent) => {
+    if (typeof loadEvent.target?.result === 'string') {
+      svgContent.value = loadEvent.target.result;
+      message.success('SVG loaded successfully');
+    }
+  };
+  reader.readAsText(file);
+}
+
 function handleFileUpload(event: Event) {
   const target = event.target as HTMLInputElement;
   const file = target.files?.[0];
@@ -28,20 +45,43 @@ function handleFileUpload(event: Event) {
     return;
   }
 
-  if (file.type !== 'image/svg+xml') {
-    message.error('Please upload a valid SVG file');
-    target.value = '';
-    return;
-  }
-
-  const reader = new FileReader();
-  reader.onload = (loadEvent) => {
-    if (typeof loadEvent.target?.result === 'string') {
-      svgContent.value = loadEvent.target.result;
-    }
-  };
-  reader.readAsText(file);
+  loadSvgFile(file);
   target.value = '';
+}
+
+const isDragging = ref(false);
+let dragCounter = 0;
+
+function onDragEnter(e: DragEvent) {
+  e.preventDefault();
+  dragCounter++;
+  isDragging.value = true;
+}
+
+function onDragOver(e: DragEvent) {
+  e.preventDefault();
+  if (e.dataTransfer) {
+    e.dataTransfer.dropEffect = 'copy';
+  }
+}
+
+function onDragLeave(e: DragEvent) {
+  e.preventDefault();
+  dragCounter--;
+  if (dragCounter <= 0) {
+    dragCounter = 0;
+    isDragging.value = false;
+  }
+}
+
+function onDrop(e: DragEvent) {
+  e.preventDefault();
+  dragCounter = 0;
+  isDragging.value = false;
+  const file = e.dataTransfer?.files?.[0];
+  if (file) {
+    loadSvgFile(file);
+  }
 }
 
 async function copyCode() {
@@ -61,7 +101,24 @@ function downloadSvg() {
 </script>
 
 <template>
-  <c-card class="svg-tools-card">
+  <c-card
+    class="svg-tools-card relative"
+    @dragenter="onDragEnter"
+    @dragover.prevent="onDragOver"
+    @dragleave="onDragLeave"
+    @drop.prevent="onDrop"
+  >
+    <!-- Drag overlay -->
+    <div
+      v-if="isDragging"
+      class="absolute inset-0 z-50 rounded-xl bg-primary/20 backdrop-blur-sm border-2 border-dashed border-primary flex flex-col items-center justify-center pointer-events-none"
+    >
+      <n-icon size="48" class="text-primary mb-2">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+      </n-icon>
+      <p class="text-lg font-bold text-primary">Drop SVG file here</p>
+    </div>
+
     <div class="editor-layout">
       <section class="panel">
         <div class="panel-header">

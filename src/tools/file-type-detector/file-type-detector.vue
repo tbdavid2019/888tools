@@ -19,6 +19,7 @@ const hexPreview = ref<string>('');
 
 // Drag and drop state
 const isOverDropZone = ref(false);
+let dragCounter = 0;
 const fileInput = ref<HTMLInputElement | null>(null);
 
 function triggerFileInput() {
@@ -26,14 +27,39 @@ function triggerFileInput() {
 }
 
 function handleFileInput(event: Event) {
-  const files = (event.target as HTMLInputElement).files;
+  const target = event.target as HTMLInputElement;
+  const files = target.files;
   if (files && files[0]) {
     processFile(files[0]);
+  }
+  target.value = '';
+}
+
+function onDragEnter(e: DragEvent) {
+  e.preventDefault();
+  dragCounter++;
+  isOverDropZone.value = true;
+}
+
+function onDragOver(e: DragEvent) {
+  e.preventDefault();
+  if (e.dataTransfer) {
+    e.dataTransfer.dropEffect = 'copy';
+  }
+}
+
+function onDragLeave(e: DragEvent) {
+  e.preventDefault();
+  dragCounter--;
+  if (dragCounter <= 0) {
+    dragCounter = 0;
+    isOverDropZone.value = false;
   }
 }
 
 function handleDrop(event: DragEvent) {
   event.preventDefault();
+  dragCounter = 0;
   isOverDropZone.value = false;
   const files = event.dataTransfer?.files;
   if (files && files[0]) {
@@ -226,13 +252,14 @@ function navigateToTool(path: string) {
       class="border-2 border-dashed rounded-3xl p-8 sm:p-10 flex flex-col items-center justify-center cursor-pointer transition-all duration-200 bg-white/70 dark:bg-zinc-900/60 backdrop-blur-md shadow-sm"
       :class="[
         isOverDropZone
-          ? 'border-primary bg-primary/10 scale-[1.01]'
+          ? 'border-primary bg-primary/10 scale-[1.01] ring-2 ring-primary/20'
           : 'border-gray-300 dark:border-zinc-700 hover:border-primary',
         isLoading ? 'pointer-events-none opacity-60' : ''
       ]"
-      @dragover.prevent="isOverDropZone = true"
-      @dragleave.prevent="isOverDropZone = false"
-      @drop="handleDrop"
+      @dragenter="onDragEnter"
+      @dragover.prevent="onDragOver"
+      @dragleave="onDragLeave"
+      @drop.prevent="handleDrop"
       @click="triggerFileInput"
     >
       <input
@@ -242,17 +269,19 @@ function navigateToTool(path: string) {
         @change="handleFileInput"
       />
 
-      <div class="p-4 bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 rounded-2xl mb-3 shadow-inner">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-      </div>
+      <div class="pointer-events-none flex flex-col items-center">
+        <div class="p-4 bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 rounded-2xl mb-3 shadow-inner">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        </div>
 
-      <div class="text-base sm:text-lg font-bold text-gray-800 dark:text-gray-100 text-center">
-        拖放任意檔案至此，或點擊選取檔案
-      </div>
-      <div class="text-xs text-gray-500 dark:text-gray-400 mt-1.5 text-center max-w-lg">
-        支援任意檔案大小（採用首尾區塊毫秒級智慧切片）、無副檔名檔案、電子書、音訊、圖片、壓縮檔或二進位檔。
+        <div class="text-base sm:text-lg font-bold text-gray-800 dark:text-gray-100 text-center">
+          拖放任意檔案至此，或點擊選取檔案
+        </div>
+        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1.5 text-center max-w-lg">
+          支援任意檔案大小（採用首尾區塊毫秒級智慧切片）、無副檔名檔案、電子書、音訊、圖片、壓縮檔或二進位檔。
+        </div>
       </div>
 
       <div v-if="isLoading" class="mt-4 flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400 font-bold">

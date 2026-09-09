@@ -79,7 +79,8 @@ const resetLyrics = () => {
 };
 
 const setAudioFile = (file: File) => {
-  if (!file.type.startsWith('audio/')) {
+  const isAudio = file.type.startsWith('audio/') || /\.(mp3|wav|m4a|ogg|flac|aac|wma|opus)$/i.test(file.name);
+  if (!isAudio) {
     message.error('請選擇有效的音訊檔案');
     return;
   }
@@ -96,19 +97,7 @@ const setAudioFile = (file: File) => {
   resetLyrics();
 };
 
-onAudioDialogChange((files) => {
-  const file = files?.[0];
-  if (file) {
-    setAudioFile(file);
-  }
-});
-
-onLrcDialogChange(async (files) => {
-  const file = files?.[0];
-  if (!file) {
-    return;
-  }
-
+const loadLrcFile = async (file: File) => {
   const text = await file.text();
   const parsed = parseLrc(text).filter(line => !isWhisperJunk(line.text));
   if (parsed.length === 0) {
@@ -118,16 +107,60 @@ onLrcDialogChange(async (files) => {
 
   lyrics.value = parsed;
   message.success(`已載入 ${parsed.length} 行歌詞`);
+};
+
+onAudioDialogChange((files) => {
+  const file = files?.[0];
+  if (file) {
+    setAudioFile(file);
+  }
 });
 
-useDropZone(dropZoneRef, {
-  onDrop(files) {
-    const file = files?.[0];
-    if (file) {
+onLrcDialogChange(async (files) => {
+  const file = files?.[0];
+  if (file) {
+    await loadLrcFile(file);
+  }
+});
+
+const isOverDropZone = ref(false);
+let dragCounter = 0;
+
+function onDragEnter(e: DragEvent) {
+  e.preventDefault();
+  dragCounter++;
+  isOverDropZone.value = true;
+}
+
+function onDragOver(e: DragEvent) {
+  e.preventDefault();
+  if (e.dataTransfer) {
+    e.dataTransfer.dropEffect = 'copy';
+  }
+}
+
+function onDragLeave(e: DragEvent) {
+  e.preventDefault();
+  dragCounter--;
+  if (dragCounter <= 0) {
+    dragCounter = 0;
+    isOverDropZone.value = false;
+  }
+}
+
+function onDrop(e: DragEvent) {
+  e.preventDefault();
+  dragCounter = 0;
+  isOverDropZone.value = false;
+  const file = e.dataTransfer?.files?.[0];
+  if (file) {
+    if (file.name.toLowerCase().endsWith('.lrc')) {
+      loadLrcFile(file);
+    } else {
       setAudioFile(file);
     }
-  },
-});
+  }
+}
 
 watch(audioUrl, () => {
   if (audioRef.value) {
@@ -409,14 +442,23 @@ onBeforeUnmount(() => {
   <div class="lyric-player-tool">
     <div
       ref="dropZoneRef"
-      class="upload-zone"
-      :class="{ disabled: hasAudio }"
+      class="upload-zone transition-all duration-200"
+      :class="{
+        'is-drag-over': isOverDropZone,
+        disabled: hasAudio
+      }"
       @click="() => openAudioDialog()"
+      @dragenter="onDragEnter"
+      @dragover.prevent="onDragOver"
+      @dragleave="onDragLeave"
+      @drop.prevent="onDrop"
     >
-      <n-icon size="42" :component="Upload" />
-      <div>
-        <div class="upload-title">拖放音訊到這裡，或點擊上傳</div>
-        <div class="upload-hint">支援 MP3、WAV、M4A、OGG。Whisper 模型首次會下載到瀏覽器快取，之後本機推論。</div>
+      <div class="pointer-events-none flex items-center gap-4 w-full">
+        <n-icon size="42" :component="Upload" />
+        <div>
+          <div class="upload-title">拖放音訊或 LRC 歌詞檔到這裡，或點擊上傳</div>
+          <div class="upload-hint">支援 MP3、WAV、M4A、OGG、FLAC、LRC。Whisper 模型首次會下載到瀏覽器快取，之後本機推論。</div>
+        </div>
       </div>
     </div>
 
@@ -577,6 +619,12 @@ onBeforeUnmount(() => {
 
 .upload-zone.disabled {
   opacity: 0.9;
+}
+
+.upload-zone.is-drag-over {
+  border-color: var(--n-primary-color) !important;
+  background: rgba(var(--n-primary-color-rgb), 0.12) !important;
+  transform: scale(1.008);
 }
 
 .upload-title {

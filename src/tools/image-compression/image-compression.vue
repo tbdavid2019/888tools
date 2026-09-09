@@ -35,7 +35,8 @@ const dropZoneRef = ref<HTMLElement | null>(null);
 const onFilesDrop = async (files: File[] | null) => {
     if (!files || files.length === 0) return;
     const file = files[0];
-    if (!file.type.startsWith('image/')) {
+    const isImage = file.type.startsWith('image/') || /\.(png|jpe?g|webp|bmp|gif|avif|heic)$/i.test(file.name);
+    if (!isImage) {
         message.error('Please upload an image file');
         return;
     }
@@ -50,7 +51,7 @@ const onFilesDrop = async (files: File[] | null) => {
                 size: file.size,
                 width: img.width,
                 height: img.height,
-                type: file.type
+                type: file.type || 'image/jpeg'
             };
             compressImage();
         };
@@ -58,6 +59,40 @@ const onFilesDrop = async (files: File[] | null) => {
     };
     reader.readAsDataURL(file);
 };
+
+const isOverDropZone = ref(false);
+let dragCounter = 0;
+
+function onDragEnter(e: DragEvent) {
+    e.preventDefault();
+    dragCounter++;
+    isOverDropZone.value = true;
+}
+
+function onDragOver(e: DragEvent) {
+    e.preventDefault();
+    if (e.dataTransfer) {
+        e.dataTransfer.dropEffect = 'copy';
+    }
+}
+
+function onDragLeave(e: DragEvent) {
+    e.preventDefault();
+    dragCounter--;
+    if (dragCounter <= 0) {
+        dragCounter = 0;
+        isOverDropZone.value = false;
+    }
+}
+
+function onDrop(e: DragEvent) {
+    e.preventDefault();
+    dragCounter = 0;
+    isOverDropZone.value = false;
+    if (e.dataTransfer?.files) {
+        onFilesDrop(Array.from(e.dataTransfer.files));
+    }
+}
 
 const compressImage = async () => {
     if (!image.value) return;
@@ -101,8 +136,6 @@ const compressImage = async () => {
     }
 };
 
-const { isOverDropZone } = useDropZone(dropZoneRef, { onDrop: onFilesDrop });
-
 const downloadImage = () => {
     if (!compressedUrl.value || !image.value) return;
     const link = document.createElement('a');
@@ -143,13 +176,29 @@ const formatSize = (bytes: number) => {
           ref="dropZoneRef" 
           class="drop-zone" 
           :class="{ 'is-drag-over': isOverDropZone }"
-          @click="(($refs.fileInput as HTMLInputElement)?.click())">
-          <n-icon size="48" :component="Photo" />
-          <p>Click or Drop image here</p>
-          <input ref="fileInput" type="file" accept="image/*" class="hidden-input" @change="(e: any) => onFilesDrop(e.target.files)" />
+          @click="(($refs.fileInput as HTMLInputElement)?.click())"
+          @dragenter="onDragEnter"
+          @dragover.prevent="onDragOver"
+          @dragleave="onDragLeave"
+          @drop.prevent="onDrop">
+          <div class="pointer-events-none flex flex-col items-center gap-3">
+            <n-icon size="48" :component="Photo" />
+            <p class="text-lg font-medium">Click or Drop image here</p>
+            <p class="text-xs text-gray-400">Supports PNG, JPG, WebP, GIF, HEIC</p>
+          </div>
+          <input ref="fileInput" type="file" accept="image/*,.png,.jpg,.jpeg,.webp,.gif,.heic" class="hidden-input" @change="(e: any) => { onFilesDrop(e.target.files); e.target.value = ''; }" />
      </div>
 
-     <div v-else class="tool-content">
+     <div v-else class="tool-content relative"
+          @dragenter="onDragEnter"
+          @dragover.prevent="onDragOver"
+          @dragleave="onDragLeave"
+          @drop.prevent="onDrop">
+        <!-- Drag overlay when dragging new image -->
+        <div v-if="isOverDropZone" class="absolute inset-0 z-50 rounded-xl bg-primary/20 backdrop-blur-sm border-2 border-dashed border-primary flex flex-col items-center justify-center pointer-events-none">
+          <n-icon size="48" class="text-primary mb-2" :component="Photo" />
+          <p class="text-lg font-bold text-primary">Drop new image to compress</p>
+        </div>
         <n-grid x-gap="20" y-gap="20" cols="1 m:2" responsive="screen">
             <n-gi>
                 <n-card title="Settings" size="small">

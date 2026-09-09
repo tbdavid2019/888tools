@@ -335,6 +335,9 @@ function saveReceivedFile() {
 }
 
 // Drag & Drop / File Select Helpers
+const isOverDropZone = ref(false);
+let dragCounter = 0;
+
 function triggerFileSelect() {
   fileInput.value?.click();
 }
@@ -343,10 +346,35 @@ function handleFileSelection(e: Event) {
   const target = e.target as HTMLInputElement;
   if (!target.files || target.files.length === 0) return;
   initiateFileSend(target.files[0]);
+  target.value = '';
+}
+
+function onDragEnter(e: DragEvent) {
+  e.preventDefault();
+  dragCounter++;
+  isOverDropZone.value = true;
+}
+
+function onDragOver(e: DragEvent) {
+  e.preventDefault();
+  if (e.dataTransfer) {
+    e.dataTransfer.dropEffect = 'copy';
+  }
+}
+
+function onDragLeave(e: DragEvent) {
+  e.preventDefault();
+  dragCounter--;
+  if (dragCounter <= 0) {
+    dragCounter = 0;
+    isOverDropZone.value = false;
+  }
 }
 
 function handleFileDrop(e: DragEvent) {
   e.preventDefault();
+  dragCounter = 0;
+  isOverDropZone.value = false;
   if (connectionState.value !== 'connected') {
     toast.warning(t('tools.p2p-file-transfer.warnChooseDevice'));
     return;
@@ -470,13 +498,18 @@ onUnmounted(() => {
 
       <!-- Drag & Drop upload & Devices list -->
       <div 
-        class="border-2 border-dashed rounded-3xl p-8 flex flex-col items-center justify-center min-h-[350px] transition relative overflow-hidden group"
-        :style="{
-          borderColor: connectionState === 'connected' ? 'var(--primary-color)' : 'rgba(255,255,255,0.12)',
-          backgroundColor: connectionState === 'connected' ? 'rgba(16,185,129,0.04)' : 'rgba(255,255,255,0.01)'
+        class="border-2 border-dashed rounded-3xl p-8 flex flex-col items-center justify-center min-h-[350px] transition duration-200 relative overflow-hidden group"
+        :class="{
+          'ring-4 ring-emerald-500/40 scale-[1.01] !border-emerald-500 !bg-emerald-500/15 shadow-lg': isOverDropZone
         }"
-        @dragover.prevent
-        @drop="handleFileDrop"
+        :style="{
+          borderColor: isOverDropZone ? 'var(--primary-color)' : (connectionState === 'connected' ? 'var(--primary-color)' : 'rgba(255,255,255,0.12)'),
+          backgroundColor: isOverDropZone ? 'rgba(16,185,129,0.15)' : (connectionState === 'connected' ? 'rgba(16,185,129,0.04)' : 'rgba(255,255,255,0.01)')
+        }"
+        @dragenter="onDragEnter"
+        @dragover.prevent="onDragOver"
+        @dragleave="onDragLeave"
+        @drop.prevent="handleFileDrop"
       >
         <input 
           ref="fileInput"

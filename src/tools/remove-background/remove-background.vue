@@ -73,7 +73,8 @@ const onFilesDrop = async (files: File[] | null) => {
   if (!files || files.length === 0) return;
 
   for (const file of files) {
-    if (!file.type.startsWith('image/')) continue;
+    const isImage = file.type.startsWith('image/') || /\.(png|jpe?g|webp|bmp|gif|svg)$/i.test(file.name);
+    if (!isImage) continue;
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -95,9 +96,39 @@ const onFilesDrop = async (files: File[] | null) => {
   }
 };
 
-const { isOverDropZone } = useDropZone(dropZoneRef, {
-  onDrop: onFilesDrop,
-});
+const isOverDropZone = ref(false);
+let dragCounter = 0;
+
+function onDragEnter(e: DragEvent) {
+  e.preventDefault();
+  dragCounter++;
+  isOverDropZone.value = true;
+}
+
+function onDragOver(e: DragEvent) {
+  e.preventDefault();
+  if (e.dataTransfer) {
+    e.dataTransfer.dropEffect = 'copy';
+  }
+}
+
+function onDragLeave(e: DragEvent) {
+  e.preventDefault();
+  dragCounter--;
+  if (dragCounter <= 0) {
+    dragCounter = 0;
+    isOverDropZone.value = false;
+  }
+}
+
+function onDrop(e: DragEvent) {
+  e.preventDefault();
+  dragCounter = 0;
+  isOverDropZone.value = false;
+  if (e.dataTransfer?.files) {
+    onFilesDrop(Array.from(e.dataTransfer.files));
+  }
+}
 
 const handleFileSelect = (e: Event) => {
   const input = e.target as HTMLInputElement;
@@ -147,13 +178,17 @@ onUnmounted(() => {
       class="drop-zone"
       :class="{ 'is-drag-over': isOverDropZone }"
       @click="($refs.fileInput as HTMLInputElement)?.click()"
+      @dragenter="onDragEnter"
+      @dragover.prevent="onDragOver"
+      @dragleave="onDragLeave"
+      @drop.prevent="onDrop"
     >
       <div class="upload-content">
         <n-icon size="48" :component="Upload" />
         <p>Click or Drop images here</p>
         <p class="sub-text">Supports PNG, JPG, WEBP</p>
       </div>
-      <input ref="fileInput" type="file" multiple accept="image/*" class="hidden-input" @change="handleFileSelect" />
+      <input ref="fileInput" type="file" multiple accept="image/*,.png,.jpg,.jpeg,.webp,.bmp" class="hidden-input" @change="handleFileSelect" />
     </div>
 
     <div v-if="items.length > 0" class="controls">
@@ -235,6 +270,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 10px;
   color: var(--n-text-color-3);
+  pointer-events: none;
 }
 
 .sub-text {

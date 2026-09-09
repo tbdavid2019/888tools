@@ -19,13 +19,40 @@ onChange((files) => {
   }
 });
 
-const onDrop = (files: File[] | null) => {
-  if (files && files.length > 0) {
-    processFile(files[0]);
-  }
-};
+const isOverDropZone = ref(false);
+let dragCounter = 0;
 
-const { isOverDropZone } = useDropZone(mainElement, onDrop);
+function onDragEnter(e: DragEvent) {
+  e.preventDefault();
+  dragCounter++;
+  isOverDropZone.value = true;
+}
+
+function onDragOver(e: DragEvent) {
+  e.preventDefault();
+  if (e.dataTransfer) {
+    e.dataTransfer.dropEffect = 'copy';
+  }
+}
+
+function onDragLeave(e: DragEvent) {
+  e.preventDefault();
+  dragCounter--;
+  if (dragCounter <= 0) {
+    dragCounter = 0;
+    isOverDropZone.value = false;
+  }
+}
+
+function onDrop(e: DragEvent) {
+  e.preventDefault();
+  dragCounter = 0;
+  isOverDropZone.value = false;
+  const file = e.dataTransfer?.files?.[0];
+  if (file) {
+    processFile(file);
+  }
+}
 
 const currentImage = shallowRef<{
   url: string;
@@ -153,15 +180,43 @@ const formatSize = (bytes: number) => {
 
 <template>
   <c-card>
-    <div ref="mainElement">
-      <div v-if="!currentImage" class="p-10 border-2 border-dashed rounded-lg text-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" :class="{ 'border-primary bg-primary/5': isOverDropZone }" @click="open()">
-        <n-icon size="48" class="text-gray-400 mb-2">
+    <div
+      ref="mainElement"
+      class="relative"
+      @dragenter="onDragEnter"
+      @dragover.prevent="onDragOver"
+      @dragleave="onDragLeave"
+      @drop.prevent="onDrop"
+    >
+      <!-- Drag overlay when dragging image over loaded view -->
+      <div
+        v-if="currentImage && isOverDropZone"
+        class="absolute inset-0 z-50 rounded-xl bg-primary/20 backdrop-blur-sm border-2 border-dashed border-primary flex flex-col items-center justify-center pointer-events-none"
+      >
+        <n-icon size="48" class="text-primary mb-2">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
         </n-icon>
-        <p class="text-lg text-gray-500">
-          Click or drop image here
-        </p>
-        <p class="text-xs text-gray-400 mt-1">Supports PNG, JPG, WebP, HEIC</p>
+        <p class="text-lg font-bold text-primary">Drop new image to convert</p>
+      </div>
+
+      <div
+        v-if="!currentImage"
+        class="p-10 border-2 border-dashed rounded-xl text-center cursor-pointer transition-all duration-200"
+        :class="{
+          'border-primary bg-primary/10 scale-[1.008] ring-2 ring-primary/20': isOverDropZone,
+          'border-gray-300 dark:border-zinc-700 hover:border-primary hover:bg-gray-50/50 dark:hover:bg-zinc-800/20': !isOverDropZone
+        }"
+        @click="open()"
+      >
+        <div class="pointer-events-none flex flex-col items-center">
+          <n-icon size="48" class="text-gray-400 mb-2">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+          </n-icon>
+          <p class="text-lg font-medium text-gray-700 dark:text-gray-200">
+            Click or drop image here
+          </p>
+          <p class="text-xs text-gray-400 mt-1">Supports PNG, JPG, WebP, HEIC</p>
+        </div>
       </div>
 
       <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-6">

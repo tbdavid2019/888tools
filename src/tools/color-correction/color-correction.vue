@@ -68,11 +68,40 @@ onChange((files) => {
   if (files && files.length > 0) processFile(files[0]);
 });
 
-const onDrop = (files: File[] | null) => {
-  if (files && files.length > 0) processFile(files[0]);
-};
+const isOverDropZone = ref(false);
+let dragCounter = 0;
 
-const { isOverDropZone } = useDropZone(mainElement, onDrop);
+function onDragEnter(e: DragEvent) {
+  e.preventDefault();
+  dragCounter++;
+  isOverDropZone.value = true;
+}
+
+function onDragOver(e: DragEvent) {
+  e.preventDefault();
+  if (e.dataTransfer) {
+    e.dataTransfer.dropEffect = 'copy';
+  }
+}
+
+function onDragLeave(e: DragEvent) {
+  e.preventDefault();
+  dragCounter--;
+  if (dragCounter <= 0) {
+    dragCounter = 0;
+    isOverDropZone.value = false;
+  }
+}
+
+function onDrop(e: DragEvent) {
+  e.preventDefault();
+  dragCounter = 0;
+  isOverDropZone.value = false;
+  const file = e.dataTransfer?.files?.[0];
+  if (file) {
+    processFile(file);
+  }
+}
 
 const resetFilters = () => {
   filters.value = {
@@ -115,14 +144,43 @@ const downloadImage = () => {
 
 <template>
   <c-card>
-    <div ref="mainElement">
-      <div v-if="!image" class="p-10 border-2 border-dashed rounded-lg text-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" :class="{ 'border-primary bg-primary/5': isOverDropZone }" @click="open()">
-        <n-icon size="48" class="text-gray-400 mb-2">
+    <div
+      ref="mainElement"
+      class="relative"
+      @dragenter="onDragEnter"
+      @dragover.prevent="onDragOver"
+      @dragleave="onDragLeave"
+      @drop.prevent="onDrop"
+    >
+      <!-- Drag overlay when dragging image over loaded view -->
+      <div
+        v-if="image && isOverDropZone"
+        class="absolute inset-0 z-50 rounded-xl bg-primary/20 backdrop-blur-sm border-2 border-dashed border-primary flex flex-col items-center justify-center pointer-events-none"
+      >
+        <n-icon size="48" class="text-primary mb-2">
           <Palette />
         </n-icon>
-        <p class="text-lg text-gray-500">
-          Click or drop image here
-        </p>
+        <p class="text-lg font-bold text-primary">Drop new image to edit</p>
+      </div>
+
+      <div
+        v-if="!image"
+        class="p-10 border-2 border-dashed rounded-xl text-center cursor-pointer transition-all duration-200"
+        :class="{
+          'border-primary bg-primary/10 scale-[1.008] ring-2 ring-primary/20': isOverDropZone,
+          'border-gray-300 dark:border-zinc-700 hover:border-primary hover:bg-gray-50/50 dark:hover:bg-zinc-800/20': !isOverDropZone
+        }"
+        @click="open()"
+      >
+        <div class="pointer-events-none flex flex-col items-center">
+          <n-icon size="48" class="text-gray-400 mb-2">
+            <Palette />
+          </n-icon>
+          <p class="text-lg font-medium text-gray-700 dark:text-gray-200">
+            Click or drop image here
+          </p>
+          <p class="text-xs text-gray-400 mt-1">Supports PNG, JPG, WebP</p>
+        </div>
       </div>
 
       <div v-else class="grid grid-cols-1 lg:grid-cols-3 gap-6">

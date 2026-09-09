@@ -33,13 +33,12 @@ const isSelecting = ref(false);
 const selectionAnchor = ref(0);
 const hasDragged = ref(false);
 const dragThresholdSeconds = 0.08;
+const isDragging = ref(false);
+let dragCounter = 0;
 
-const handleFileUpload = async (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  const file = target.files?.[0];
-  if (!file) return;
-
-  if (!file.type.startsWith('audio/')) {
+const loadAudioFile = async (file: File) => {
+  const isAudio = file.type.startsWith('audio/') || /\.(mp3|wav|m4a|ogg|flac|aac|wma|opus)$/i.test(file.name);
+  if (!isAudio) {
     message.error('Please select a valid audio file');
     return;
   }
@@ -64,6 +63,46 @@ const handleFileUpload = async (event: Event) => {
     message.error('Error loading audio file');
   }
 };
+
+const handleFileUpload = async (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const file = target.files?.[0];
+  if (!file) return;
+  await loadAudioFile(file);
+  target.value = '';
+};
+
+function onDragEnter(e: DragEvent) {
+  e.preventDefault();
+  dragCounter++;
+  isDragging.value = true;
+}
+
+function onDragOver(e: DragEvent) {
+  e.preventDefault();
+  if (e.dataTransfer) {
+    e.dataTransfer.dropEffect = 'copy';
+  }
+}
+
+function onDragLeave(e: DragEvent) {
+  e.preventDefault();
+  dragCounter--;
+  if (dragCounter <= 0) {
+    dragCounter = 0;
+    isDragging.value = false;
+  }
+}
+
+function onDrop(e: DragEvent) {
+  e.preventDefault();
+  dragCounter = 0;
+  isDragging.value = false;
+  const file = e.dataTransfer?.files?.[0];
+  if (file) {
+    loadAudioFile(file);
+  }
+}
 
 const drawWaveform = () => {
   if (!canvasRef.value || !audioBuffer.value) return;
@@ -517,20 +556,58 @@ onBeforeUnmount(() => {
     <div class="space-y-6">
       <div
         v-if="!audioFile"
-        class="p-10 border-2 border-dashed rounded-lg text-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+        class="p-10 border-2 border-dashed rounded-xl text-center cursor-pointer transition-all duration-200"
+        :class="{
+          'border-primary bg-primary/10 scale-[1.008] ring-2 ring-primary/20': isDragging,
+          'border-gray-300 dark:border-zinc-700 hover:border-primary hover:bg-gray-50/50 dark:hover:bg-zinc-800/20': !isDragging,
+        }"
         @click="fileInput?.click()"
+        @dragenter="onDragEnter"
+        @dragover.prevent="onDragOver"
+        @dragleave="onDragLeave"
+        @drop.prevent="onDrop"
       >
-        <input ref="fileInput" type="file" accept="audio/*" hidden @change="handleFileUpload" />
-        <n-icon size="48" class="text-gray-400 mb-2">
-          <Upload />
-        </n-icon>
-        <p class="text-lg text-gray-500">Click or drop audio file here</p>
+        <input ref="fileInput" type="file" accept="audio/*,.mp3,.wav,.m4a,.ogg,.flac,.aac" hidden @change="handleFileUpload" />
+        <div class="pointer-events-none flex flex-col items-center">
+          <n-icon size="48" class="text-gray-400 mb-2">
+            <Upload />
+          </n-icon>
+          <p class="text-lg font-medium text-gray-700 dark:text-gray-200">Click or drop audio file here</p>
+          <p class="text-xs text-gray-400 mt-1">Supports MP3, WAV, M4A, OGG, FLAC, AAC</p>
+        </div>
       </div>
 
-      <div v-else>
-        <div class="mb-4 flex flex-col items-center">
-          <h3 class="font-bold">{{ audioFile.name }}</h3>
-          <span class="text-xs text-gray-500">{{ formatTime(duration) }}</span>
+      <div
+        v-else
+        class="relative"
+        @dragenter="onDragEnter"
+        @dragover.prevent="onDragOver"
+        @dragleave="onDragLeave"
+        @drop.prevent="onDrop"
+      >
+        <!-- Overlay when dragging over existing audio -->
+        <div
+          v-if="isDragging"
+          class="absolute inset-0 z-50 rounded-xl bg-primary/20 backdrop-blur-sm border-2 border-dashed border-primary flex flex-col items-center justify-center pointer-events-none"
+        >
+          <n-icon size="48" class="text-primary mb-2">
+            <Upload />
+          </n-icon>
+          <p class="text-lg font-bold text-primary">Drop new audio to replace</p>
+        </div>
+
+        <div class="mb-4 flex flex-wrap justify-between items-center gap-3">
+          <div class="flex flex-col">
+            <h3 class="font-bold text-base">{{ audioFile.name }}</h3>
+            <span class="text-xs text-gray-500">{{ formatTime(duration) }}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <input ref="fileInput" type="file" accept="audio/*,.mp3,.wav,.m4a,.ogg,.flac,.aac" hidden @change="handleFileUpload" />
+            <c-button size="small" secondary @click="fileInput?.click()">
+              <template #icon><n-icon><Upload /></n-icon></template>
+              Replace Audio
+            </c-button>
+          </div>
         </div>
 
         <canvas

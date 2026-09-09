@@ -308,6 +308,46 @@ async function handleAudioFileChange(event: Event) {
   await processUploadedAudio(file);
 }
 
+const isUploadDragging = ref(false);
+let uploadDragCounter = 0;
+
+function onUploadDragEnter(e: DragEvent) {
+  e.preventDefault();
+  uploadDragCounter++;
+  isUploadDragging.value = true;
+}
+
+function onUploadDragOver(e: DragEvent) {
+  e.preventDefault();
+  if (e.dataTransfer) {
+    e.dataTransfer.dropEffect = 'copy';
+  }
+}
+
+function onUploadDragLeave(e: DragEvent) {
+  e.preventDefault();
+  uploadDragCounter--;
+  if (uploadDragCounter <= 0) {
+    uploadDragCounter = 0;
+    isUploadDragging.value = false;
+  }
+}
+
+function onUploadDrop(e: DragEvent) {
+  e.preventDefault();
+  uploadDragCounter = 0;
+  isUploadDragging.value = false;
+  const file = e.dataTransfer?.files?.[0];
+  if (file) {
+    const isAudio = file.type.startsWith('audio/') || /\.(wav|mp3|m4a|aac|ogg|flac|webm)$/i.test(file.name);
+    if (!isAudio) {
+      toast.error('請上傳有效音訊檔案');
+      return;
+    }
+    processUploadedAudio(file);
+  }
+}
+
 async function processUploadedAudio(file: File) {
   if (!canUploadAudio.value) {
     return;
@@ -1052,22 +1092,32 @@ onBeforeUnmount(() => {
         </p>
       </div>
 
-      <div class="language-card upload-card">
-        <div class="field-label">
+      <div
+        class="language-card upload-card transition-all duration-200 cursor-pointer"
+        :class="{
+          '!border-primary !bg-primary/10 ring-2 ring-primary/20 scale-[1.01] shadow-sm': isUploadDragging
+        }"
+        @dragenter="onUploadDragEnter"
+        @dragover.prevent="onUploadDragOver"
+        @dragleave="onUploadDragLeave"
+        @drop.prevent="onUploadDrop"
+        @click="openAudioUploadPicker"
+      >
+        <div class="field-label pointer-events-none">
           <n-icon :component="Upload" />
           {{ t('tools.meeting-captions.fields.uploadAudio') }}
         </div>
-        <p class="field-hint">
-          {{ t('tools.meeting-captions.fields.uploadAudioHint') }}
+        <p class="field-hint pointer-events-none">
+          {{ t('tools.meeting-captions.fields.uploadAudioHint') }}（亦支援直接拖曳音訊檔至此）
         </p>
         <input
           ref="uploadInput"
           class="sr-only"
           type="file"
-          accept="audio/wav,audio/x-wav,audio/mpeg,audio/mp3,audio/mp4,audio/aac,audio/x-m4a,.wav,.mp3,.m4a,.aac"
+          accept="audio/wav,audio/x-wav,audio/mpeg,audio/mp3,audio/mp4,audio/aac,audio/x-m4a,.wav,.mp3,.m4a,.aac,.ogg,.flac"
           @change="handleAudioFileChange"
         >
-        <n-button secondary block type="primary" :disabled="!canUploadAudio" :loading="isProcessingUpload" @click="openAudioUploadPicker">
+        <n-button secondary block type="primary" :disabled="!canUploadAudio" :loading="isProcessingUpload">
           <template #icon>
             <n-icon :component="Upload" />
           </template>

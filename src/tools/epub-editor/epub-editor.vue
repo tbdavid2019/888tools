@@ -1592,7 +1592,7 @@ onUnmounted(() => {
     <div v-if="!file" class="max-w-2xl mx-auto py-8">
       <div
         class="flex flex-col cursor-pointer items-center justify-center border-2px border-gray-300 dark:border-zinc-700 border-opacity-50 rounded-2xl border-dashed p-12 transition-all hover:border-primary hover:bg-gray-50/50 dark:hover:bg-zinc-800/10"
-        :class="{ 'border-primary border-opacity-100 bg-gray-50 dark:bg-zinc-800/20': isDragging }"
+        :class="{ 'border-primary border-opacity-100 bg-primary/10 shadow-sm scale-[1.008] ring-2 ring-primary/20': isDragging }"
         @dragover.prevent
         @dragenter="isDragging = true"
         @dragleave="isDragging = false"
@@ -1604,17 +1604,19 @@ onUnmounted(() => {
           type="file"
           accept=".epub,application/epub+zip,*"
           class="hidden"
-          @change="(e: any) => e.target.files[0] && handleFileUpload(e.target.files[0])"
+          @change="(e: any) => { if (e.target.files[0]) handleFileUpload(e.target.files[0]); e.target.value = ''; }"
         />
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-gray-400 dark:text-zinc-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-        </svg>
-        <span class="text-lg font-semibold text-gray-700 dark:text-gray-200">
-          拖曳 EPUB 電子書至此，或點擊選取檔案
-        </span>
-        <span class="text-sm text-gray-400 mt-2 text-center">
-          支援本機繁簡體轉換、標點符號轉換、橫排直排轉換、字體滿血嵌入及封面替換
-        </span>
+        <div class="pointer-events-none flex flex-col items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-gray-400 dark:text-zinc-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+          </svg>
+          <span class="text-lg font-semibold text-gray-700 dark:text-gray-200">
+            拖曳 EPUB 電子書至此，或點擊選取檔案
+          </span>
+          <span class="text-sm text-gray-400 mt-2 text-center">
+            支援本機繁簡體轉換、標點符號轉換、橫排直排轉換、字體滿血嵌入及封面替換
+          </span>
+        </div>
       </div>
 
       <!-- Processed History List -->
@@ -1937,12 +1939,14 @@ onUnmounted(() => {
             @drop.prevent="handleCoverDrop"
             @click="clickFileInput(coverInput)"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            <span class="text-xs text-gray-500 text-center">
-              此書目前無封面或已移除。拖曳圖片或點擊在此新增封面
-            </span>
+            <div class="pointer-events-none flex flex-col items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <span class="text-xs text-gray-500 text-center">
+                此書目前無封面或已移除。拖曳圖片或點擊在此新增封面
+              </span>
+            </div>
           </div>
 
           <input

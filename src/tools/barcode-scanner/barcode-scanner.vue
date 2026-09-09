@@ -84,7 +84,8 @@ const startCamera = async () => {
 };
 
 const decodeFile = async (file: File) => {
-  if (!file.type.startsWith('image/')) {
+  const isImage = file.type.startsWith('image/') || /\.(png|jpe?g|webp|bmp|gif|svg)$/i.test(file.name);
+  if (!isImage) {
     error.value = 'Not an image file';
     return;
   }
@@ -94,8 +95,6 @@ const decodeFile = async (file: File) => {
     const id = previewRef.value?.id ?? 'barcode-preview';
     const html5 = new Html5Qrcode(id);
     const res = await html5.scanFile(file, true);
-    // Note: scanFile returns only string in current version types, but might return object in newer. 
-    // We'll treat it as string for now.
     addResult(res, 'File Scan');
   } catch (err: any) {
     error.value = err?.message ?? 'Failed to decode image';
@@ -109,6 +108,41 @@ const onFileChange = async (e: Event) => {
   await decodeFile(file);
   target.value = '';
 };
+
+const isDragging = ref(false);
+let dragCounter = 0;
+
+function onDragEnter(e: DragEvent) {
+  e.preventDefault();
+  dragCounter++;
+  isDragging.value = true;
+}
+
+function onDragOver(e: DragEvent) {
+  e.preventDefault();
+  if (e.dataTransfer) {
+    e.dataTransfer.dropEffect = 'copy';
+  }
+}
+
+function onDragLeave(e: DragEvent) {
+  e.preventDefault();
+  dragCounter--;
+  if (dragCounter <= 0) {
+    dragCounter = 0;
+    isDragging.value = false;
+  }
+}
+
+function onDrop(e: DragEvent) {
+  e.preventDefault();
+  dragCounter = 0;
+  isDragging.value = false;
+  const file = e.dataTransfer?.files?.[0];
+  if (file) {
+    decodeFile(file);
+  }
+}
 
 const handlePaste = async (event: ClipboardEvent) => {
   const items = event.clipboardData?.items;
@@ -145,13 +179,33 @@ const { copy } = useClipboard();
   <c-card>
     <n-grid x-gap="12" y-gap="12" cols="1 700:3">
       <n-gi span="2">
-        <div flex gap-3 items-center mb-3>
-          <input ref="fileInput" type="file" accept="image/*" @change="onFileChange" hidden />
-          <c-button @click="() => fileInput?.click()">Upload Image</c-button>
-          <c-button secondary @click="startCamera" :disabled="scanning">Start Camera Scan</c-button>
-          <c-button tertiary @click="clearAll">Clear</c-button>
+        <!-- Drag & Drop Dropzone -->
+        <div
+          class="border-2 border-dashed rounded-xl p-6 mb-4 flex flex-col items-center justify-center cursor-pointer transition-all duration-200"
+          :class="{
+            'border-primary bg-primary/10 scale-[1.008] ring-2 ring-primary/20': isDragging,
+            'border-gray-300 dark:border-zinc-700 hover:border-primary hover:bg-gray-50/50 dark:hover:bg-zinc-800/20': !isDragging,
+          }"
+          @click="() => fileInput?.click()"
+          @dragenter="onDragEnter"
+          @dragover.prevent="onDragOver"
+          @dragleave="onDragLeave"
+          @drop.prevent="onDrop"
+        >
+          <input ref="fileInput" type="file" accept="image/*,.png,.jpg,.jpeg,.webp,.bmp" class="hidden" @change="onFileChange" />
+          <div class="pointer-events-none flex flex-col items-center text-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-gray-400 mb-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4v16m8-8H4" />
+            </svg>
+            <p class="text-sm font-medium text-gray-700 dark:text-gray-200">Drag & drop barcode image here, or click to browse</p>
+            <p class="text-xs text-gray-400 mt-0.5">Supports clipboard paste (Ctrl+V / Cmd+V)</p>
+          </div>
         </div>
-        <div class="hint">Supports pasting images from Clipboard.</div>
+
+        <div flex gap-3 items-center mb-3>
+          <c-button secondary @click="startCamera" :disabled="scanning">Start Camera Scan</c-button>
+          <c-button tertiary @click="clearAll">Clear Results</c-button>
+        </div>
 
         <div v-if="availableCameras.length > 0" flex gap-2 items-center mb-2>
           <span>Camera:</span>

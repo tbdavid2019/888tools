@@ -65,8 +65,9 @@ const startCamera = async () => {
 };
 
 const decodeFile = async (file: File) => {
-  if (!file.type.startsWith('image/')) {
-    error.value = '貼上的不是圖片檔';
+  const isImage = file.type.startsWith('image/') || /\.(png|jpe?g|webp|bmp|gif|svg)$/i.test(file.name);
+  if (!isImage) {
+    error.value = '請選擇圖片檔案';
     return;
   }
   error.value = '';
@@ -88,6 +89,41 @@ const onFileChange = async (e: Event) => {
   await decodeFile(file);
   target.value = '';
 };
+
+const isDragging = ref(false);
+let dragCounter = 0;
+
+function onDragEnter(e: DragEvent) {
+  e.preventDefault();
+  dragCounter++;
+  isDragging.value = true;
+}
+
+function onDragOver(e: DragEvent) {
+  e.preventDefault();
+  if (e.dataTransfer) {
+    e.dataTransfer.dropEffect = 'copy';
+  }
+}
+
+function onDragLeave(e: DragEvent) {
+  e.preventDefault();
+  dragCounter--;
+  if (dragCounter <= 0) {
+    dragCounter = 0;
+    isDragging.value = false;
+  }
+}
+
+function onDrop(e: DragEvent) {
+  e.preventDefault();
+  dragCounter = 0;
+  isDragging.value = false;
+  const file = e.dataTransfer?.files?.[0];
+  if (file) {
+    decodeFile(file);
+  }
+}
 
 const handlePaste = async (event: ClipboardEvent) => {
   const items = event.clipboardData?.items;
@@ -124,13 +160,33 @@ const { copy } = useClipboard();
   <c-card>
     <n-grid x-gap="12" y-gap="12" cols="1 700:3">
       <n-gi span="2">
-        <div flex gap-3 items-center mb-3>
-          <input ref="fileInput" type="file" accept="image/*" @change="onFileChange" />
-          <c-button @click="() => fileInput?.click()">上傳圖片</c-button>
-          <c-button secondary @click="startCamera" :disabled="scanning">開啟相機掃描</c-button>
-          <c-button tertiary @click="clearAll">清除</c-button>
+        <!-- Drag & Drop Dropzone -->
+        <div
+          class="border-2 border-dashed rounded-xl p-6 mb-4 flex flex-col items-center justify-center cursor-pointer transition-all duration-200"
+          :class="{
+            'border-primary bg-primary/10 scale-[1.008] ring-2 ring-primary/20': isDragging,
+            'border-gray-300 dark:border-zinc-700 hover:border-primary hover:bg-gray-50/50 dark:hover:bg-zinc-800/20': !isDragging,
+          }"
+          @click="() => fileInput?.click()"
+          @dragenter="onDragEnter"
+          @dragover.prevent="onDragOver"
+          @dragleave="onDragLeave"
+          @drop.prevent="onDrop"
+        >
+          <input ref="fileInput" type="file" accept="image/*,.png,.jpg,.jpeg,.webp,.bmp" class="hidden" @change="onFileChange" />
+          <div class="pointer-events-none flex flex-col items-center text-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-gray-400 mb-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4v16m8-8H4" />
+            </svg>
+            <p class="text-sm font-medium text-gray-700 dark:text-gray-200">拖放包含 QR Code 的圖片至此，或點擊選取</p>
+            <p class="text-xs text-gray-400 mt-0.5">亦支援剪貼簿直接貼上 (Ctrl+V / Cmd+V)</p>
+          </div>
         </div>
-        <div class="hint">支援直接貼上圖片（Clipboard）後自動解析。</div>
+
+        <div flex gap-3 items-center mb-3>
+          <c-button secondary @click="startCamera" :disabled="scanning">開啟相機掃描</c-button>
+          <c-button tertiary @click="clearAll">清除結果</c-button>
+        </div>
 
         <div v-if="availableCameras.length > 0" flex gap-2 items-center mb-2>
           <span>Camera:</span>

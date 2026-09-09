@@ -30,7 +30,8 @@ const rotateAngle = ref(90);
 const onFilesDrop = async (droppedFiles: File[] | null) => {
   if (!droppedFiles) return;
   for (const file of droppedFiles) {
-    if (file.type !== 'application/pdf') continue;
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    if (!isPdf) continue;
 
     try {
       const buffer = await file.arrayBuffer();
@@ -52,7 +53,39 @@ const onFilesDrop = async (droppedFiles: File[] | null) => {
   }
 };
 
-const { isOverDropZone } = useDropZone(dropZoneRef, { onDrop: onFilesDrop });
+const isOverDropZone = ref(false);
+let dragCounter = 0;
+
+function onDragEnter(e: DragEvent) {
+  e.preventDefault();
+  dragCounter++;
+  isOverDropZone.value = true;
+}
+
+function onDragOver(e: DragEvent) {
+  e.preventDefault();
+  if (e.dataTransfer) {
+    e.dataTransfer.dropEffect = 'copy';
+  }
+}
+
+function onDragLeave(e: DragEvent) {
+  e.preventDefault();
+  dragCounter--;
+  if (dragCounter <= 0) {
+    dragCounter = 0;
+    isOverDropZone.value = false;
+  }
+}
+
+function onDrop(e: DragEvent) {
+  e.preventDefault();
+  dragCounter = 0;
+  isOverDropZone.value = false;
+  if (e.dataTransfer?.files) {
+    onFilesDrop(Array.from(e.dataTransfer.files));
+  }
+}
 
 const removeFile = (id: string) => {
   const idx = files.value.findIndex((f) => f.id === id);
@@ -313,6 +346,10 @@ const formatSize = (bytes: number) => {
         class="drop-zone"
         :class="{ 'is-drag-over': isOverDropZone }"
         @click="($refs.fileInput as HTMLInputElement)?.click()"
+        @dragenter="onDragEnter"
+        @dragover.prevent="onDragOver"
+        @dragleave="onDragLeave"
+        @drop.prevent="onDrop"
       >
         <div class="upload-content">
           <n-icon size="48" :component="FilePlus" />
@@ -322,9 +359,9 @@ const formatSize = (bytes: number) => {
           ref="fileInput"
           type="file"
           multiple
-          accept="application/pdf"
+          accept="application/pdf,.pdf"
           class="hidden-input"
-          @change="(e: any) => onFilesDrop(e.target.files)"
+          @change="(e: any) => { onFilesDrop(e.target.files); e.target.value = ''; }"
         />
       </div>
 
@@ -386,6 +423,13 @@ const formatSize = (bytes: number) => {
 }
 .hidden-input {
   display: none;
+}
+.upload-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  pointer-events: none;
 }
 .file-list-header {
   display: flex;
