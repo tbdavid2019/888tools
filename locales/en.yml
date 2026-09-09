@@ -203,6 +203,40 @@ tools:
   password-generator:
     title: Password generator
     description: Generate multiple secure passwords across various formats (symbols, alphanumeric, grouped, PIN, passphrase) with crack time estimates and one-click copy.
+    searchPlaceholder: Search password formats (e.g. symbols, PIN, passphrase)...
+    regenerateAll: Regenerate all
+    regenerateSingle: Regenerate this item
+    lengthFineTune: 'Fine-tune length:'
+    excludeAmbiguous: 'Exclude ambiguous characters (0, O, 1, l, I, |)'
+    characters: '{count} characters'
+    recommended: Recommended
+    copy: Copy password
+    copied: Copied!
+    copySuccess: 'Password for "{label}" copied to clipboard!'
+    copyFailed: Copy failed, please copy manually
+    strength: Strength
+    crackTimePrefix: 'Estimated crack time: '
+    categories:
+      alphaNumSym: Alphabets, Numbers and Symbols
+      alphaNum: Alphabets & Numbers (No symbols)
+      alphaSym: Alphabets & Symbols
+      symbols: Symbols only
+      alphabets: Alphabets only
+      numbers: Numbers only (PIN)
+      passphrase: Memorable Passphrase
+    labels:
+      fullStandard: Standard full combination
+      fullGrouped: Grouped readable format
+      alphaNumStandard: Standard alphanumeric
+      alphaNumGrouped: Grouped alphanumeric (like license key)
+      alphaSymStandard: Letters & symbols (no numbers)
+      symbolsStandard: High-entropy symbol string
+      alphaLower: Lowercase letters only
+      alphaMixed: Mixed-case letters
+      alphaGrouped: Grouped letters
+      numPin: Numeric PIN code
+      numGrouped: Grouped digits / card format
+      passphraseStandard: Word passphrase (memorable & high-entropy)
 
   token-generator:
     title: Token generator

@@ -4,6 +4,7 @@ export interface PasswordItem {
   id: string;
   category: string;
   categoryKey: string;
+  labelKey: string;
   label: string;
   value: string;
   crackTime: string;
@@ -222,12 +223,13 @@ export function generateAllPasswordCategories(options: {
   }
   const phrase = phraseWords.join('-');
 
-  function buildItem(val: string, label: string, category: string, catKey: string): PasswordItem {
+  function buildItem(val: string, label: string, labelKey: string, category: string, catKey: string): PasswordItem {
     const est = estimatePasswordStrength(val);
     return {
       id: Math.random().toString(36).substring(2, 9),
       category,
       categoryKey: catKey,
+      labelKey,
       label,
       value: val,
       crackTime: est.crackTimeZh,
@@ -242,54 +244,54 @@ export function generateAllPasswordCategories(options: {
       title: '字母、數字與特殊符號 (Alphabets, Numbers and Symbols)',
       titleEn: 'Alphabets, Numbers and Symbols',
       items: [
-        buildItem(full1, '標準全組合', 'Alphabets, Numbers and Symbols', 'alphaNumSym'),
-        buildItem(full2, '分組易讀型', 'Alphabets, Numbers and Symbols', 'alphaNumSym'),
+        buildItem(full1, '標準全組合', 'fullStandard', 'Alphabets, Numbers and Symbols', 'alphaNumSym'),
+        buildItem(full2, '分組易讀型', 'fullGrouped', 'Alphabets, Numbers and Symbols', 'alphaNumSym'),
       ],
     },
     {
       title: '字母與數字 (Alphabets & Numbers / 無符號)',
       titleEn: 'Alphabets & Numbers',
       items: [
-        buildItem(an1, '標準英數混合', 'Alphabets & Numbers', 'alphaNum'),
-        buildItem(an2, '分組英數型 (如軟體金鑰)', 'Alphabets & Numbers', 'alphaNum'),
+        buildItem(an1, '標準英數混合', 'alphaNumStandard', 'Alphabets & Numbers', 'alphaNum'),
+        buildItem(an2, '分組英數型 (如軟體金鑰)', 'alphaNumGrouped', 'Alphabets & Numbers', 'alphaNum'),
       ],
     },
     {
       title: '字母與特殊符號 (Alphabets & Symbols)',
       titleEn: 'Alphabets & Symbols',
       items: [
-        buildItem(as1, '無數字符號混合', 'Alphabets & Symbols', 'alphaSym'),
+        buildItem(as1, '無數字符號混合', 'alphaSymStandard', 'Alphabets & Symbols', 'alphaSym'),
       ],
     },
     {
       title: '純特殊符號 (Symbols only)',
       titleEn: 'Symbols',
       items: [
-        buildItem(sym1, '高熵符號字串', 'Symbols', 'symbols'),
+        buildItem(sym1, '高熵符號字串', 'symbolsStandard', 'Symbols', 'symbols'),
       ],
     },
     {
       title: '純英文字母 (Alphabets only)',
       titleEn: 'Alphabets',
       items: [
-        buildItem(aLower, '純小寫字母', 'Alphabets', 'alphabets'),
-        buildItem(aMixed, '大小寫混合', 'Alphabets', 'alphabets'),
-        buildItem(aGroup, '字母分組型', 'Alphabets', 'alphabets'),
+        buildItem(aLower, '純小寫字母', 'alphaLower', 'Alphabets', 'alphabets'),
+        buildItem(aMixed, '大小寫混合', 'alphaMixed', 'Alphabets', 'alphabets'),
+        buildItem(aGroup, '字母分組型', 'alphaGrouped', 'Alphabets', 'alphabets'),
       ],
     },
     {
       title: '純數字 PIN (Numbers only)',
       titleEn: 'Numbers',
       items: [
-        buildItem(num1, '純數字 PIN 碼', 'Numbers', 'numbers'),
-        buildItem(num2, '分段數字驗證碼 / 卡號', 'Numbers', 'numbers'),
+        buildItem(num1, '純數字 PIN 碼', 'numPin', 'Numbers', 'numbers'),
+        buildItem(num2, '分段數字驗證碼 / 卡號', 'numGrouped', 'Numbers', 'numbers'),
       ],
     },
     {
       title: '好記單字密語 (Passphrase / 口令)',
       titleEn: 'Memorable Passphrase',
       items: [
-        buildItem(phrase, '單字口令型 (易記且高熵)', 'Memorable Passphrase', 'passphrase'),
+        buildItem(phrase, '單字口令型 (易記且高熵)', 'passphraseStandard', 'Memorable Passphrase', 'passphrase'),
       ],
     },
   ];
