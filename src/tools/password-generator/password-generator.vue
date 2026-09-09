@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useMessage } from 'naive-ui';
 import { useI18n } from 'vue-i18n';
 import {
@@ -114,6 +114,14 @@ const filteredCategories = computed(() => {
     })
     .filter(cat => cat.items.length > 0);
 });
+
+onMounted(() => {
+  if (typeof window !== 'undefined') {
+    (window as any).generatePassword = (opts?: any) => {
+      return (window as any).executeWebMcpTool?.('generate_password', opts || {});
+    };
+  }
+});
 </script>
 
 <template>
@@ -168,11 +176,24 @@ const filteredCategories = computed(() => {
           </div>
         </div>
 
-        <div class="flex items-center gap-2">
-          <n-switch v-model:value="excludeAmbiguous" size="small" />
-          <span class="cursor-pointer font-medium text-gray-800 dark:text-gray-200 select-none" @click="excludeAmbiguous = !excludeAmbiguous">
-            {{ t('tools.password-generator.excludeAmbiguous') }}
-          </span>
+        <div class="flex items-center gap-3">
+          <div class="flex items-center gap-2">
+            <n-switch v-model:value="excludeAmbiguous" size="small" />
+            <span class="cursor-pointer font-medium text-gray-800 dark:text-gray-200 select-none" @click="excludeAmbiguous = !excludeAmbiguous">
+              {{ t('tools.password-generator.excludeAmbiguous') }}
+            </span>
+          </div>
+
+          <!-- WebMCP Agent Badge -->
+          <n-tooltip trigger="hover">
+            <template #trigger>
+              <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-mono text-[11px] font-semibold cursor-help">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span>WebMCP Ready</span>
+              </div>
+            </template>
+            {{ t('tools.password-generator.webmcpTooltip') }}
+          </n-tooltip>
         </div>
       </div>
     </div>

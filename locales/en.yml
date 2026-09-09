@@ -216,6 +216,7 @@ tools:
     copyFailed: Copy failed, please copy manually
     strength: Strength
     crackTimePrefix: 'Estimated crack time: '
+    webmcpTooltip: 'WebMCP Enabled! AI agents or browser console can run window.executeWebMcpTool("generate_password") to obtain structured password results.'
     categories:
       alphaNumSym: Alphabets, Numbers and Symbols
       alphaNum: Alphabets & Numbers (No symbols)
@@ -236,7 +237,9 @@ tools:
       alphaGrouped: Grouped letters
       numPin: Numeric PIN code
       numGrouped: Grouped digits / card format
-      passphraseStandard: Word passphrase (memorable & high-entropy)
+      passphraseStandard: Hyphenated passphrase (memorable & high-entropy)
+      passphraseCapitalized: Capitalized passphrase (e.g. Dragon-Radiant-Castle)
+      passphraseEnhanced: Enhanced passphrase (with numbers & symbols)
 
   token-generator:
     title: Token generator

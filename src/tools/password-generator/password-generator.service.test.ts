@@ -32,4 +32,13 @@ describe('Password Generator Service', () => {
     const weak = estimatePasswordStrength('1234');
     expect(weak.strength).toBe('weak');
   });
+
+  it('should place passphrase category at the very top (index 0)', () => {
+    const categories = generateAllPasswordCategories({ length: 16 });
+    expect(categories[0].key).toBe('passphrase');
+    expect(categories[0].items.length).toBe(3);
+    expect(categories[0].items[0].labelKey).toBe('passphraseStandard');
+    expect(categories[0].items[1].labelKey).toBe('passphraseCapitalized');
+    expect(categories[0].items[2].labelKey).toBe('passphraseEnhanced');
+  });
 });

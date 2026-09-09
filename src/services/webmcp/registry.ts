@@ -26,6 +26,7 @@ export function registerWebMcpTool(toolDef: WebMcpToolDefinition): void {
       window.__888TOOLS_WEBMCP_TOOLS__ = {};
     }
     window.__888TOOLS_WEBMCP_TOOLS__[toolDef.name] = toolDef;
+    (window as any).executeWebMcpTool = executeWebMcpTool;
   }
 
   if (

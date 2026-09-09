@@ -210,6 +210,7 @@ tools:
     copyFailed: 複製失敗，請手動選取複製
     strength: 強度
     crackTimePrefix: '預估破解時間：'
+    webmcpTooltip: '已啟用 WebMCP！AI 代理或瀏覽器控制台可直接執行 window.executeWebMcpTool("generate_password") 取得結構化結果。'
     categories:
       alphaNumSym: 字母、數字與特殊符號 (Alphabets, Numbers and Symbols)
       alphaNum: 字母與數字 (Alphabets & Numbers / 無符號)
@@ -230,7 +231,9 @@ tools:
       alphaGrouped: 字母分組型
       numPin: 純數字 PIN 碼
       numGrouped: 分段數字驗證碼 / 卡號
-      passphraseStandard: 單字口令型 (易記且高熵)
+      passphraseStandard: 連字號單字密語 (易記且高熵)
+      passphraseCapitalized: 首字大寫密語 (如 Dragon-Radiant-Castle)
+      passphraseEnhanced: 數字與符號強化口令 (如 Dragon-Castle-2026!)
 
   token-generator:
     title: 隨機 Token 產生器

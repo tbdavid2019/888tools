@@ -16,6 +16,7 @@ import { bip39GeneratorTool } from './bip39.tool';
 import { passwordStrengthTool } from './password-strength.tool';
 import { loremIpsumTool } from './lorem-ipsum.tool';
 import { rsaKeyPairTool } from './rsa-keys.tool';
+import { passwordGeneratorTool } from './password-generator.tool';
 
 export const allWebMcpTools: WebMcpToolDefinition[] = [
   listToolsTool,
@@ -36,6 +37,7 @@ export const allWebMcpTools: WebMcpToolDefinition[] = [
   passwordStrengthTool,
   loremIpsumTool,
   rsaKeyPairTool,
+  passwordGeneratorTool,
 ];
 
 export {
@@ -57,4 +59,5 @@ export {
   passwordStrengthTool,
   loremIpsumTool,
   rsaKeyPairTool,
+  passwordGeneratorTool,
 };

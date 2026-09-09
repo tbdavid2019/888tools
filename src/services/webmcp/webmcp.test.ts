@@ -15,6 +15,7 @@ import {
   listToolsTool,
   loremIpsumTool,
   passwordStrengthTool,
+  passwordGeneratorTool,
   registerWebMcpTool,
   registerWebMcpTools,
   rsaKeyPairTool,
@@ -213,5 +214,30 @@ describe('WebMCP Engine and Registry', () => {
     const rsaData = JSON.parse(rsaRes.content[0].text);
     expect(rsaData.publicKeyPem).toContain('BEGIN PUBLIC KEY');
     expect(rsaData.privateKeyPem).toContain('BEGIN RSA PRIVATE KEY');
+  });
+
+  it('executes generate_password tool (passphrase, single, and all formats)', async () => {
+    registerWebMcpTool(passwordGeneratorTool);
+
+    // Passphrase format
+    const passRes = await executeWebMcpTool('generate_password', {
+      format: 'passphrase',
+      wordCount: 4,
+      capitalize: true,
+      addNumber: true,
+    });
+    const passData = JSON.parse(passRes.content[0].text);
+    expect(passData.count).toBe(1);
+    expect(passData.first).toContain('-');
+    expect(passData.passwords[0].strength).toBeTruthy();
+
+    // All categories format
+    const allRes = await executeWebMcpTool('generate_password', {
+      format: 'all',
+      length: 20,
+    });
+    const allData = JSON.parse(allRes.content[0].text);
+    expect(allData.totalCategories).toBeGreaterThan(5);
+    expect(allData.categories[0].key).toBe('passphrase');
   });
 });

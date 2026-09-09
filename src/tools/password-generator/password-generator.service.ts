@@ -168,6 +168,104 @@ export function estimatePasswordStrength(password: string): {
 }
 
 /**
+ * Generate memorable passphrase words
+ */
+export function generatePassphrase(options?: {
+  wordCount?: number;
+  capitalize?: boolean;
+  addNumber?: boolean;
+  addSymbol?: boolean;
+  separator?: string;
+}): string {
+  const {
+    wordCount = 4,
+    capitalize = false,
+    addNumber = false,
+    addSymbol = false,
+    separator = '-',
+  } = options || {};
+
+  const count = Math.max(2, Math.min(10, wordCount));
+  const words: string[] = [];
+  for (let i = 0; i < count; i++) {
+    let word = WORDLIST[secureRandomInt(WORDLIST.length)];
+    if (capitalize) {
+      word = word.charAt(0).toUpperCase() + word.slice(1);
+    }
+    words.push(word);
+  }
+
+  let result = words.join(separator);
+  if (addNumber) {
+    const num = secureRandomInt(900) + 100;
+    result += `${separator}${num}`;
+  }
+  if (addSymbol) {
+    const syms = '!@#$%&*?';
+    result += syms[secureRandomInt(syms.length)];
+  }
+  return result;
+}
+
+/**
+ * Generate a single password with specific format
+ */
+export function generatePassword(options: {
+  format?: 'passphrase' | 'alphaNumSym' | 'alphaNum' | 'alphaSym' | 'symbols' | 'alphabets' | 'numbers';
+  length?: number;
+  wordCount?: number;
+  excludeAmbiguous?: boolean;
+}): string {
+  const {
+    format = 'passphrase',
+    length = 16,
+    wordCount = 4,
+    excludeAmbiguous = false,
+  } = options;
+
+  if (format === 'passphrase') {
+    return generatePassphrase({ wordCount });
+  }
+
+  let lChars = LOWERCASE;
+  let uChars = UPPERCASE;
+  let nChars = NUMBERS;
+  let sChars = SYMBOLS;
+
+  if (excludeAmbiguous) {
+    lChars = lChars.replace(AMBIGUOUS, '');
+    uChars = uChars.replace(AMBIGUOUS, '');
+    nChars = nChars.replace(AMBIGUOUS, '');
+    sChars = sChars.replace(AMBIGUOUS, '');
+  }
+
+  let charset = lChars + uChars + nChars + sChars;
+  switch (format) {
+    case 'alphaNum':
+      charset = lChars + uChars + nChars;
+      break;
+    case 'alphaSym':
+      charset = lChars + uChars + sChars;
+      break;
+    case 'symbols':
+      charset = sChars;
+      break;
+    case 'alphabets':
+      charset = lChars + uChars;
+      break;
+    case 'numbers':
+      charset = nChars;
+      break;
+    case 'alphaNumSym':
+    default:
+      charset = lChars + uChars + nChars + sChars;
+      break;
+  }
+
+  return generateFromCharset(charset, Math.max(4, Math.min(128, length)));
+}
+
+/**
  * Generate a complete set of passwords across all categories
  */
 export function generateAllPasswordCategories(options: {
@@ -193,36 +291,34 @@ export function generateAllPasswordCategories(options: {
   const allAlphaSym = allAlpha + sChars;
   const allCombo = allAlpha + nChars + sChars;
 
-  // 1. Alphabets, Numbers and Symbols
+  // 1. Passphrase (好記單字密語 - 置頂最上方)
+  const wordCount = Math.max(3, Math.min(6, Math.round(length / 4)));
+  const phrase1 = generatePassphrase({ wordCount, capitalize: false, separator: '-' });
+  const phrase2 = generatePassphrase({ wordCount, capitalize: true, separator: '-' });
+  const phrase3 = generatePassphrase({ wordCount, capitalize: true, addNumber: true, addSymbol: true, separator: '-' });
+
+  // 2. Alphabets, Numbers and Symbols
   const full1 = generateFromCharset(allCombo, length);
   const full2 = formatHyphenated(generateFromCharset(allCombo, length), 4);
 
-  // 2. Alphabets & Numbers
+  // 3. Alphabets & Numbers
   const an1 = generateFromCharset(allAlphaNum, length);
   const an2 = formatHyphenated(generateFromCharset(allAlphaNum, length), 4);
 
-  // 3. Alphabets & Symbols
+  // 4. Alphabets & Symbols
   const as1 = generateFromCharset(allAlphaSym, length);
 
-  // 4. Symbols only
+  // 5. Symbols only
   const sym1 = generateFromCharset(sChars, length);
 
-  // 5. Alphabets only
+  // 6. Alphabets only
   const aLower = generateFromCharset(lChars, length);
   const aMixed = generateFromCharset(allAlpha, length);
   const aGroup = formatHyphenated(generateFromCharset(allAlpha, length), 4);
 
-  // 6. Numbers only
+  // 7. Numbers only
   const num1 = generateFromCharset(nChars, length);
   const num2 = formatHyphenated(generateFromCharset(nChars, length), 4);
-
-  // 7. Passphrase
-  const wordCount = Math.max(3, Math.min(6, Math.round(length / 4)));
-  const phraseWords: string[] = [];
-  for (let i = 0; i < wordCount; i++) {
-    phraseWords.push(WORDLIST[secureRandomInt(WORDLIST.length)]);
-  }
-  const phrase = phraseWords.join('-');
 
   function buildItem(val: string, label: string, labelKey: string, category: string, catKey: string): PasswordItem {
     const est = estimatePasswordStrength(val);
@@ -241,6 +337,16 @@ export function generateAllPasswordCategories(options: {
   }
 
   return [
+    {
+      key: 'passphrase',
+      title: '好記單字密語 (Passphrase / 口令)',
+      titleEn: 'Memorable Passphrase',
+      items: [
+        buildItem(phrase1, '連字號單字密語 (易記且高熵)', 'passphraseStandard', 'Memorable Passphrase', 'passphrase'),
+        buildItem(phrase2, '首字大寫密語 (如 Dragon-Radiant-Castle)', 'passphraseCapitalized', 'Memorable Passphrase', 'passphrase'),
+        buildItem(phrase3, '數字與符號強化口令 (如 Dragon-Castle-2026!)', 'passphraseEnhanced', 'Memorable Passphrase', 'passphrase'),
+      ],
+    },
     {
       key: 'alphaNumSym',
       title: '字母、數字與特殊符號 (Alphabets, Numbers and Symbols)',
@@ -292,14 +398,6 @@ export function generateAllPasswordCategories(options: {
       items: [
         buildItem(num1, '純數字 PIN 碼', 'numPin', 'Numbers', 'numbers'),
         buildItem(num2, '分段數字驗證碼 / 卡號', 'numGrouped', 'Numbers', 'numbers'),
-      ],
-    },
-    {
-      key: 'passphrase',
-      title: '好記單字密語 (Passphrase / 口令)',
-      titleEn: 'Memorable Passphrase',
-      items: [
-        buildItem(phrase, '單字口令型 (易記且高熵)', 'passphraseStandard', 'Memorable Passphrase', 'passphrase'),
       ],
     },
   ];
