@@ -122,13 +122,12 @@ async function main() {
     }
 
     // E. Inject crawler-friendly static list inside #app
+    const fallbackTitle = urlPath === '/' ? '' : `<h1>${title}</h1>\n        <p>${description}</p>\n        <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.15); margin: 20px 0;" />`;
     const fallbackHtml = `
     <div id="app">
       <div style="padding: 20px; max-width: 800px; margin: 0 auto; font-family: sans-serif; line-height: 1.6;">
-        <h1>${title === '888 TOOL' ? title : title + ' - 888 TOOL'}</h1>
-        <p>${description}</p>
-        <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.15); margin: 20px 0;" />
-        <h3>888 TOOL - 熱門綜合工具列表</h3>
+        ${fallbackTitle}
+        <h3>熱門綜合工具列表</h3>
         <ul>
           ${globalToolsListHtml}
         </ul>

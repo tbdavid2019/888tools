@@ -16,7 +16,18 @@ import App from './App.vue';
 import router from './router';
 import { i18nPlugin } from './plugins/i18n.plugin';
 
-registerSW({ immediate: true });
+const updateSW = registerSW({
+  immediate: true,
+  onNeedRefresh() {
+    updateSW(true);
+  },
+});
+
+if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    window.location.reload();
+  });
+}
 
 const app = createApp(App);
 

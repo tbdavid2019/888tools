@@ -61,11 +61,11 @@ const breadcrumbItems = computed(() => {
 <template>
   <MenuLayout class="menu-layout" :class="{ isSmallScreen: styleStore.isSmallScreen, isCollapsed: styleStore.isMenuCollapsed }">
     <template #sider>
-      <div class="sider-header">
-
+      <div class="sider-container">
         <c-tooltip
           :tooltip="styleStore.isMenuCollapsed ? $t('home.toggleMenu') : $t('home.toggleMenu')"
           position="right"
+          class="sider-toggle-tooltip"
         >
           <c-button
             class="sider-toggle"
@@ -77,9 +77,8 @@ const breadcrumbItems = computed(() => {
             <NIcon size="20" :component="styleStore.isMenuCollapsed ? LayoutSidebarLeftExpand : LayoutSidebarLeftCollapse" />
           </c-button>
         </c-tooltip>
-      </div>
 
-      <div class="sider-content" :class="{ collapsed: styleStore.isMenuCollapsed }">
+        <div class="sider-content" :class="{ collapsed: styleStore.isMenuCollapsed }">
         <div v-if="!styleStore.isMenuCollapsed" class="sider-controls">
           <div class="sider-controls-row">
             <c-button to="/" circle variant="text" :aria-label="$t('home.home')">
@@ -154,6 +153,7 @@ const breadcrumbItems = computed(() => {
         </div>
 
         <AppearanceSettings />
+      </div>
       </div>
     </template>
 
@@ -237,15 +237,15 @@ const breadcrumbItems = computed(() => {
 }
 
 .sider-content {
-  padding: 14px 14px 28px;
+  padding: 0 12px 24px;
 
   &.collapsed {
-    padding: 14px 8px 20px;
+    padding: 0 6px 20px;
   }
 }
 
 .sider-controls {
-  margin: 2px 0 12px;
+  margin: 0 0 10px;
   padding: 12px;
   border-radius: 20px;
   background-color: v-bind('layoutBackgroundColor');
@@ -264,7 +264,7 @@ const breadcrumbItems = computed(() => {
 }
 
 .sider-controls-collapsed {
-  margin: 2px 0 12px;
+  margin: 0 0 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -361,17 +361,19 @@ const breadcrumbItems = computed(() => {
   padding: 8px 8px 18px;
 }
 
-.sider-header {
+.sider-container {
   position: relative;
-  z-index: 20;
-  min-height: 0;
+  height: 100%;
+}
+
+.sider-toggle-tooltip {
+  position: absolute !important;
+  top: 14px;
+  right: -14px;
+  z-index: 50;
 }
 
 .sider-toggle {
-  position: absolute;
-  top: 22px;
-  right: -14px;
-  z-index: 30;
   color: rgba(255, 249, 242, 0.94);
   background: rgba(20, 28, 30, 0.78);
   backdrop-filter: blur(8px);
@@ -380,7 +382,7 @@ const breadcrumbItems = computed(() => {
 }
 
 @media (max-width: 900px) {
-  .sider-toggle {
+  .sider-toggle-tooltip {
     display: none;
   }
 
