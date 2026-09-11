@@ -17,6 +17,27 @@ import { passwordStrengthTool } from './password-strength.tool';
 import { loremIpsumTool } from './lorem-ipsum.tool';
 import { rsaKeyPairTool } from './rsa-keys.tool';
 import { passwordGeneratorTool } from './password-generator.tool';
+import { excelCsvConverterTool } from './excel-csv.tool';
+import { dockerComposeConverterTool } from './docker-compose.tool';
+import { dataFormatConverterTool } from './data-format-converter.tool';
+import { crontabTool } from './crontab.tool';
+import { phoneNumberTool } from './phone-number.tool';
+import { ibanValidatorTool } from './iban.tool';
+import { ipv4SubnetTool } from './ipv4-subnet.tool';
+import { jsonDiffTool } from './json-diff.tool';
+import { sqlPrettifyTool } from './sql-prettify.tool';
+import { markdownToHtmlTool } from './markdown-to-html.tool';
+import { datetimeConverterTool } from './datetime-converter.tool';
+import { listConverterTool } from './list-converter.tool';
+import { qrCodeTool } from './qr-code.tool';
+import { hmacTool } from './hmac.tool';
+import { bcryptTool } from './bcrypt.tool';
+import { totpTool } from './totp.tool';
+import { userAgentTool } from './user-agent.tool';
+import { httpStatusTool } from './http-status.tool';
+import { textStatisticsTool } from './text-statistics.tool';
+import { colorConverterTool } from './color-converter.tool';
+import { htmlEntitiesTool } from './html-entities.tool';
 
 export const allWebMcpTools: WebMcpToolDefinition[] = [
   listToolsTool,
@@ -38,6 +59,27 @@ export const allWebMcpTools: WebMcpToolDefinition[] = [
   loremIpsumTool,
   rsaKeyPairTool,
   passwordGeneratorTool,
+  excelCsvConverterTool,
+  dockerComposeConverterTool,
+  dataFormatConverterTool,
+  crontabTool,
+  phoneNumberTool,
+  ibanValidatorTool,
+  ipv4SubnetTool,
+  jsonDiffTool,
+  sqlPrettifyTool,
+  markdownToHtmlTool,
+  datetimeConverterTool,
+  listConverterTool,
+  qrCodeTool,
+  hmacTool,
+  bcryptTool,
+  totpTool,
+  userAgentTool,
+  httpStatusTool,
+  textStatisticsTool,
+  colorConverterTool,
+  htmlEntitiesTool,
 ];
 
 export {
@@ -60,4 +102,25 @@ export {
   loremIpsumTool,
   rsaKeyPairTool,
   passwordGeneratorTool,
+  excelCsvConverterTool,
+  dockerComposeConverterTool,
+  dataFormatConverterTool,
+  crontabTool,
+  phoneNumberTool,
+  ibanValidatorTool,
+  ipv4SubnetTool,
+  jsonDiffTool,
+  sqlPrettifyTool,
+  markdownToHtmlTool,
+  datetimeConverterTool,
+  listConverterTool,
+  qrCodeTool,
+  hmacTool,
+  bcryptTool,
+  totpTool,
+  userAgentTool,
+  httpStatusTool,
+  textStatisticsTool,
+  colorConverterTool,
+  htmlEntitiesTool,
 };

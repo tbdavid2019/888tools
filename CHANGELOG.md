@@ -2,6 +2,37 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## Version 2026.09.11
+
+### Features
+- **webmcp**: 大規模擴充 WebMCP (Web Model Context Protocol) 執行庫，新增 21 款高價值前端純函數 AI 工具（工具總數擴增至 39 款）。
+  - **Excel 專用抗 BOM CSV (`convert_to_excel_csv`)**：支援將 CSV 文字、JSON 物件陣列或多位元組編碼二進位檔案轉換為開頭含 UTF-8 BOM (`\uFEFF`) 的 CSV，徹底根治 Windows Excel 開啟中文亂碼問題，並回傳 Base64 Data URL 供直接下載。
+  - **DevOps 與設定格式轉換**：
+    - `convert_docker_run_to_compose`：將 `docker run` 指令智能轉換為 `docker-compose.yml`。
+    - `convert_data_format`：支援 JSON ↔ YAML ↔ TOML ↔ XML 四種主流資料與設定格式任意雙向無損互轉。
+    - `prettify_sql`：支援 MySQL, PostgreSQL, SQLite, BigQuery 等多種 SQL 方言美化與關鍵字排版。
+    - `convert_markdown_to_html`：將 Markdown 渲染為純淨標準 HTML。
+  - **網路維運與通訊**：
+    - `calculate_ipv4_subnet`：精確計算 CIDR、子網遮罩、可用主機範圍與廣播地址。
+    - `parse_phone_number`：整合 Google libphonenumber，支援 E.164、國際/國內格式化與國別有效性驗證。
+    - `parse_user_agent`：解析瀏覽器核心、版本、作業系統與裝置型號。
+    - `lookup_http_status`：依狀態碼或關鍵字檢索標準 HTTP 狀態碼與定義。
+  - **密碼學、安全與排程**：
+    - `parse_crontab_expression`：驗證 Cron 表達式並生成人類易讀的時間說明。
+    - `validate_iban`：校驗國際銀行帳號 (IBAN) 模數 97 檢查碼與提取 BBAN。
+    - `bcrypt_tool`：支援 Bcrypt 密碼雜湊計算與明文比對。
+    - `generate_hmac`：支援 SHA256 / SHA512 / SHA1 / MD5 密鑰簽章計算。
+    - `totp_tool`：生成或驗證 6 位數 Google Authenticator 雙因素驗證碼，並支援密鑰生成。
+  - **數據與實用工具**：
+    - `diff_json`：精確比較兩份 JSON 的結構差異（新增、刪除、修改）。
+    - `convert_datetime`：Unix Timestamp、ISO 8601、RFC 3339 跨格式與時區轉換。
+    - `convert_list_format`：多行清單轉逗號分隔、SQL `IN (...)` 語句、排序與去重。
+    - `generate_qr_code`：將文字/網址轉為 SVG 向量或 Base64 PNG QR Code。
+    - `analyze_text_statistics`：統計字元數、單字數、中文字數、Byte 體積與預估閱讀時間。
+    - `convert_color`：HEX、RGB、HSL、CMYK 跨格式精確轉換與對比度/明度計算。
+    - `html_entities_codec`：HTML 實體字符轉義與還原。
+  - **自動化測試與瀏覽器相容性**：所有新增工具均通過 Vitest 單元測試（36 項測試全數 PASS），並以純 Web API 與 Base64 實作，確保 Vite 與 PWA 前端構建零相容性問題。
+
 ## Version 2026.09.05
 
 ### Features

@@ -104,6 +104,14 @@
 
 ## Changelog
 
+### 2026-09-11
+
+- **WebMCP 工具庫擴充至 39 款**：
+  - 新增 Windows Excel 專用抗 BOM CSV 轉換工具（`convert_to_excel_csv`），自動附加 UTF-8 BOM (`\uFEFF`)，徹底解決 Excel 雙擊中文亂碼問題。
+  - 新增 Docker Run 轉 Compose（`convert_docker_run_to_compose`）、四方資料格式互轉（`convert_data_format`：JSON ↔ YAML ↔ TOML ↔ XML）、SQL 美化排版（`prettify_sql`）、Markdown 轉 HTML（`convert_markdown_to_html`）。
+  - 新增 IPv4 子網計算（`calculate_ipv4_subnet`）、國際電話號碼解析（`parse_phone_number`）、IBAN 驗證（`validate_iban`）、Cron 表達式解析（`parse_crontab_expression`）、JSON 比對（`diff_json`）、日期時間轉換（`convert_datetime`）、清單批次轉換（`convert_list_format`）。
+  - 新增 QR Code 生成（`generate_qr_code`）、HMAC 簽章（`generate_hmac`）、Bcrypt 雜湊/驗證（`bcrypt_tool`）、TOTP 雙因素驗證碼（`totp_tool`）、User-Agent 解析（`parse_user_agent`）、HTTP 狀態碼查詢（`lookup_http_status`）、文本字數統計（`analyze_text_statistics`）、色彩模型轉換（`convert_color`）與 HTML 實體編解碼（`html_entities_codec`）。
+
 ### 2026-08-19
 
 - **W3C WebMCP 瀏覽器原生 AI Agent 支援**：領先支援 W3C WebMCP 標準（Chrome 146+ 與 Cloudflare BrowserRun），透過 `document.modelContext` 原生暴露 17+ 款純前端開發者工具。

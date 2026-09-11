@@ -106,10 +106,10 @@ export const passwordGeneratorTool: WebMcpToolDefinition = {
     }
 
     const passwords: Array<{
-      value: string;
-      strength: string;
-      crackTimeZh: string;
-      crackTimeEn: string;
+      value: string
+      strength: string
+      crackTimeZh: string
+      crackTimeEn: string
     }> = [];
 
     for (let i = 0; i < numCount; i++) {
@@ -122,7 +122,8 @@ export const passwordGeneratorTool: WebMcpToolDefinition = {
           addSymbol: Boolean(addSymbol),
           separator: '-',
         });
-      } else {
+      }
+      else {
         pwd = generatePassword({
           format: format as any,
           length: passLength,
