@@ -1,6 +1,11 @@
 import * as ort from 'onnxruntime-web';
-import { PaddleOcrService } from 'paddleocr';
+import { PaddleOcrService, type OrtInferenceSession, type OrtModule } from 'paddleocr';
 import type { OcrProgressEvent, OcrTextItem } from './ocr.types';
+import {
+  broadcastOcrProgress,
+  getExecutionProviders,
+  type OcrBackend,
+} from './ocr.worker-utils';
 
 // 配置 ONNX Runtime wasm 路徑與執行緒
 if (typeof ort !== 'undefined' && ort.env?.wasm) {
@@ -10,8 +15,9 @@ if (typeof ort !== 'undefined' && ort.env?.wasm) {
 }
 
 let paddleOcrService: PaddleOcrService | null = null;
-let currentBackend: 'webgpu' | 'wasm' = 'wasm';
+let currentBackend: OcrBackend = 'wasm';
 let initPromise: Promise<void> | null = null;
+const initRequestIds = new Set<number>();
 
 // 模型檔案路徑（先從本地 /models/ocr/ 載入，若失敗則回退至 HuggingFace CDN）
 const MODEL_PATHS = {
@@ -37,6 +43,7 @@ async function fetchWithProgress(
   label: string,
   startPct: number,
   endPct: number,
+  onProgress: (data: OcrProgressEvent) => void,
   isText = false,
 ): Promise<ArrayBuffer | string> {
   let lastError: Error | null = null;
@@ -50,24 +57,18 @@ async function fetchWithProgress(
 
       // 若不支援 Body Stream 或為小字典，直接取得
       if (!res.body || contentLength < 500000 || isText) {
-        postMessage({
-          type: 'progress',
-          data: {
-            stage: 'load-model',
-            message: `正在載入 ${label}...`,
-            progress: startPct + Math.round((endPct - startPct) * 0.5),
-          } as OcrProgressEvent,
+        onProgress({
+          stage: 'load-model',
+          message: `正在載入 ${label}...`,
+          progress: startPct + Math.round((endPct - startPct) * 0.5),
         });
 
         const data = isText ? await res.text() : await res.arrayBuffer();
 
-        postMessage({
-          type: 'progress',
-          data: {
-            stage: 'load-model',
-            message: `已載入 ${label}`,
-            progress: endPct,
-          } as OcrProgressEvent,
+        onProgress({
+          stage: 'load-model',
+          message: `已載入 ${label}`,
+          progress: endPct,
         });
 
         return data;
@@ -90,15 +91,12 @@ async function fetchWithProgress(
           const currentMB = (received / 1048576).toFixed(1);
           const totalMB = (contentLength / 1048576).toFixed(1);
 
-          postMessage({
-            type: 'progress',
-            data: {
-              stage: 'load-model',
-              message: `正在下載 ${label} (${currentMB}MB / ${totalMB}MB)...`,
-              progress: currentProgress,
-              current: received,
-              total: contentLength,
-            } as OcrProgressEvent,
+          onProgress({
+            stage: 'load-model',
+            message: `正在下載 ${label} (${currentMB}MB / ${totalMB}MB)...`,
+            progress: currentProgress,
+            current: received,
+            total: contentLength,
           });
         }
       }
@@ -109,6 +107,14 @@ async function fetchWithProgress(
         combined.set(chunk, offset);
         offset += chunk.length;
       }
+
+      onProgress({
+        stage: 'load-model',
+        message: `已載入 ${label}`,
+        progress: endPct,
+        current: received,
+        total: contentLength,
+      });
 
       return combined.buffer;
     } catch (err: any) {
@@ -122,7 +128,7 @@ async function fetchWithProgress(
 /**
  * 檢測 WebGPU，並於失敗時自動降級至 WebAssembly/CPU
  */
-async function resolveBackend(): Promise<'webgpu' | 'wasm'> {
+async function resolveBackend(): Promise<OcrBackend> {
   try {
     if (typeof navigator !== 'undefined' && 'gpu' in navigator && (navigator as any).gpu) {
       const adapter = await (navigator as any).gpu.requestAdapter();
@@ -136,23 +142,60 @@ async function resolveBackend(): Promise<'webgpu' | 'wasm'> {
   return 'wasm';
 }
 
+function postInitializationProgress(data: OcrProgressEvent): void {
+  broadcastOcrProgress(initRequestIds, data, message => postMessage(message));
+}
+
+function createPaddleOcrService(
+  detBuffer: ArrayBuffer,
+  recBuffer: ArrayBuffer,
+  charactersDictionary: string[],
+): Promise<PaddleOcrService> {
+  const executionProviders = getExecutionProviders(currentBackend);
+  const paddleOrt: OrtModule = {
+    Tensor: ort.Tensor,
+    InferenceSession: {
+      create: async (modelBuffer: ArrayBuffer): Promise<OrtInferenceSession> =>
+        (await ort.InferenceSession.create(modelBuffer, { executionProviders })) as unknown as OrtInferenceSession,
+    },
+  };
+
+  return PaddleOcrService.createInstance({
+    ort: paddleOrt,
+    detection: {
+      modelBuffer: detBuffer,
+      textPixelThreshold: 0.3,
+      boxScoreThreshold: 0.6,
+      unclipRatio: 1.6,
+    },
+    recognition: {
+      modelBuffer: recBuffer,
+      charactersDictionary,
+    },
+  });
+}
+
 /**
  * 初始化 OCR 服務實例
  */
-async function initService(): Promise<void> {
-  if (paddleOcrService) return;
-  if (initPromise) return initPromise;
+async function initService(requestId?: number): Promise<void> {
+  if (requestId !== undefined) {
+    initRequestIds.add(requestId);
+  }
 
-  initPromise = (async () => {
+  if (paddleOcrService) {
+    if (requestId !== undefined) initRequestIds.delete(requestId);
+    return;
+  }
+
+  if (!initPromise) {
+    const initialization = (async () => {
     currentBackend = await resolveBackend();
 
-    postMessage({
-      type: 'progress',
-      data: {
-        stage: 'init',
-        message: currentBackend === 'webgpu' ? 'WebGPU 硬體加速就緒，準備載入模型...' : 'WebAssembly 引擎就緒，準備載入模型...',
-        progress: 10,
-      } as OcrProgressEvent,
+    postInitializationProgress({
+      stage: 'init',
+      message: currentBackend === 'webgpu' ? 'WebGPU 硬體加速就緒，準備載入模型...' : 'WebAssembly 引擎就緒，準備載入模型...',
+      progress: 10,
     });
 
     // 依序下載文字檢測 (Det, 4.8MB)、辨識 (Rec, 16.5MB) 與字典 (74KB)，帶真實進度回饋
@@ -161,6 +204,7 @@ async function initService(): Promise<void> {
       '文字檢測模型 (Det)',
       15,
       35,
+      postInitializationProgress,
     )) as ArrayBuffer;
 
     const recBuffer = (await fetchWithProgress(
@@ -168,6 +212,7 @@ async function initService(): Promise<void> {
       '文字識別模型 (Rec)',
       36,
       75,
+      postInitializationProgress,
     )) as ArrayBuffer;
 
     const dictText = (await fetchWithProgress(
@@ -175,56 +220,29 @@ async function initService(): Promise<void> {
       '中文繁簡字表 (Dict)',
       76,
       82,
+      postInitializationProgress,
       true,
     )) as string;
 
-    postMessage({
-      type: 'progress',
-      data: {
-        stage: 'init',
-        message: '正在編譯神經網絡並建立 PaddleOCR 推論管線...',
-        progress: 85,
-      } as OcrProgressEvent,
+    postInitializationProgress({
+      stage: 'init',
+      message: '正在編譯神經網絡並建立 PaddleOCR 推論管線...',
+      progress: 85,
     });
 
-    // 確保字典滿足 CTC 解碼類別數量
-    const charactersDictionary = dictText.split(/\r?\n/);
-    while (charactersDictionary.length < 18385) {
-      charactersDictionary.push(' ');
+    const charactersDictionary = dictText.trimEnd().split(/\r?\n/);
+    if (charactersDictionary.length < 18384) {
+      throw new Error(`OCR dictionary is incomplete: expected 18384 entries, got ${charactersDictionary.length}`);
     }
 
     try {
-      paddleOcrService = await PaddleOcrService.createInstance({
-        ort,
-        detection: {
-          modelBuffer: detBuffer,
-          textPixelThreshold: 0.3,
-          boxScoreThreshold: 0.6,
-          unclipRatio: 1.6,
-        },
-        recognition: {
-          modelBuffer: recBuffer,
-          charactersDictionary,
-        },
-      });
+      paddleOcrService = await createPaddleOcrService(detBuffer, recBuffer, charactersDictionary);
     } catch (err: any) {
       // 若 WebGPU 建立 Session 失敗，嘗試降級
       if (currentBackend === 'webgpu') {
         console.warn('[OCR Worker] WebGPU 推論初始化異常，切換至 WebAssembly/CPU 備援:', err);
         currentBackend = 'wasm';
-        paddleOcrService = await PaddleOcrService.createInstance({
-          ort,
-          detection: {
-            modelBuffer: detBuffer,
-            textPixelThreshold: 0.3,
-            boxScoreThreshold: 0.6,
-            unclipRatio: 1.6,
-          },
-          recognition: {
-            modelBuffer: recBuffer,
-            charactersDictionary,
-          },
-        });
+        paddleOcrService = await createPaddleOcrService(detBuffer, recBuffer, charactersDictionary);
       } else {
         throw err;
       }
@@ -234,9 +252,19 @@ async function initService(): Promise<void> {
       type: 'init-complete',
       data: { backend: currentBackend },
     });
-  })();
+    })();
 
-  return initPromise;
+    initPromise = initialization.catch(err => {
+      initPromise = null;
+      throw err;
+    });
+  }
+
+  try {
+    await initPromise;
+  } finally {
+    if (requestId !== undefined) initRequestIds.delete(requestId);
+  }
 }
 
 self.onmessage = async (event: MessageEvent) => {
@@ -245,7 +273,7 @@ self.onmessage = async (event: MessageEvent) => {
   // 1. 初始化請求
   if (type === 'init') {
     try {
-      await initService();
+      await initService(id);
       postMessage({ type: 'init-success', id, backend: currentBackend });
     } catch (err: any) {
       console.error('[OCR Worker] Init failed:', err);
@@ -257,11 +285,15 @@ self.onmessage = async (event: MessageEvent) => {
   // 2. 記憶體釋放請求 (SPA 元件卸載時調用)
   if (type === 'destroy') {
     try {
+      // Do not release sessions while model initialization is still creating them.
+      const pendingInitialization = initPromise;
+      await pendingInitialization?.catch(() => {});
       if (paddleOcrService) {
         await paddleOcrService.destroy().catch(() => {});
         paddleOcrService = null;
       }
       initPromise = null;
+      initRequestIds.clear();
       postMessage({ type: 'destroy-complete', id });
     } catch (e) {
       console.warn('[OCR Worker] Destroy warning:', e);
@@ -274,7 +306,7 @@ self.onmessage = async (event: MessageEvent) => {
     const startTime = performance.now();
     try {
       if (!paddleOcrService) {
-        await initService();
+        await initService(id);
       }
 
       if (!paddleOcrService) {

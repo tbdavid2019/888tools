@@ -20,6 +20,7 @@ import {
 import { checkBrowserWebGpu, recognizeImage, generateDemoSample, destroyOcrService } from './ocr.service';
 import { reconstructTableFromOcrBoxes, exportGridToXlsx } from './table-reconstruction.service';
 import type { OcrResult, OcrTextItem, TableReconstructResult, OcrProgressEvent } from './ocr.types';
+import { isCurrentOcrRequest } from './ocr.worker-utils';
 import { convertOpenCC } from '@/services/opencc.service';
 
 const message = useMessage();
@@ -51,6 +52,7 @@ const containerRef = ref<HTMLDivElement | null>(null);
 const showBoundingBoxes = ref(true);
 const showTableGrid = ref(true);
 const hoveredItemId = ref<string | null>(null);
+let latestOcrRequestId = 0;
 
 // 拖曳狀態
 const isDraggingOver = ref(false);
@@ -84,6 +86,7 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
+  latestOcrRequestId++;
   window.removeEventListener('paste', handleGlobalPaste);
   destroyOcrService();
 });
@@ -156,6 +159,9 @@ function loadSample(type: 'text' | 'table') {
       rowCount: 5,
       colCount: 4,
     };
+  } else {
+    ocrResult.value = null;
+    tableResult.value = null;
   }
 
   runOcr(dataUrl);
@@ -190,6 +196,8 @@ function processImageFile(file: File) {
   reader.onload = () => {
     const dataUrl = reader.result as string;
     originalImageUrl.value = dataUrl;
+    ocrResult.value = null;
+    tableResult.value = null;
     runOcr(dataUrl);
   };
   reader.readAsDataURL(file);
@@ -197,6 +205,7 @@ function processImageFile(file: File) {
 
 // 執行核心 OCR 與二維表格幾何重構
 async function runOcr(imageSource: string) {
+  const requestId = ++latestOcrRequestId;
   isProcessing.value = true;
   progressInfo.value = {
     stage: 'init',
@@ -206,8 +215,12 @@ async function runOcr(imageSource: string) {
 
   try {
     const result = await recognizeImage(imageSource, (ev) => {
-      progressInfo.value = ev;
+      if (isCurrentOcrRequest(requestId, latestOcrRequestId)) {
+        progressInfo.value = ev;
+      }
     });
+
+    if (!isCurrentOcrRequest(requestId, latestOcrRequestId)) return;
 
     ocrResult.value = result;
     imageNaturalWidth.value = result.imageWidth;
@@ -236,10 +249,13 @@ async function runOcr(imageSource: string) {
       drawCanvasOverlay();
     });
   } catch (err: any) {
+    if (!isCurrentOcrRequest(requestId, latestOcrRequestId)) return;
     console.error('OCR Processing failed:', err);
     message.error(`辨識失敗: ${err.message || String(err)}`);
   } finally {
-    isProcessing.value = false;
+    if (isCurrentOcrRequest(requestId, latestOcrRequestId)) {
+      isProcessing.value = false;
+    }
   }
 }
 
@@ -433,6 +449,8 @@ function convertChinese(direction: 's2t' | 't2s') {
 
 // 清除所有內容
 function reset() {
+  latestOcrRequestId++;
+  isProcessing.value = false;
   originalImageUrl.value = null;
   ocrResult.value = null;
   tableResult.value = null;

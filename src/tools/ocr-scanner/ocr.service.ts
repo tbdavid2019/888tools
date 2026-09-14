@@ -80,6 +80,13 @@ function getOrCreateWorker(): Worker {
         const req = pendingRequests.get(id)!;
         pendingRequests.delete(id);
         req.reject(new Error(error));
+        return;
+      }
+
+      if (type === 'destroy-complete' && id && pendingRequests.has(id)) {
+        const req = pendingRequests.get(id)!;
+        pendingRequests.delete(id);
+        req.resolve(undefined);
       }
     };
 
@@ -117,31 +124,42 @@ export async function initOcrService(onProgress?: (e: OcrProgressEvent) => void)
  * 終止 Worker 並釋放所有推論記憶體與張量
  */
 export async function destroyOcrService(): Promise<void> {
-  if (ocrWorker) {
-    try {
-      const reqId = ++reqIdCounter;
-      await new Promise<void>((resolve) => {
-        const timeout = setTimeout(resolve, 300);
-        pendingRequests.set(reqId, {
-          resolve: () => {
-            clearTimeout(timeout);
-            resolve();
-          },
-          reject: () => {
-            clearTimeout(timeout);
-            resolve();
-          },
-        });
-        ocrWorker?.postMessage({ type: 'destroy', id: reqId });
+  const worker = ocrWorker;
+  if (!worker) return;
+
+  // Detach the worker synchronously so a remounted component cannot reuse it
+  // while the asynchronous cleanup handshake is in progress.
+  ocrWorker = null;
+  initPromise = null;
+
+  const destroyError = new Error('OCR service was destroyed');
+  const requests = [...pendingRequests.values()];
+  pendingRequests.clear();
+  for (const request of requests) {
+    request.reject(destroyError);
+  }
+
+  const destroyReqId = ++reqIdCounter;
+  try {
+    await new Promise<void>((resolve) => {
+      const timeout = setTimeout(resolve, 300);
+      pendingRequests.set(destroyReqId, {
+        resolve: () => {
+          clearTimeout(timeout);
+          resolve();
+        },
+        reject: () => {
+          clearTimeout(timeout);
+          resolve();
+        },
       });
-    } catch {
-      // ignore
-    } finally {
-      ocrWorker.terminate();
-      ocrWorker = null;
-      initPromise = null;
-      pendingRequests.clear();
-    }
+      worker.postMessage({ type: 'destroy', id: destroyReqId });
+    });
+  } catch {
+    // ignore
+  } finally {
+    pendingRequests.delete(destroyReqId);
+    worker.terminate();
   }
 }
 
