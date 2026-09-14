@@ -114,6 +114,38 @@ export async function initOcrService(onProgress?: (e: OcrProgressEvent) => void)
 }
 
 /**
+ * 終止 Worker 並釋放所有推論記憶體與張量
+ */
+export async function destroyOcrService(): Promise<void> {
+  if (ocrWorker) {
+    try {
+      const reqId = ++reqIdCounter;
+      await new Promise<void>((resolve) => {
+        const timeout = setTimeout(resolve, 300);
+        pendingRequests.set(reqId, {
+          resolve: () => {
+            clearTimeout(timeout);
+            resolve();
+          },
+          reject: () => {
+            clearTimeout(timeout);
+            resolve();
+          },
+        });
+        ocrWorker?.postMessage({ type: 'destroy', id: reqId });
+      });
+    } catch {
+      // ignore
+    } finally {
+      ocrWorker.terminate();
+      ocrWorker = null;
+      initPromise = null;
+      pendingRequests.clear();
+    }
+  }
+}
+
+/**
  * 從 File、Blob 或 Data URL 提取像素陣列
  */
 export async function extractImageData(source: File | Blob | string): Promise<{

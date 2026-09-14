@@ -17,7 +17,7 @@ import {
   Trash,
 } from '@vicons/tabler';
 
-import { checkBrowserWebGpu, recognizeImage, generateDemoSample } from './ocr.service';
+import { checkBrowserWebGpu, recognizeImage, generateDemoSample, destroyOcrService } from './ocr.service';
 import { reconstructTableFromOcrBoxes, exportGridToXlsx } from './table-reconstruction.service';
 import type { OcrResult, OcrTextItem, TableReconstructResult, OcrProgressEvent } from './ocr.types';
 import { convertOpenCC } from '@/services/opencc.service';
@@ -41,7 +41,7 @@ const imageNaturalHeight = ref(0);
 // 辨識結果
 const ocrResult = ref<OcrResult | null>(null);
 const tableResult = ref<TableReconstructResult | null>(null);
-const activeTab = ref<'table' | 'text' | 'raw'>('table');
+const activeTab = ref<'table' | 'markdown' | 'csv' | 'text' | 'raw'>('table');
 
 // Canvas 幾何視覺化
 const canvasRef = ref<HTMLCanvasElement | null>(null);
@@ -74,14 +74,18 @@ const stats = computed(() => {
   };
 });
 
-// 初始化檢查 WebGPU
+// 初始化檢查 WebGPU 並預載示範表格
 onMounted(async () => {
   webGpuInfo.value = await checkBrowserWebGpu();
   window.addEventListener('paste', handleGlobalPaste);
+
+  // 預設自動載入示範表格，確保使用者一開即有完整預覽畫面
+  loadSample('table');
 });
 
 onUnmounted(() => {
   window.removeEventListener('paste', handleGlobalPaste);
+  destroyOcrService();
 });
 
 // 處理貼上截圖 (Ctrl+V / Cmd+V)
@@ -127,8 +131,58 @@ function loadSample(type: 'text' | 'table') {
   const dataUrl = generateDemoSample(type);
   originalImageUrl.value = dataUrl;
   activeTab.value = type === 'table' ? 'table' : 'text';
+
+  if (type === 'table') {
+    const demoGrid = [
+      ['季度', '產品線', '銷售額 (萬)', '利潤率 (%)'],
+      ['第一季 Q1', '雲端運算', '1,280.50', '32.4%'],
+      ['第二季 Q2', '智慧裝置', '2,460.00', '28.6%'],
+      ['第三季 Q3', '軟體授權', '3,150.80', '41.2%'],
+      ['第四季 Q4', '人工智慧', '5,890.20', '48.9%'],
+    ];
+    tableResult.value = {
+      grid: demoGrid,
+      cells: [],
+      markdown: [
+        '| 季度 | 產品線 | 銷售額 (萬) | 利潤率 (%) |',
+        '| --- | --- | --- | --- |',
+        '| 第一季 Q1 | 雲端運算 | 1,280.50 | 32.4% |',
+        '| 第二季 Q2 | 智慧裝置 | 2,460.00 | 28.6% |',
+        '| 第三季 Q3 | 軟體授權 | 3,150.80 | 41.2% |',
+        '| 第四季 Q4 | 人工智慧 | 5,890.20 | 48.9% |',
+      ].join('\n'),
+      csv: demoGrid.map(r => r.join(',')).join('\n'),
+      html: '',
+      rowCount: 5,
+      colCount: 4,
+    };
+  }
+
   runOcr(dataUrl);
 }
+
+// 監聽表格儲存格編輯，即時同步 Markdown 與 CSV 預覽
+watch(
+  () => tableResult.value?.grid,
+  (newGrid) => {
+    if (!newGrid || !tableResult.value) return;
+    const numRows = newGrid.length;
+    if (numRows === 0) return;
+
+    const header = `| ${newGrid[0].map(c => c.replace(/\|/g, '\\|') || ' ').join(' | ')} |`;
+    const separator = `| ${newGrid[0].map(() => '---').join(' | ')} |`;
+    const lines = [header, separator];
+    for (let r = 1; r < numRows; r++) {
+      lines.push(`| ${newGrid[r].map(c => c.replace(/\|/g, '\\|') || ' ').join(' | ')} |`);
+    }
+    tableResult.value.markdown = lines.join('\n');
+
+    tableResult.value.csv = newGrid
+      .map(row => row.map(val => (/[",\n\r]/.test(val) ? `"${val.replace(/"/g, '""')}"` : val)).join(','))
+      .join('\n');
+  },
+  { deep: true },
+);
 
 // 處理圖片檔案
 function processImageFile(file: File) {
@@ -146,7 +200,7 @@ async function runOcr(imageSource: string) {
   isProcessing.value = true;
   progressInfo.value = {
     stage: 'init',
-    message: '正在準備推論引擎...',
+    message: '正在準備推論引擎與載入權重...',
     progress: 10,
   };
 
@@ -297,19 +351,27 @@ function onCanvasMouseLeave() {
   hoveredItemId.value = null;
 }
 
-// 複製到剪貼簿
-async function copyToClipboard(text: string, label = '內容') {
+// 複製到剪貼簿（具備空值防呆與明確回饋）
+async function copyToClipboard(text: string | undefined | null, label = '內容') {
+  if (!text || !text.trim()) {
+    message.warning(`目前沒有可複製的 ${label}，請確認圖片已辨識完成`);
+    return;
+  }
+
   try {
     await navigator.clipboard.writeText(text);
     message.success(`${label} 已複製到剪貼簿！`);
   } catch {
-    message.error('複製失敗，請手動選取複製');
+    message.error('複製失敗，請手動選取文字');
   }
 }
 
 // 下載純文字檔案
 function downloadTextFile() {
-  if (!ocrResult.value) return;
+  if (!ocrResult.value || !ocrResult.value.text.trim()) {
+    message.warning('目前沒有文字可下載');
+    return;
+  }
   const blob = new Blob([ocrResult.value.text], { type: 'text/plain;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -388,10 +450,10 @@ function reset() {
             <template #icon>
               <Cpu class="w-4 h-4" />
             </template>
-            {{ webGpuInfo.supported ? 'WebGPU 加速啟用' : 'WASM 引擎就緒' }}
+            {{ webGpuInfo.supported ? 'WebGPU 硬體加速中' : 'WASM 引擎就緒' }}
           </n-tag>
           <span class="text-sm opacity-75">
-            推論引擎：PaddleOCR (PP-OCRv5/v6) + 二維幾何重構演算法 (純前端本地運算)
+            推論引擎：PaddleOCR (PP-OCR) + 二維幾何重構演算法 (純前端本地運算)
           </span>
         </div>
 
@@ -406,7 +468,7 @@ function reset() {
           </n-button>
           <n-button v-if="originalImageUrl" size="small" quaternary type="error" @click="reset">
             <template #icon><Trash class="w-4 h-4" /></template>
-            清除
+            清除圖片
           </n-button>
         </div>
       </div>
@@ -414,7 +476,7 @@ function reset() {
 
     <!-- 上傳與剪貼簿貼上區 -->
     <div
-      class="upload-drop-zone relative border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer bg-slate-50 dark:bg-slate-800/40"
+      class="upload-drop-zone relative border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer bg-slate-50 dark:bg-slate-800/40"
       :class="{
         'border-primary ring-2 ring-primary/20 bg-primary/5': isDraggingOver,
         'border-slate-300 dark:border-slate-700 hover:border-primary/60': !isDraggingOver,
@@ -432,16 +494,16 @@ function reset() {
         @change="onFileSelect"
       />
 
-      <div class="flex flex-col items-center justify-center gap-3">
-        <div class="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-          <Upload class="w-7 h-7" />
+      <div class="flex flex-col items-center justify-center gap-2">
+        <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+          <Upload class="w-6 h-6" />
         </div>
         <div>
           <h3 class="text-base font-semibold mb-1">
-            點擊選擇圖片、拖曳至此，或直接按 <kbd class="px-2 py-0.5 bg-slate-200 dark:bg-slate-700 rounded text-xs">Ctrl+V</kbd> / <kbd class="px-2 py-0.5 bg-slate-200 dark:bg-slate-700 rounded text-xs">Cmd+V</kbd> 貼上截圖
+            點擊選擇圖片、拖曳至此，或直接按 <kbd class="px-2 py-0.5 bg-slate-200 dark:bg-slate-700 rounded text-xs font-mono">Ctrl+V</kbd> / <kbd class="px-2 py-0.5 bg-slate-200 dark:bg-slate-700 rounded text-xs font-mono">Cmd+V</kbd> 貼上截圖
           </h3>
           <p class="text-xs opacity-65">
-            支援 PNG、JPG、WEBP 等常見影像格式，圖片完全在本地運算不經過任何外部伺服器。
+            支援繁簡中文、英文、數字及二維結構表格，影像完全在您的裝置本地端處理，保障數據安全。
           </p>
         </div>
       </div>
@@ -494,7 +556,7 @@ function reset() {
                 ref="imageRef"
                 :src="originalImageUrl"
                 alt="Original OCR Target"
-                class="max-w-full h-auto object-contain block rounded"
+                class="max-w-full h-auto object-contain block rounded shadow-sm"
                 @load="drawCanvasOverlay"
               />
               <canvas
@@ -507,51 +569,57 @@ function reset() {
           </div>
 
           <div v-if="stats" class="mt-3 flex flex-wrap items-center justify-between text-xs opacity-75 pt-2 border-t border-slate-200 dark:border-slate-800">
-            <span>尺寸: {{ imageNaturalWidth }} × {{ imageNaturalHeight }} px</span>
+            <span>原圖尺寸: {{ imageNaturalWidth }} × {{ imageNaturalHeight }} px</span>
             <span>推論耗時: {{ stats.timeMs }} ms</span>
             <span>平均置信度: {{ stats.avgConfidence }}%</span>
           </div>
         </c-card>
       </div>
 
-      <!-- 右欄：多模式辨識成果 (表格重構 / 純文字 / JSON 幾何) -->
+      <!-- 右欄：多模式預覽工作區 (表格視覺 / Markdown / CSV / 純文字 / 幾何座標) -->
       <div class="lg:col-span-6 flex flex-col gap-3">
         <c-card>
           <n-tabs v-model:value="activeTab" type="segment" animated>
-            <!-- 分頁 1: 二維表格重構 -->
-            <n-tab-pane name="table" tab="二維表格重構">
+            <!-- 分頁 1: 表格渲染視覺預覽 -->
+            <n-tab-pane name="table" tab="表格預覽">
               <div class="flex flex-col gap-3 pt-2">
                 <!-- 工具列 -->
                 <div class="flex flex-wrap items-center justify-between gap-2">
                   <div class="flex items-center gap-2">
-                    <n-tag v-if="tableResult" size="small" type="success" round>
+                    <n-tag v-if="tableResult && tableResult.rowCount > 0" size="small" type="success" round>
                       {{ tableResult.rowCount }} 列 × {{ tableResult.colCount }} 欄
                     </n-tag>
                     <span class="text-xs opacity-65">點擊單元格可即時編輯</span>
                   </div>
 
                   <div class="flex items-center gap-1.5">
-                    <n-button size="small" type="primary" secondary @click="handleExportExcel">
+                    <n-button
+                      size="small"
+                      type="primary"
+                      secondary
+                      :disabled="!tableResult || tableResult.rowCount === 0"
+                      @click="handleExportExcel"
+                    >
                       <template #icon><Download class="w-3.5 h-3.5" /></template>
                       匯出 Excel (.xlsx)
                     </n-button>
-                    <n-button size="small" secondary @click="copyToClipboard(tableResult?.markdown || '', 'Markdown 表格')">
-                      <template #icon><Copy class="w-3.5 h-3.5" /></template>
-                      Markdown
-                    </n-button>
-                    <n-button size="small" secondary @click="copyToClipboard(tableResult?.csv || '', 'CSV')">
-                      <template #icon><Copy class="w-3.5 h-3.5" /></template>
-                      CSV
-                    </n-button>
-                    <n-button size="small" quaternary @click="openInCsvExcelViewer">
+                    <n-button
+                      size="small"
+                      quaternary
+                      :disabled="!tableResult || tableResult.rowCount === 0"
+                      @click="openInCsvExcelViewer"
+                    >
                       <template #icon><ExternalLink class="w-3.5 h-3.5" /></template>
-                      檢視器中打開
+                      在檢視器打開
                     </n-button>
                   </div>
                 </div>
 
-                <!-- 表格預覽視窗 -->
-                <div v-if="tableResult && tableResult.grid.length > 0" class="table-container max-h-[440px] overflow-auto border rounded-lg border-slate-200 dark:border-slate-800">
+                <!-- 互動式表格可視化視窗 -->
+                <div
+                  v-if="tableResult && tableResult.grid.length > 0"
+                  class="table-container max-h-[440px] overflow-auto border rounded-lg border-slate-200 dark:border-slate-800"
+                >
                   <table class="w-full text-left border-collapse text-sm">
                     <thead>
                       <tr class="bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
@@ -591,13 +659,59 @@ function reset() {
                 </div>
 
                 <div v-else class="text-center py-12 text-slate-400">
-                  未偵測到明顯結構之表格，可切換至「純文字辨識」檢視
+                  未偵測到明顯結構之表格，可切換至「純文字辨識」或重新上傳
                 </div>
               </div>
             </n-tab-pane>
 
-            <!-- 分頁 2: 純文字辨識 -->
-            <n-tab-pane name="text" tab="純文字辨識">
+            <!-- 分頁 2: Markdown 表格原始碼與預覽 -->
+            <n-tab-pane name="markdown" tab="Markdown 預覽">
+              <div class="flex flex-col gap-3 pt-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs opacity-75">Markdown 表格語法（支援 Notion、Obsidian、GitHub 直接貼上）：</span>
+                  <n-button
+                    size="small"
+                    type="primary"
+                    secondary
+                    :disabled="!tableResult || !tableResult.markdown"
+                    @click="copyToClipboard(tableResult?.markdown, 'Markdown 表格')"
+                  >
+                    <template #icon><Copy class="w-3.5 h-3.5" /></template>
+                    複製 Markdown
+                  </n-button>
+                </div>
+
+                <div class="relative">
+                  <pre class="bg-slate-900 text-slate-100 p-4 rounded-lg text-xs font-mono max-h-[440px] overflow-auto whitespace-pre leading-relaxed">{{ tableResult?.markdown || '（尚無 Markdown 表格資料）' }}</pre>
+                </div>
+              </div>
+            </n-tab-pane>
+
+            <!-- 分頁 3: CSV 原始碼與預覽 -->
+            <n-tab-pane name="csv" tab="CSV 預覽">
+              <div class="flex flex-col gap-3 pt-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs opacity-75">標準 CSV 格式字串（逗號分隔與引號逸出）：</span>
+                  <n-button
+                    size="small"
+                    type="primary"
+                    secondary
+                    :disabled="!tableResult || !tableResult.csv"
+                    @click="copyToClipboard(tableResult?.csv, 'CSV 內容')"
+                  >
+                    <template #icon><Copy class="w-3.5 h-3.5" /></template>
+                    複製 CSV
+                  </n-button>
+                </div>
+
+                <div class="relative">
+                  <pre class="bg-slate-900 text-slate-100 p-4 rounded-lg text-xs font-mono max-h-[440px] overflow-auto whitespace-pre leading-relaxed">{{ tableResult?.csv || '（尚無 CSV 資料）' }}</pre>
+                </div>
+              </div>
+            </n-tab-pane>
+
+            <!-- 分頁 4: 純文字辨識 -->
+            <n-tab-pane name="text" tab="純文字預覽">
               <div class="flex flex-col gap-3 pt-2">
                 <div class="flex flex-wrap items-center justify-between gap-2">
                   <div class="flex items-center gap-2">
@@ -613,11 +727,22 @@ function reset() {
                     <n-button size="small" secondary @click="convertChinese('t2s')">
                       轉簡體
                     </n-button>
-                    <n-button size="small" type="primary" secondary @click="copyToClipboard(ocrResult?.text || '', '辨識文字')">
+                    <n-button
+                      size="small"
+                      type="primary"
+                      secondary
+                      :disabled="!ocrResult || !ocrResult.text"
+                      @click="copyToClipboard(ocrResult?.text, '純文字內容')"
+                    >
                       <template #icon><Copy class="w-3.5 h-3.5" /></template>
                       複製文字
                     </n-button>
-                    <n-button size="small" secondary @click="downloadTextFile">
+                    <n-button
+                      size="small"
+                      secondary
+                      :disabled="!ocrResult || !ocrResult.text"
+                      @click="downloadTextFile"
+                    >
                       <template #icon><Download class="w-3.5 h-3.5" /></template>
                       下載 TXT
                     </n-button>
@@ -632,17 +757,25 @@ function reset() {
                   :rows="14"
                   class="font-sans leading-relaxed"
                 />
+                <div v-else class="text-center py-12 text-slate-400">
+                  （尚未提取文字）
+                </div>
               </div>
             </n-tab-pane>
 
-            <!-- 分頁 3: 原始幾何與 JSON 數據 -->
+            <!-- 分頁 5: 原始幾何與 JSON 數據 -->
             <n-tab-pane name="raw" tab="幾何座標 (JSON)">
               <div class="flex flex-col gap-3 pt-2">
                 <div class="flex justify-between items-center">
                   <span class="text-xs opacity-75">
                     提供文字區域二維邊界框座標 (X, Y, Width, Height) 與信心分數
                   </span>
-                  <n-button size="small" secondary @click="copyToClipboard(JSON.stringify(ocrResult, null, 2), 'JSON 數據')">
+                  <n-button
+                    size="small"
+                    secondary
+                    :disabled="!ocrResult"
+                    @click="copyToClipboard(JSON.stringify(ocrResult, null, 2), 'JSON 數據')"
+                  >
                     <template #icon><Copy class="w-3.5 h-3.5" /></template>
                     複製 JSON
                   </n-button>
@@ -660,7 +793,7 @@ function reset() {
 
 <style scoped>
 .upload-drop-zone {
-  min-height: 140px;
+  min-height: 120px;
 }
 
 .table-container {

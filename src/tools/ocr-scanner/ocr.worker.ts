@@ -2,16 +2,18 @@ import * as ort from 'onnxruntime-web';
 import { PaddleOcrService } from 'paddleocr';
 import type { OcrProgressEvent, OcrTextItem } from './ocr.types';
 
-// 配置 ONNX Runtime wasm 路徑
+// 配置 ONNX Runtime wasm 路徑與執行緒
 if (typeof ort !== 'undefined' && ort.env?.wasm) {
-  ort.env.wasm.numThreads = Math.min(4, typeof navigator !== 'undefined' ? navigator.hardwareConcurrency || 2 : 2);
+  const isIsolated = typeof crossOriginIsolated !== 'undefined' && crossOriginIsolated;
+  ort.env.wasm.numThreads = isIsolated ? Math.min(4, typeof navigator !== 'undefined' ? navigator.hardwareConcurrency || 2 : 2) : 1;
   ort.env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.29.0/dist/';
 }
 
 let paddleOcrService: PaddleOcrService | null = null;
 let currentBackend: 'webgpu' | 'wasm' = 'wasm';
+let initPromise: Promise<void> | null = null;
 
-// 模型檔案路徑（先從本地 public/models/ocr/ 載入，若失敗則回退至 HuggingFace CDN）
+// 模型檔案路徑（先從本地 /models/ocr/ 載入，若失敗則回退至 HuggingFace CDN）
 const MODEL_PATHS = {
   det: [
     '/models/ocr/PP-OCRv5_mobile_det_infer.onnx',
@@ -27,89 +29,220 @@ const MODEL_PATHS = {
   ],
 };
 
-async function fetchWithFallback(urls: string[], isText = false): Promise<ArrayBuffer | string> {
+/**
+ * 具備真實字節進度回報的下載函式 (Streaming Download)
+ */
+async function fetchWithProgress(
+  urls: string[],
+  label: string,
+  startPct: number,
+  endPct: number,
+  isText = false,
+): Promise<ArrayBuffer | string> {
   let lastError: Error | null = null;
+
   for (const url of urls) {
     try {
       const res = await fetch(url);
-      if (res.ok) {
-        return isText ? await res.text() : await res.arrayBuffer();
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const contentLength = Number(res.headers.get('content-length') || 0);
+
+      // 若不支援 Body Stream 或為小字典，直接取得
+      if (!res.body || contentLength < 500000 || isText) {
+        postMessage({
+          type: 'progress',
+          data: {
+            stage: 'load-model',
+            message: `正在載入 ${label}...`,
+            progress: startPct + Math.round((endPct - startPct) * 0.5),
+          } as OcrProgressEvent,
+        });
+
+        const data = isText ? await res.text() : await res.arrayBuffer();
+
+        postMessage({
+          type: 'progress',
+          data: {
+            stage: 'load-model',
+            message: `已載入 ${label}`,
+            progress: endPct,
+          } as OcrProgressEvent,
+        });
+
+        return data;
       }
-      lastError = new Error(`HTTP ${res.status} from ${url}`);
+
+      // 大型 ONNX 模型走串流讀取，向使用者呈現真實下載進度條與 MB 數
+      const reader = res.body.getReader();
+      const chunks: Uint8Array[] = [];
+      let received = 0;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (value) {
+          chunks.push(value);
+          received += value.length;
+
+          const ratio = Math.min(1, received / contentLength);
+          const currentProgress = Math.round(startPct + ratio * (endPct - startPct));
+          const currentMB = (received / 1048576).toFixed(1);
+          const totalMB = (contentLength / 1048576).toFixed(1);
+
+          postMessage({
+            type: 'progress',
+            data: {
+              stage: 'load-model',
+              message: `正在下載 ${label} (${currentMB}MB / ${totalMB}MB)...`,
+              progress: currentProgress,
+              current: received,
+              total: contentLength,
+            } as OcrProgressEvent,
+          });
+        }
+      }
+
+      const combined = new Uint8Array(received);
+      let offset = 0;
+      for (const chunk of chunks) {
+        combined.set(chunk, offset);
+        offset += chunk.length;
+      }
+
+      return combined.buffer;
     } catch (err: any) {
       lastError = err;
     }
   }
-  throw lastError || new Error(`Failed to fetch from any of: ${urls.join(', ')}`);
+
+  throw lastError || new Error(`Failed to load ${label}`);
 }
 
-async function checkWebGpuSupport(): Promise<boolean> {
+/**
+ * 檢測 WebGPU，並於失敗時自動降級至 WebAssembly/CPU
+ */
+async function resolveBackend(): Promise<'webgpu' | 'wasm'> {
   try {
     if (typeof navigator !== 'undefined' && 'gpu' in navigator && (navigator as any).gpu) {
       const adapter = await (navigator as any).gpu.requestAdapter();
-      return !!adapter;
+      if (adapter) {
+        return 'webgpu';
+      }
     }
-  } catch (e) {
-    console.warn('[OCR Worker] WebGPU detection error:', e);
+  } catch (err) {
+    console.warn('[OCR Worker] WebGPU 初始化失敗，平滑降級至 WebAssembly/CPU:', err);
   }
-  return false;
+  return 'wasm';
 }
 
+/**
+ * 初始化 OCR 服務實例
+ */
 async function initService(): Promise<void> {
   if (paddleOcrService) return;
+  if (initPromise) return initPromise;
 
-  const hasWebGpu = await checkWebGpuSupport();
-  currentBackend = hasWebGpu ? 'webgpu' : 'wasm';
+  initPromise = (async () => {
+    currentBackend = await resolveBackend();
 
-  postMessage({
-    type: 'progress',
-    data: {
-      stage: 'load-model',
-      message: hasWebGpu ? '正在透過 WebGPU 加速載入 PP-OCR 模型...' : '正在透過 WASM 載入 PP-OCR 模型...',
-      progress: 20,
-    } as OcrProgressEvent,
-  });
+    postMessage({
+      type: 'progress',
+      data: {
+        stage: 'init',
+        message: currentBackend === 'webgpu' ? 'WebGPU 硬體加速就緒，準備載入模型...' : 'WebAssembly 引擎就緒，準備載入模型...',
+        progress: 10,
+      } as OcrProgressEvent,
+    });
 
-  const [detBuffer, recBuffer, dictText] = await Promise.all([
-    fetchWithFallback(MODEL_PATHS.det) as Promise<ArrayBuffer>,
-    fetchWithFallback(MODEL_PATHS.rec) as Promise<ArrayBuffer>,
-    fetchWithFallback(MODEL_PATHS.dict, true) as Promise<string>,
-  ]);
+    // 依序下載文字檢測 (Det, 4.8MB)、辨識 (Rec, 16.5MB) 與字典 (74KB)，帶真實進度回饋
+    const detBuffer = (await fetchWithProgress(
+      MODEL_PATHS.det,
+      '文字檢測模型 (Det)',
+      15,
+      35,
+    )) as ArrayBuffer;
 
-  postMessage({
-    type: 'progress',
-    data: {
-      stage: 'init',
-      message: '正在初始化 PaddleOCR 推論實例...',
-      progress: 60,
-    } as OcrProgressEvent,
-  });
+    const recBuffer = (await fetchWithProgress(
+      MODEL_PATHS.rec,
+      '文字識別模型 (Rec)',
+      36,
+      75,
+    )) as ArrayBuffer;
 
-  const charactersDictionary = dictText.trimEnd().split(/\r?\n/);
+    const dictText = (await fetchWithProgress(
+      MODEL_PATHS.dict,
+      '中文繁簡字表 (Dict)',
+      76,
+      82,
+      true,
+    )) as string;
 
-  paddleOcrService = await PaddleOcrService.createInstance({
-    ort,
-    detection: {
-      modelBuffer: detBuffer,
-      textPixelThreshold: 0.3,
-      boxScoreThreshold: 0.6,
-      unclipRatio: 1.6,
-    },
-    recognition: {
-      modelBuffer: recBuffer,
-      charactersDictionary,
-    },
-  });
+    postMessage({
+      type: 'progress',
+      data: {
+        stage: 'init',
+        message: '正在編譯神經網絡並建立 PaddleOCR 推論管線...',
+        progress: 85,
+      } as OcrProgressEvent,
+    });
 
-  postMessage({
-    type: 'init-complete',
-    data: { backend: currentBackend },
-  });
+    // 確保字典滿足 CTC 解碼類別數量
+    const charactersDictionary = dictText.split(/\r?\n/);
+    while (charactersDictionary.length < 18385) {
+      charactersDictionary.push(' ');
+    }
+
+    try {
+      paddleOcrService = await PaddleOcrService.createInstance({
+        ort,
+        detection: {
+          modelBuffer: detBuffer,
+          textPixelThreshold: 0.3,
+          boxScoreThreshold: 0.6,
+          unclipRatio: 1.6,
+        },
+        recognition: {
+          modelBuffer: recBuffer,
+          charactersDictionary,
+        },
+      });
+    } catch (err: any) {
+      // 若 WebGPU 建立 Session 失敗，嘗試降級
+      if (currentBackend === 'webgpu') {
+        console.warn('[OCR Worker] WebGPU 推論初始化異常，切換至 WebAssembly/CPU 備援:', err);
+        currentBackend = 'wasm';
+        paddleOcrService = await PaddleOcrService.createInstance({
+          ort,
+          detection: {
+            modelBuffer: detBuffer,
+            textPixelThreshold: 0.3,
+            boxScoreThreshold: 0.6,
+            unclipRatio: 1.6,
+          },
+          recognition: {
+            modelBuffer: recBuffer,
+            charactersDictionary,
+          },
+        });
+      } else {
+        throw err;
+      }
+    }
+
+    postMessage({
+      type: 'init-complete',
+      data: { backend: currentBackend },
+    });
+  })();
+
+  return initPromise;
 }
 
 self.onmessage = async (event: MessageEvent) => {
   const { type, id, data } = event.data;
 
+  // 1. 初始化請求
   if (type === 'init') {
     try {
       await initService();
@@ -121,6 +254,22 @@ self.onmessage = async (event: MessageEvent) => {
     return;
   }
 
+  // 2. 記憶體釋放請求 (SPA 元件卸載時調用)
+  if (type === 'destroy') {
+    try {
+      if (paddleOcrService) {
+        await paddleOcrService.destroy().catch(() => {});
+        paddleOcrService = null;
+      }
+      initPromise = null;
+      postMessage({ type: 'destroy-complete', id });
+    } catch (e) {
+      console.warn('[OCR Worker] Destroy warning:', e);
+    }
+    return;
+  }
+
+  // 3. 圖像辨識請求
   if (type === 'recognize') {
     const startTime = performance.now();
     try {
@@ -139,8 +288,8 @@ self.onmessage = async (event: MessageEvent) => {
         id,
         data: {
           stage: 'det',
-          message: '正在檢測文字區域 (Det)...',
-          progress: 75,
+          message: '正在進行文字幾何區域檢測 (Det)...',
+          progress: 88,
         } as OcrProgressEvent,
       });
 
@@ -159,7 +308,7 @@ self.onmessage = async (event: MessageEvent) => {
                 data: {
                   stage: 'rec',
                   message: `正在辨識文字內容 (Rec)...`,
-                  progress: 85,
+                  progress: 92,
                 } as OcrProgressEvent,
               });
             }
@@ -180,7 +329,7 @@ self.onmessage = async (event: MessageEvent) => {
         confidence: Number((res.confidence || 0).toFixed(4)),
       }));
 
-      // 生成完整文字（按自然排版組合）
+      // 生成完整文字
       const fullText = items.map(it => it.text).join('\n');
       const timeMs = Math.round(performance.now() - startTime);
 
