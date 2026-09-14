@@ -213,6 +213,7 @@ declare module '@vue/runtime-core' {
     NTag: typeof import('naive-ui')['NTag']
     NTooltip: typeof import('naive-ui')['NTooltip']
     NumeronymGenerator: typeof import('./src/tools/numeronym-generator/numeronym-generator.vue')['default']
+    OcrScanner: typeof import('./src/tools/ocr-scanner/ocr-scanner.vue')['default']
     OnlineClock: typeof import('./src/tools/online-clock/online-clock.vue')['default']
     OtpCodeGeneratorAndValidator: typeof import('./src/tools/otp-code-generator-and-validator/otp-code-generator-and-validator.vue')['default']
     P2pChat: typeof import('./src/tools/p2p-chat/p2p-chat.vue')['default']

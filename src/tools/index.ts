@@ -102,6 +102,7 @@ import { tool as birthdayCalculator } from './birthday-calculator';
 import { tool as dogAgeCalculator } from './dog-age-calculator';
 import { tool as catAgeCalculator } from './cat-age-calculator';
 import { tool as onlineClock } from './online-clock';
+import { tool as ocrScanner } from './ocr-scanner';
 import { tool as removeBackground } from './remove-background';
 import { tool as imageCompression } from './image-compression';
 import { tool as pdfTools } from './pdf-tools';
@@ -171,7 +172,7 @@ export const toolsByCategory: ToolCategory[] = [
   },
   {
     name: 'images',
-    components: [colorCorrection, svgTools, removeBackground, imageCompression, barcodeScanner, imageConverter, qrCodeGenerator, qrChecker, wifiQrCodeGenerator, svgPlaceholderGenerator, barcodeGenerator],
+    components: [ocrScanner, colorCorrection, svgTools, removeBackground, imageCompression, barcodeScanner, imageConverter, qrCodeGenerator, qrChecker, wifiQrCodeGenerator, svgPlaceholderGenerator, barcodeGenerator],
   },
   {
     name: 'videos',

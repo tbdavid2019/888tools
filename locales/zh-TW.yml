@@ -574,6 +574,10 @@ tools:
     title: 文字轉二進位 (ASCII)
     description: 將文字轉換為 ASCII 二進位表示法，或由二進位還原文字。
 
+  ocr-scanner:
+    title: 智慧文字與表格辨識 (OCR)
+    description: 由 WebGPU 與深度學習驅動的純前端即時 OCR，支援繁簡中文文字辨識、二維幾何表格重構與 Excel 匯出。
+
   remove-background:
     title: 圖片去背
     description: 自動移除圖片背景，純前端本地運算保護隱私。

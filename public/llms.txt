@@ -76,6 +76,7 @@
 - [Mic & Camera Tester](https://tool.david888.com/mic-camera-tester): Test and preview your camera and microphone devices with visual feedback.
 - [MIME types](https://tool.david888.com/mime-types): Convert MIME types to file extensions and vice-versa.
 - [Numeronym generator](https://tool.david888.com/numeronym-generator): A numeronym is a word where a number is used to form an abbreviation. For example, "i18n" is a numeronym of "internationalization" where 18 stands for the number of letters between the first i and the last n in the word.
+- [OCR & Table Scanner](https://tool.david888.com/ocr-scanner): Real-time client-side OCR powered by WebGPU and deep learning. Supports Chinese/English text recognition, 2D geometric table reconstruction, and Excel export.
 - [Online clock](https://tool.david888.com/online-clock): View current time with digital, analog, or flip styles plus timezone/seconds/date toggles
 - [Open graph meta generator](https://tool.david888.com/og-meta-generator): Generate open-graph and socials HTML meta tags for your website.
 - [OTP code generator](https://tool.david888.com/otp-generator): Generate and validate time-based OTP (one time password) for multi-factor authentication.

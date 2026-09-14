@@ -634,6 +634,10 @@ tools:
     title: Text to ASCII binary
     description: Convert text to its ASCII binary representation and vice-versa.
 
+  ocr-scanner:
+    title: OCR & Table Scanner
+    description: Real-time client-side OCR powered by WebGPU and deep learning. Supports Chinese/English text recognition, 2D geometric table reconstruction, and Excel export.
+
   remove-background:
     title: Background Remover
     description: Automatically remove image backgrounds locally in your browser.
