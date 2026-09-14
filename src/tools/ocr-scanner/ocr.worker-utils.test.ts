@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
-import { broadcastOcrProgress, getExecutionProviders, isCurrentOcrRequest } from './ocr.worker-utils';
+import {
+  broadcastOcrProgress,
+  getExecutionProviders,
+  isCurrentOcrRequest,
+  normalizeOcrDictionary,
+} from './ocr.worker-utils';
 
 describe('ocr worker utilities', () => {
   it('prefers WebGPU and keeps WASM as the fallback provider', () => {
@@ -21,5 +26,10 @@ describe('ocr worker utilities', () => {
   it('only accepts the latest OCR request', () => {
     expect(isCurrentOcrRequest(2, 2)).toBe(true);
     expect(isCurrentOcrRequest(1, 2)).toBe(false);
+  });
+
+  it('preserves the CTC blank entry and trailing dictionary slot', () => {
+    expect(normalizeOcrDictionary('\n甲\n', 3)).toEqual(['', '甲', '']);
+    expect(normalizeOcrDictionary('\n甲', 3)).toEqual(['', '甲', ' ']);
   });
 });

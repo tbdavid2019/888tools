@@ -4,6 +4,7 @@ import type { OcrProgressEvent, OcrTextItem } from './ocr.types';
 import {
   broadcastOcrProgress,
   getExecutionProviders,
+  normalizeOcrDictionary,
   type OcrBackend,
 } from './ocr.worker-utils';
 
@@ -230,10 +231,7 @@ async function initService(requestId?: number): Promise<void> {
       progress: 85,
     });
 
-    const charactersDictionary = dictText.trimEnd().split(/\r?\n/);
-    if (charactersDictionary.length < 18384) {
-      throw new Error(`OCR dictionary is incomplete: expected 18384 entries, got ${charactersDictionary.length}`);
-    }
+    const charactersDictionary = normalizeOcrDictionary(dictText);
 
     try {
       paddleOcrService = await createPaddleOcrService(detBuffer, recBuffer, charactersDictionary);

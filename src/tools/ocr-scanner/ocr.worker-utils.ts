@@ -6,6 +6,14 @@ export function getExecutionProviders(backend: OcrBackend): Array<'webgpu' | 'wa
   return backend === 'webgpu' ? ['webgpu', 'wasm'] : ['wasm'];
 }
 
+export function normalizeOcrDictionary(text: string, minimumLength = 18385): string[] {
+  const entries = text.split(/\r?\n/);
+  while (entries.length < minimumLength) {
+    entries.push(' ');
+  }
+  return entries;
+}
+
 export function broadcastOcrProgress(
   requestIds: Iterable<number>,
   data: OcrProgressEvent,
