@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## Version 2026.09.21
+
+### Features
+- **bip39-generator**: 新增中文助記詞規範與非英語系錢包相容性動態提示。
+  - **中文單字規範說明**：依據比特幣官方 BIP-39 規範，繁體與簡體中文字庫由 2,048 個標準「單字」（單一漢字）組成並以半形空格分隔。當使用者選取中文時動態顯示說明，消除對單字而非詞彙排版的疑慮。
+  - **主流錢包相容性警示**：選取非英語語系（繁中、簡中、日語、韓語、法語、西班牙語等）時動態跳出提醒，告知主流軟硬體錢包（如 MetaMask、Ledger、Trezor）主要以英文（English）為最高相容標準，強烈建議真實資產儲存優先使用英文助記詞，防止跨錢包還原時因 Unicode 正規化（NFKD）或未支援中文字庫而導致無法還原。
+  - **多語系與自動化測試**：繁體中文與英文 locale 完整支援，並新增 `bip39-generator.test.ts` 測試案例，修復 WebMCP BIP-39 工具字典型別定義。
+- **ocr-scanner**: 新增基於 WebGPU 與 ONNX Runtime Web 的瀏覽器端離線文字識別與 2D 表格幾何重構工具。
+  - **PP-OCR 繁簡中文辨識**：採用 DBNet 文字偵測與 SVTR 文字辨識雙模型，支援純客戶端離線運算與 WebGPU 硬體加速。
+  - **2D 幾何表格重構**：自動偵測表格行列交集，支援將識別結果即時匯出為 Markdown、CSV 與 HTML 表格。
+
 ## Version 2026.09.11
 
 ### Features

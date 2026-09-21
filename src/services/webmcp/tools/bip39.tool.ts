@@ -14,7 +14,7 @@ import {
 } from '@it-tools/bip39';
 import type { WebMcpToolDefinition } from '../types';
 
-const languages: Record<string, string[]> = {
+const languages: Record<string, any> = {
   english: englishWordList,
   chinese_simplified: chineseSimplifiedWordList,
   chinese_traditional: chineseTraditionalWordList,

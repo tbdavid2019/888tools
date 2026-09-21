@@ -18,6 +18,7 @@ import { Copy, Refresh } from '@vicons/tabler';
 
 import { useCopy } from '@/composable/copy';
 import { useValidation } from '@/composable/validation';
+import { translate } from '@/plugins/i18n.plugin';
 import { isNotThrowing } from '@/utils/boolean';
 import { withDefaultOnError } from '@/utils/defaults';
 
@@ -38,6 +39,9 @@ const entropy = ref(generateEntropy());
 const passphraseInput = ref('');
 
 const language = ref<keyof typeof languages>('English');
+const isChinese = computed(() => language.value === 'Chinese traditional' || language.value === 'Chinese simplified');
+const isNonEnglish = computed(() => language.value !== 'English');
+
 const passphrase = computed({
   get() {
     return withDefaultOnError(() => entropyToMnemonic(entropy.value, languages[language.value]), passphraseInput.value);
@@ -76,8 +80,8 @@ function refreshEntropy() {
   entropy.value = generateEntropy();
 }
 
-const { copy: copyEntropy } = useCopy({ source: entropy, text: 'Entropy copied to the clipboard' });
-const { copy: copyPassphrase } = useCopy({ source: passphrase, text: 'Passphrase copied to the clipboard' });
+const { copy: copyEntropy } = useCopy({ source: entropy, text: translate('tools.bip39-generator.entropyCopied') });
+const { copy: copyPassphrase } = useCopy({ source: passphrase, text: translate('tools.bip39-generator.passphraseCopied') });
 </script>
 
 <template>
@@ -87,13 +91,13 @@ const { copy: copyPassphrase } = useCopy({ source: passphrase, text: 'Passphrase
         <c-select
           v-model:value="language"
           searchable
-          label="Language:"
+          :label="$t('tools.bip39-generator.languageLabel')"
           :options="Object.keys(languages)"
         />
       </n-gi>
       <n-gi span="2">
         <n-form-item
-          label="Entropy (seed):"
+          :label="$t('tools.bip39-generator.entropyLabel')"
           :feedback="entropyValidation.message"
           :validation-status="entropyValidation.status"
         >
@@ -115,7 +119,7 @@ const { copy: copyPassphrase } = useCopy({ source: passphrase, text: 'Passphrase
       </n-gi>
     </n-grid>
     <n-form-item
-      label="Passphrase (mnemonic):"
+      :label="$t('tools.bip39-generator.passphraseLabel')"
       :feedback="mnemonicValidation.message"
       :validation-status="mnemonicValidation.status"
     >
@@ -127,5 +131,41 @@ const { copy: copyPassphrase } = useCopy({ source: passphrase, text: 'Passphrase
         </c-button>
       </n-input-group>
     </n-form-item>
+
+    <n-alert
+      v-if="isChinese"
+      type="warning"
+      class="mt-4 shadow-sm"
+      :title="$t('tools.bip39-generator.chineseNoticeTitle')"
+    >
+      <div class="space-y-2 text-xs leading-relaxed">
+        <div>
+          <span class="font-bold text-amber-800 dark:text-amber-400">
+            • {{ $t('tools.bip39-generator.chineseCharRuleLabel') }}：
+          </span>
+          <span>{{ $t('tools.bip39-generator.chineseCharRuleText') }}</span>
+        </div>
+        <div>
+          <span class="font-bold text-amber-800 dark:text-amber-400">
+            • {{ $t('tools.bip39-generator.compatLabel') }}：
+          </span>
+          <span>{{ $t('tools.bip39-generator.chineseCompatText') }}</span>
+        </div>
+      </div>
+    </n-alert>
+
+    <n-alert
+      v-else-if="isNonEnglish"
+      type="warning"
+      class="mt-4 shadow-sm"
+      :title="$t('tools.bip39-generator.nonEnglishNoticeTitle')"
+    >
+      <div class="text-xs leading-relaxed">
+        <span class="font-bold text-amber-800 dark:text-amber-400">
+          • {{ $t('tools.bip39-generator.compatLabel') }}：
+        </span>
+        <span>{{ $t('tools.bip39-generator.nonEnglishCompatText') }}</span>
+      </div>
+    </n-alert>
   </div>
 </template>

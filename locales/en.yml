@@ -353,6 +353,18 @@ tools:
     title: BIP39 passphrase generator
     description: Generate a BIP39 passphrase from an existing or random mnemonic, or
       get the mnemonic from the passphrase.
+    languageLabel: "Language:"
+    entropyLabel: "Entropy (seed):"
+    passphraseLabel: "Passphrase (mnemonic):"
+    entropyCopied: Entropy copied to the clipboard
+    passphraseCopied: Passphrase copied to the clipboard
+    chineseNoticeTitle: BIP-39 Chinese Mnemonic Standard & Compatibility Notice
+    chineseCharRuleLabel: Single Character Standard
+    chineseCharRuleText: According to the official BIP-39 specification, Chinese wordlists (Traditional & Simplified) consist of 2,048 single characters separated by ASCII spaces. This strictly adheres to the standard.
+    compatLabel: Wallet Compatibility Warning
+    chineseCompatText: Most hardware and software wallets (MetaMask, Ledger, Trezor, Phantom, etc.) primarily implement and test with the English wordlist. If securing real crypto assets, using the English wordlist is strongly recommended to ensure maximum cross-wallet compatibility and avoid Unicode normalization (NFKD) discrepancies.
+    nonEnglishNoticeTitle: Non-English Mnemonic Compatibility Notice
+    nonEnglishCompatText: Most hardware and software wallets primarily implement and test with the English wordlist. If securing real crypto assets, using English is strongly recommended to ensure maximum compatibility across different wallets.
 
   base64-file-converter:
     title: Base64 file converter

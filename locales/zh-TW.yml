@@ -331,6 +331,18 @@ tools:
   bip39-generator:
     title: BIP39 助記詞產生器
     description: 依照 BIP39 規範產生隨機錢包助記詞或從種子片語推導。
+    languageLabel: 語言：
+    entropyLabel: Entropy (種子)：
+    passphraseLabel: 助記詞片語 (Passphrase)：
+    entropyCopied: Entropy 已複製到剪貼簿
+    passphraseCopied: 助記詞已複製到剪貼簿
+    chineseNoticeTitle: BIP-39 中文助記詞規範與相容性提醒
+    chineseCharRuleLabel: 單字規範（官方標準）
+    chineseCharRuleText: 依據比特幣 BIP-39 官方規範，繁體與簡體中文字庫均由 2,048 個標準「單字」（單一漢字）組成，各字之間以半形空格分隔，這是完全符合官方標準規範的正常表現。
+    compatLabel: 錢包相容性重要提醒
+    chineseCompatText: 全球主流軟硬體錢包（如 MetaMask、Ledger、Trezor 等）主要以英文（English）助記詞為全球通用與測試最完善的標準。若用於保存真實重要資產，強烈建議切換為英文助記詞，以確保跨軟硬體錢包時具備最高相容性，避免因 Unicode 正規化（NFKD）或個別錢包未實作中文字庫而發生無法還原之風險。
+    nonEnglishNoticeTitle: 非英語助記詞相容性提醒
+    nonEnglishCompatText: 全球主流軟硬體錢包（如 MetaMask、Ledger、Trezor 等）主要以英文（English）助記詞為全球通用標準。若用於保存真實重要資產，強烈建議優先使用英文助記詞，以確保在不同錢包之間能順利還原。
 
   base64-file-converter:
     title: Base64 檔案轉換器
