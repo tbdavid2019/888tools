@@ -1,29 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
-  <title id="title">888 TOOL</title>
-  <desc id="desc">888 TOOL logo with a centered wrench</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
-    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#5eead4" />
-      <stop offset="1" stop-color="#14b8a6" />
+    <linearGradient id="orangeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF7A1A" />
+      <stop offset="60%" stop-color="#FF5A00" />
+      <stop offset="100%" stop-color="#E54400" />
     </linearGradient>
-    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="5" result="blur" />
-      <feMerge>
-        <feMergeNode in="blur" />
-        <feMergeNode in="SourceGraphic" />
-      </feMerge>
-    </filter>
   </defs>
-
-  <rect width="512" height="512" rx="112" fill="#101828" />
-  <circle cx="256" cy="285" r="58" fill="#142b35" stroke="#1f5860" stroke-width="3" />
-
-  <text x="256" y="190" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="164" font-weight="900" letter-spacing="-15" text-anchor="middle">888</text>
-
-  <g transform="translate(226 255) scale(2.5)" fill="none" stroke="url(#accent)" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.8" filter="url(#glow)">
-    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94z" />
+  <rect width="512" height="512" rx="112" fill="url(#orangeGrad)" />
+  <g fill="#FFFFFF" text-anchor="middle">
+    <text x="256" y="254" font-size="172" font-weight="900" letter-spacing="-4" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', Inter, 'Segoe UI', Roboto, sans-serif">888</text>
+    <text x="256" y="382" font-size="104" font-weight="900" letter-spacing="1" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', Inter, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif" >TOOLs</text>
   </g>
-
-  <path d="M145 342h222" stroke="#2dd4bf" stroke-linecap="round" stroke-width="6" opacity=".42" />
-  <text x="256" y="425" fill="#ccfbf1" font-family="Arial, Helvetica, sans-serif" font-size="78" font-weight="800" letter-spacing="15" text-anchor="middle">TOOL</text>
 </svg>
