@@ -274,6 +274,10 @@ You have an idea of a tool? Submit a [feature request](https://github.com/tbdavi
 5. 需要其他環境變數的話，於 Vercel 專案設定補上後重新部署。
 6. 首次部署完成後即可透過 Vercel 提供的網址存取。
 
+## GitHub Pages 部署
+
+正式站由 GitHub Actions 自動部署至 GitHub Pages。推送至 `main` 後，workflow 會執行 `pnpm build`、產生 Vue Router 的 `404.html` 備援，並發布 `dist/`。正式網域由 `VITE_SITE_ORIGIN` 設定，網站使用根路徑部署。
+
 ## 本地測試
 
 啟動開發伺服器：pnpm dev，預設會跑在 http://localhost:5173
@@ -391,7 +395,7 @@ Big thanks to all the people who have already contributed!
 
 Coded with ❤️ by [Corentin Thomasset](https://corentin.tech?utm_source=it-tools&utm_medium=readme).
 
-This project is continuously deployed using [vercel.com](https://vercel.com).
+This project is continuously deployed using [GitHub Pages](https://pages.github.com/) and GitHub Actions.
 
 Contributor graph is generated using [contrib.rocks](https://contrib.rocks/preview?repo=corentinth/it-tools).
 

@@ -38,11 +38,10 @@ jobs:
       - name: Build site
         run: pnpm build
         env:
-          BASE_URL: /888tools/
-          VITE_SITE_ORIGIN: https://tbdavid2019.github.io/888tools
+          BASE_URL: /
+          VITE_SITE_ORIGIN: https://tool.david888.com
           VITE_VERCEL_ENV: production
           VITE_VERCEL_GIT_COMMIT_SHA: ${{ github.sha }}
-          VITE_GA_ENABLED: 'false'
 
       - name: Add GitHub Pages SPA fallback
         run: cp dist/index.html dist/404.html
