@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## Version 2026.10.12
+
+### Features
+- **pwa**: 新增 App 風格的版本更新提示。新版下載完成後顯示「有新版本可用」，提供「稍後再說」與「立即更新」，由使用者確認後啟用新版並重新載入頁面。
+- **pwa**: 開啟頁面時檢查版本，並每小時、回到前景與恢復連線時檢查更新；支援繁體中文、英文及深淺色介面。
+
+### Bug Fixes
+- **pwa**: 將 Service Worker 改為提示更新模式，移除偵測新版後自動啟用與強制重載，讓使用者能先完成目前操作。
+
 ## Version 2026.09.21
 
 ### Features

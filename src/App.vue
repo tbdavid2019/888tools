@@ -6,6 +6,7 @@ import { layouts } from './layouts';
 import { useStyleStore } from './stores/style.store';
 import BingBackground from './components/BingBackground.vue';
 import PwaInstallPrompt from './components/PwaInstallPrompt.vue';
+import PwaUpdatePrompt from './components/PwaUpdatePrompt.vue';
 import { kanagawaDarkPalette, kanagawaLightPalette } from './theme/palette';
 
 const route = useRoute();
@@ -47,6 +48,7 @@ syncRef(
             <RouterView />
           </component>
           <PwaInstallPrompt />
+          <PwaUpdatePrompt />
         </NNotificationProvider>
       </NMessageProvider>
     </div>

@@ -1,3 +1,8 @@
+pwaUpdate:
+  title: 'Update available'
+  description: 'A new version is ready. Save your work, then reload to use it.'
+  later: 'Later'
+  now: 'Update now'
 home:
   categories:
     newestTools: Newest tools
