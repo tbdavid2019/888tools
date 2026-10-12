@@ -14,7 +14,7 @@ export const FONT_CONFIG: Record<string, FontInfo> = {
   'noto-sans': {
     id: 'noto-sans',
     name: '思源黑體',
-    file: '/fonts/NotoSansCJKtc-Regular.otf',
+    file: `${import.meta.env.BASE_URL}fonts/NotoSansCJKtc-Regular.otf`,
     family: 'Noto Sans TC',
     format: 'opentype',
     description: '清晰俐落，適合螢幕閱讀',
@@ -22,7 +22,7 @@ export const FONT_CONFIG: Record<string, FontInfo> = {
   'noto-serif': {
     id: 'noto-serif',
     name: '思源宋體',
-    file: '/fonts/NotoSerifCJKtc-Regular.otf',
+    file: `${import.meta.env.BASE_URL}fonts/NotoSerifCJKtc-Regular.otf`,
     family: 'Noto Serif TC',
     format: 'opentype',
     description: '典雅正式，適合長篇小說',
@@ -30,7 +30,7 @@ export const FONT_CONFIG: Record<string, FontInfo> = {
   'guankiap': {
     id: 'guankiap',
     name: '原俠正楷',
-    file: '/fonts/GuanKiapTsingKhai-TW.ttf',
+    file: `${import.meta.env.BASE_URL}fonts/GuanKiapTsingKhai-TW.ttf`,
     family: 'GuanKiapTsingKhai TW',
     format: 'truetype',
     description: '手寫楷書，溫暖文青感',
@@ -38,7 +38,7 @@ export const FONT_CONFIG: Record<string, FontInfo> = {
   'huninn': {
     id: 'huninn',
     name: 'jf 粉圓',
-    file: '/fonts/jf-openhuninn.ttf',
+    file: `${import.meta.env.BASE_URL}fonts/jf-openhuninn.ttf`,
     family: 'jf-openhuninn',
     format: 'truetype',
     description: '可愛圓體，活潑輕鬆',

@@ -1,6 +1,6 @@
 import type { SupportedLanguage } from './meeting-captions.service';
 
-const SHERPA_BASE_PATH = '/models/meeting-captions-sensevoice';
+const SHERPA_BASE_PATH = `${import.meta.env.BASE_URL}models/meeting-captions-sensevoice`;
 const SHERPA_CACHE_NAME = 'meeting-captions-sensevoice-assets-v1';
 const SHERPA_ASSET_FILES = [
   'sherpa-onnx-asr.js',

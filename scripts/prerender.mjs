@@ -3,11 +3,13 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import YAML from 'yaml';
+import { siteConfig } from '../site.config.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '..');
 const distDir = path.join(rootDir, 'dist');
 const localesDir = path.join(rootDir, 'locales');
+const siteOrigin = String(process.env.VITE_SITE_ORIGIN || siteConfig.origin).replace(/\/+$/, '');
 
 // 1. Read translation keys to map tools with their localized titles & descriptions
 async function loadTranslations() {
@@ -112,7 +114,7 @@ async function main() {
     html = html.replaceAll(defaultDesc, description);
 
     // C. Update canonical & og:url URLs
-    const canonicalUrl = urlPath === '/' ? 'https://tool.david888.com' : `https://tool.david888.com${urlPath}`;
+    const canonicalUrl = urlPath === '/' ? siteOrigin : `${siteOrigin}${urlPath}`;
     html = html.replace('href="https://tool.david888.com"', `href="${canonicalUrl}"`);
     html = html.replace('content="https://tool.david888.com/"', `content="${canonicalUrl}/"`);
 
@@ -146,13 +148,13 @@ async function main() {
     "@graph": [
       {
         "@type": "WebSite",
-        "@id": "https://tool.david888.com/#website",
-        "url": "https://tool.david888.com/",
+        "@id": `${siteOrigin}/#website`,
+        "url": `${siteOrigin}/`,
         "name": "888 TOOL",
         "description": "整合文字處理、影音剪輯、格式轉換、生活密碼與日常辦公的綜合工具箱，無廣告、安全隱私、完全在瀏覽器端運行。",
         "potentialAction": {
           "@type": "SearchAction",
-          "target": "https://tool.david888.com/?search={search_term_string}",
+          "target": `${siteOrigin}/?search={search_term_string}`,
           "query-input": "required name=search_term_string"
         }
       },
@@ -163,7 +165,7 @@ async function main() {
         "itemListElement": tools.map((t, idx) => ({
           "@type": "ListItem",
           "position": idx + 1,
-          "url": `https://tool.david888.com${t.path}`,
+          "url": `${siteOrigin}${t.path}`,
           "name": t.title,
           "description": t.description
         }))
@@ -180,7 +182,7 @@ async function main() {
     "@type": "AboutPage",
     "name": "關於 888 TOOL",
     "description": "888 TOOL（Tool.David888.com）是一款整合文字處理、影音剪輯、格式轉換、生活密碼與日常辦公的綜合工具箱。預設繁體中文，無廣告，加載迅速，完全在瀏覽器端運行，安全隱私保護。",
-    "url": "https://tool.david888.com/about"
+    "url": `${siteOrigin}/about`
   };
   const aboutHtml = processPage('/about', '關於我們', '888 TOOL（Tool.David888.com）是一款整合文字處理、影音剪輯、格式轉換、生活密碼與日常辦公的綜合工具箱。預設繁體中文，無廣告，加載迅速，完全在瀏覽器端運行，安全隱私保護。', aboutJsonLd);
   await saveHtml('/about', aboutHtml);
@@ -196,7 +198,7 @@ async function main() {
       "applicationCategory": "DeveloperApplication",
       "operatingSystem": "All",
       "browserRequirements": "Requires HTML5 and modern web browser.",
-      "url": `https://tool.david888.com${tool.path}`,
+      "url": `${siteOrigin}${tool.path}`,
       "offers": {
         "@type": "Offer",
         "price": "0",

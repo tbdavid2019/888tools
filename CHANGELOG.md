@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file. See [standa
 ## Version 2026.10.12
 
 ### Features
+- **deploy**: 新增 GitHub Pages Actions 部署，支援 `/888tools/` 專案子路徑、預渲染網址與 Vue Router 404 備援，方便先以 GitHub Pages 預覽驗證。
 - **pwa**: 新增 App 風格的版本更新提示。新版下載完成後顯示「有新版本可用」，提供「稍後再說」與「立即更新」，由使用者確認後啟用新版並重新載入頁面。
 - **pwa**: 開啟頁面時檢查版本，並每小時、回到前景與恢復連線時檢查更新；支援繁體中文、英文及深淺色介面。
 

@@ -21,7 +21,8 @@ export function toAbsoluteUrl(pathOrUrl, origin = siteConfig.origin) {
   if (/^https?:\/\//.test(pathOrUrl))
     return pathOrUrl;
 
-  return new URL(pathOrUrl, `${normalizeOrigin(origin)}/`).toString();
+  const baseUrl = new URL(`${normalizeOrigin(origin)}/`);
+  return new URL(String(pathOrUrl).replace(/^\/+/, ''), baseUrl).toString();
 }
 
 export function resolveSiteConfig(env = {}) {

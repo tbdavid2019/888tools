@@ -119,7 +119,7 @@ async function requestNotificationPermission() {
       toast.success(t('tools.p2p-chat.notificationsEnabled'));
       new Notification(t('tools.p2p-chat.title'), {
         body: t('tools.p2p-chat.notificationTest'),
-        icon: '/favicon.ico'
+        icon: `${import.meta.env.BASE_URL}favicon.ico`
       });
     } else if (permission === 'denied') {
       toast.warning(t('tools.p2p-chat.notificationsBlocked'));
@@ -641,7 +641,7 @@ function setupConnection(conn: DataConnection) {
       if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted' && document.hidden) {
         new Notification(data.senderName || 'P2P Chat', {
           body: text || (fileData ? `[傳送了檔案: ${fileData.name}]` : ''),
-          icon: '/favicon.ico'
+          icon: `${import.meta.env.BASE_URL}favicon.ico`
         });
       }
       

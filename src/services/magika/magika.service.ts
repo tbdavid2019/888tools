@@ -21,9 +21,10 @@ export async function getMagikaInstance(): Promise<any> {
 
     if (origin) {
       try {
+        const basePath = import.meta.env.BASE_URL;
         return await Magika.create({
-          modelURL: `${origin}/models/magika/model.json`,
-          modelConfigURL: `${origin}/models/magika/config.min.json`,
+          modelURL: `${origin}${basePath}models/magika/model.json`,
+          modelConfigURL: `${origin}${basePath}models/magika/config.min.json`,
         });
       } catch (err) {
         console.warn('Failed to load local Magika model, falling back to official CDN:', err);

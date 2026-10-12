@@ -23,15 +23,15 @@ const initRequestIds = new Set<number>();
 // 模型檔案路徑（先從本地 /models/ocr/ 載入，若失敗則回退至 HuggingFace CDN）
 const MODEL_PATHS = {
   det: [
-    '/models/ocr/PP-OCRv5_mobile_det_infer.onnx',
+    `${import.meta.env.BASE_URL}models/ocr/PP-OCRv5_mobile_det_infer.onnx`,
     'https://huggingface.co/x3zvawq/paddleocr-js-onnx/resolve/main/ppocr_v5_mobile/PP-OCRv5_mobile_det_infer.onnx',
   ],
   rec: [
-    '/models/ocr/PP-OCRv5_mobile_rec_infer.onnx',
+    `${import.meta.env.BASE_URL}models/ocr/PP-OCRv5_mobile_rec_infer.onnx`,
     'https://huggingface.co/x3zvawq/paddleocr-js-onnx/resolve/main/ppocr_v5_mobile/PP-OCRv5_mobile_rec_infer.onnx',
   ],
   dict: [
-    '/models/ocr/ppocrv5_dict.txt',
+    `${import.meta.env.BASE_URL}models/ocr/ppocrv5_dict.txt`,
     'https://huggingface.co/x3zvawq/paddleocr-js-onnx/resolve/main/ppocr_v5_mobile/ppocrv5_dict.txt',
   ],
 };
