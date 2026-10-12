@@ -40,8 +40,8 @@ jobs:
         env:
           BASE_URL: /
           VITE_SITE_ORIGIN: https://tool.david888.com
-          VITE_VERCEL_ENV: production
-          VITE_VERCEL_GIT_COMMIT_SHA: ${{ github.sha }}
+          VITE_APP_ENV: production
+          VITE_P2P_ROOM_SIGNALING_URL: https://david888-p2p-room-signal.oobwei.workers.dev
 
       - name: Add GitHub Pages SPA fallback
         run: cp dist/index.html dist/404.html

@@ -34,8 +34,7 @@
 - **/llms.txt**：符合 [llmstxt.org](https://llmstxt.org/) 規範，由 build 階段自動掃描全站工具與 Descriptions 生成 Markdown 格式的 LLM 網站導覽檔，提供 AI Agent 與 AI 搜尋引擎檢索。
 - `/sitemap.xml`：由 build 階段自動根據首頁、About 與工具 routes 生成，不需手動維護 URL 清單。
 - `/robots.txt`：由 build 階段自動生成，包含 `Sitemap:` 與 `Content-Signal:`。
-- `/.well-known/api-catalog`：以 `application/linkset+json` 輸出 API catalog。
-- 首頁回應 header：透過 Vercel 設定輸出 `Link: </.well-known/api-catalog>; rel="api-catalog"`。
+- `/.well-known/api-catalog`：build 階段產生的靜態 API catalog JSON。
 
 這些檔案與預渲染流程的實作在 [site.config.js](./site.config.js)、[scripts/generate-discovery.mjs](./scripts/generate-discovery.mjs) 與 [scripts/prerender.mjs](./scripts/prerender.mjs)。
 
@@ -139,7 +138,7 @@ P2P 聊天內容仍由瀏覽器透過 WebRTC 直連傳送；Cloudflare Worker �
 - 架構說明：[P2P Chat 架構說明](docs/p2p-chat-architecture.md)
 - 部署指令：`wrangler deploy --config workers/p2p-room-signal/wrangler.toml`
 - 目前正式 Worker：`https://david888-p2p-room-signal.oobwei.workers.dev`
-- 若要替換 signaling 服務，於 Vercel 設定 `VITE_P2P_ROOM_SIGNALING_URL`；未設定時會使用上述預設網址。
+- 若要替換 signaling 服務，請更新 `.github/workflows/github-pages.yml` 中的 `VITE_P2P_ROOM_SIGNALING_URL`。
 
 ### 2026-07-09
 
@@ -265,18 +264,11 @@ Please check the [issues](https://github.com/tbdavid2019/888tools/issues) to see
 
 You have an idea of a tool? Submit a [feature request](https://github.com/tbdavid2019/888tools/issues/new/choose)!
 
-## Deploy to Vercel
-
-1. 將程式碼推上 GitHub/GitLab（`dist` 繼續保留在 `.gitignore`）。
-2. 在 Vercel 匯入專案，Framework 選「Vite」。
-3. 安裝指令：`pnpm install --frozen-lockfile`（可用預設）；Build 指令：`pnpm build`；Output Directory：`dist`。
-4. 如需覆寫 canonical origin，可設定 `VITE_SITE_ORIGIN`；預設為 `https://tool.david888.com`。
-5. 需要其他環境變數的話，於 Vercel 專案設定補上後重新部署。
-6. 首次部署完成後即可透過 Vercel 提供的網址存取。
-
 ## GitHub Pages 部署
 
 正式站由 GitHub Actions 自動部署至 GitHub Pages。推送至 `main` 後，workflow 會執行 `pnpm build`、產生 Vue Router 的 `404.html` 備援，並發布 `dist/`。正式網域由 `VITE_SITE_ORIGIN` 設定，網站使用根路徑部署。
+
+若要調整 P2P signaling Worker，請更新 workflow 的 `VITE_P2P_ROOM_SIGNALING_URL`，再推送至 `main` 觸發部署。
 
 ## 本地測試
 

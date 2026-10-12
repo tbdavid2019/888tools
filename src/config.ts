@@ -9,12 +9,6 @@ export const config = figue({
       default: '0.0.0',
       env: 'PACKAGE_VERSION',
     },
-    lastCommitSha: {
-      doc: 'Application last commit SHA version',
-      format: 'string',
-      default: '',
-      env: 'VITE_VERCEL_GIT_COMMIT_SHA',
-    },
     baseUrl: {
       doc: 'Application base url',
       format: 'string',
@@ -32,7 +26,7 @@ export const config = figue({
       format: 'enum',
       values: ['production', 'development', 'preview', 'test'],
       default: 'development',
-      env: 'VITE_VERCEL_ENV',
+      env: 'VITE_APP_ENV',
     },
   },
   plausible: {

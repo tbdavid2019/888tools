@@ -2,12 +2,12 @@
 
 ## 先講結論
 
-`p2p-chat` 的聊天內容不會經過 Vercel，也不會寫入 Cloudflare R2、KV 或 Durable Object Storage。
+`p2p-chat` 的聊天內容不會經過 GitHub Pages，也不會寫入 Cloudflare R2、KV 或 Durable Object Storage。
 
 Cloudflare Worker 只做「房間協調」：暫時知道哪些瀏覽器在線、每個瀏覽器的 PeerJS ID 是什麼，然後把成員加入/離開事件通知給其他人。真正的文字、圖片、檔案與撤回封包，都是瀏覽器彼此透過 WebRTC 直連傳送。
 
 ```text
-Vercel 靜態前端
+GitHub Pages 靜態前端
     │
     │ 公開 wss:// Worker URL
     ▼
@@ -43,9 +43,9 @@ Durable Object：一個 Room ID 對應一個房間協調者
 - Cloudflare Worker：[`workers/p2p-room-signal/src/index.ts`](../workers/p2p-room-signal/src/index.ts)
 - Durable Object binding：[`workers/p2p-room-signal/wrangler.toml`](../workers/p2p-room-signal/wrangler.toml)
 
-## 為什麼 Vercel 不需要 Cloudflare 憑證？
+## 為什麼靜態網站不需要 Cloudflare 憑證？
 
-因為 Vercel 沒有直接存取 Cloudflare 資源。
+因為 GitHub Pages 沒有直接存取 Cloudflare 資源。
 
 瀏覽器只是連線到一個公開的 WebSocket endpoint，和呼叫公開 API 的概念相同：
 
@@ -63,12 +63,12 @@ class_name = "Room"
 
 因此：
 
-- Vercel 不需要保存 Cloudflare API Token。
+- GitHub Pages 不需要保存 Cloudflare API Token。
 - 瀏覽器不會拿到 Cloudflare 憑證。
 - `wrangler deploy` 的 Cloudflare 登入權限只用於部署 Worker。
 - 正式網站只需要知道公開的 Worker URL。
 
-如果未來真的要從 Worker 存取 R2 或 KV，也應該由 Worker 使用 binding 存取，不應該把 R2/KV 憑證放進 Vercel 前端或瀏覽器。
+如果未來真的要從 Worker 存取 R2 或 KV，也應該由 Worker 使用 binding 存取，不應該把 R2/KV 憑證放進 GitHub Pages 前端或瀏覽器。
 
 ## 目前有沒有 KV 寫入額度問題？
 
@@ -122,10 +122,12 @@ Worker 的正式網址目前是：
 https://david888-p2p-room-signal.oobwei.workers.dev
 ```
 
-部署指令：
+部署 Worker：
 
 ```bash
 wrangler deploy --config workers/p2p-room-signal/wrangler.toml
 ```
 
-Vercel 前端預設使用上述 Worker URL，也可以透過 `VITE_P2P_ROOM_SIGNALING_URL` 覆寫。
+靜態前端則由 GitHub Pages 自動發布。
+
+GitHub Pages 前端預設使用上述 Worker URL，也可以透過 `.github/workflows/github-pages.yml` 中的 `VITE_P2P_ROOM_SIGNALING_URL` 覆寫。

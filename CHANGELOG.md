@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file. See [standa
 
 ### Features
 - **deploy**: 正式網站改由 GitHub Pages Actions 部署。每次推送至 `main` 後自動建置，支援自訂網域根路徑、預渲染網址與 Vue Router 404 備援。
+- **deploy**: 移除舊託管平台設定、專用環境變數與過時部署文件，統一以 GitHub Pages workflow 管理靜態網站發布。
 - **pwa**: 新增 App 風格的版本更新提示。新版下載完成後顯示「有新版本可用」，提供「稍後再說」與「立即更新」，由使用者確認後啟用新版並重新載入頁面。
 - **pwa**: 開啟頁面時檢查版本，並每小時、回到前景與恢復連線時檢查更新；支援繁體中文、英文及深淺色介面。
 
@@ -114,7 +115,7 @@ All notable changes to this project will be documented in this file. See [standa
 - 撤回訊息改用「系統訊息」標籤、↩ 符號與虛線框顯示，與使用者實際輸入的訊息清楚區分。
 - Telegram 經典塗鴉背景改用獨立模糊背景層、低透明度與半透明遮罩，避免圖案穿透干擾訊息文字。
 - 背景裝飾層不再擴張聊天容器，並隱藏橫向溢出，避免主題背景造成不必要的水平捲軸。
-- 補充 P2P Chat 架構文件，說明 Vercel、Cloudflare Worker、Durable Object 與瀏覽器 WebRTC 的分工，以及目前不使用 R2/KV 儲存聊天內容的原因。
+- 補充 P2P Chat 架構文件，說明靜態前端、Cloudflare Worker、Durable Object 與瀏覽器 WebRTC 的分工，以及目前不使用 R2/KV 儲存聊天內容的原因。
 
 ## Version 2026.07.09
 
@@ -140,7 +141,7 @@ All notable changes to this project will be documented in this file. See [standa
 ### Features
 - **discovery**: 新增 build-time discovery 生成流程，於 `pnpm build` 自動產生 `/sitemap.xml`、`/.well-known/api-catalog` 與 `/robots.txt`。
 - **seo**: 將站點 canonical source-of-truth 統一為 `https://tool.david888.com`，首頁、About 頁與各工具頁皆改為輸出一致的 canonical 與 `og:url`。
-- **headers**: 在 Vercel 首頁回應新增 `Link: </.well-known/api-catalog>; rel="api-catalog"`，並對 `/.well-known/api-catalog` 明確輸出 `application/linkset+json`。
+- **headers**: 在首頁回應新增 `Link: </.well-known/api-catalog>; rel="api-catalog"`，並對 `/.well-known/api-catalog` 明確輸出 `application/linkset+json`。
 - **sidebar/ui**: 側邊欄改為兩態固定模式，支援「完整展開」與「窄欄 icon 模式」，不再完全隱藏；窄欄模式會保留工具 icon 導覽與最小設定入口。
 - **home/ui**: 縮小左上品牌區塊、重整側欄資訊密度，並放大全站與首頁工具卡的標題/說明字級，改善掃讀與可讀性。
 - **navigation/rwd**: 手機版導覽改為預設收合的 drawer，將搜尋移到上方工具列，並把 breadcrumb 移到內容區上方且補上首頁 icon。
@@ -407,7 +408,7 @@ All notable changes to this project will be documented in this file. See [standa
 - **spelling**: minor corrections to phrasing/spelling (#596) (8a30b6b)
 - **i18n**: merge tools scoped locales with global ones (#612) (233d556)
 - **c-key-value-list**: got rid of table for layout (#611) (7ab9204)
-- **CI**: run e2e against built app and no longer vercel (#610) (18dd140)
+- **CI**: run e2e against built app instead of a hosted deployment (#610) (18dd140)
 - **bcrypt**: fix typo (#604) (e18bae1)
 
 ### Chores
@@ -518,7 +519,7 @@ All notable changes to this project will be documented in this file. See [standa
 - **deps**: update dependency @vitejs/plugin-vue to v4 (#496) (a249421)
 - **deps**: update dependency vite-plugin-pwa to ^0.16.0 (#488) (6498c9b)
 - **deps**: update dependency vite to v4 (#503) (f40d7ec)
-- **ci**: e2e against vercel deployement (#518) (2e28c50)
+- **ci**: e2e against hosted deployment (#518) (2e28c50)
 - **e2e**: execute e2e against built app (#511) (cf382b5)
 - **deps**: update github/codeql-action action to v2 (#513) (0152583)
 - **deps**: update node.js to v18 (#514) (38cb61d)

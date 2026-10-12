@@ -37,7 +37,7 @@ about:
 
     ## Teknologier
 
-    IT Tools er laget i Vue.js (Vue 3) med Naive UI komponent bibliotektet og er hosted og kontinuerlig deployet av Vercel. Tredjeparts åpen-kildekode biblioteker er brukt i noen verktøy, du kan finne den komplette listen i [package.json](https://github.com/tbdavid2019/888tools/blob/main/package.json) filen i depoet.
+    IT Tools er laget med Vue.js (Vue 3) og Naive UI-komponentbiblioteket. GitHub Pages er vert, og GitHub Actions publiserer endringer automatisk. Noen verktøy bruker tredjepartsbiblioteker med åpen kildekode. Du finner hele listen i [package.json](https://github.com/tbdavid2019/888tools/blob/main/package.json).
 
     ## Funnet en feil? Et verktøy som mangler?
 

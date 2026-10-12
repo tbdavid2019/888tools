@@ -43,7 +43,7 @@ about:
 
     ## 技術
 
-    IT-Tools 採用 Vue.js（Vue 3）和 Naive UI 元件庫開發，並由 Vercel 託管和持續部署。某些工具使用了第三方開源庫，您可以在倉庫的 [package.json](https://github.com/tbdavid2019/888tools/blob/main/package.json) 檔案中找到完整的列表。
+    IT-Tools 採用 Vue.js（Vue 3）和 Naive UI 元件庫開發，並由 GitHub Pages 託管、GitHub Actions 自動部署。某些工具使用了第三方開源庫，您可以在倉庫的 [package.json](https://github.com/tbdavid2019/888tools/blob/main/package.json) 檔案中找到完整的列表。
 
     ## 發現了 Bug？缺少工具？
 

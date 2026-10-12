@@ -36,7 +36,7 @@ about:
 
     ## Technologies
 
-    IT Tools est fait en Vue.js (Vue 3) avec la bibliothèque de composants Naive UI et est hébergé et déployé en continu par Vercel. Des bibliothèques open-source tierces sont utilisées dans certains outils, vous pouvez trouver la liste complète dans le fichier [package.json](https://github.com/tbdavid2019/888tools/blob/main/package.json) du dépôt.
+    IT Tools est développé avec Vue.js (Vue 3) et la bibliothèque Naive UI. GitHub Pages l’héberge et GitHub Actions le déploie automatiquement. Certains outils utilisent des bibliothèques open source tierces. La liste complète figure dans le fichier [package.json](https://github.com/tbdavid2019/888tools/blob/main/package.json) du dépôt.
 
     ## Vous avez trouvé un bug ? Un outil manque ?
 

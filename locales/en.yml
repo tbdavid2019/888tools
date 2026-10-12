@@ -47,7 +47,7 @@ about:
 
     ## Technologies
 
-    IT Tools is made in Vue.js (Vue 3) with the the Naive UI component library and is hosted and continuously deployed by Vercel. Third-party open-source libraries are used in some tools, you may find the complete list in the [package.json](https://github.com/tbdavid2019/888tools/blob/main/package.json) file of the repository.
+    IT Tools is made in Vue.js (Vue 3) with the Naive UI component library and is hosted on GitHub Pages with automatic deployments through GitHub Actions. Third-party open-source libraries are used in some tools; you can find the complete list in the repository [package.json](https://github.com/tbdavid2019/888tools/blob/main/package.json).
 
     ## Found a bug? A tool is missing?
 
