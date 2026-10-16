@@ -76,6 +76,7 @@ tools:
     pdf: PDF
     books: Bøker
     editor: Redigering
+    design: Design & Farger
 
   password-strength-analyser:
     title: Analyseverktøy for passordstyrke

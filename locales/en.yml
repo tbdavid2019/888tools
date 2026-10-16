@@ -86,6 +86,7 @@ tools:
     pdf: PDF
     books: Books
     editor: Editor
+    design: Design & Colors
 
   password-strength-analyser:
     title: Password strength analyser
@@ -289,8 +290,8 @@ tools:
       value of each emoji.
 
   color-converter:
-    title: Color converter
-    description: Convert color between the different formats (hex, rgb, hsl and css name)
+    title: Color Converter & Pantone Matcher (Delta E 2000)
+    description: Convert between HEX, RGB, CMYK, HSL, and LCH with client-side Delta E 2000 Pantone matching, screen eyedropper, and screenshot color picker.
 
   bcrypt:
     title: Bcrypt
@@ -843,10 +844,8 @@ tools:
     description: Open and view CSV, XLSX, XLS spreadsheets directly in the browser.
 
   find-color:
-    title: "Pantone Palette Library"
-    description: Pantone Color of the Year picks from 2024 to 2026 plus curated
-      trend palettes. Includes Light/Dark previews, visible HEX codes, and
-      one-click palette copy.
+    title: "Pantone & Trend Palette Library"
+    description: Curated Pantone Color of the Year picks from 2000 to 2026 plus design trend palettes. Features Light/Dark modes, WCAG AAA high-contrast copyable HEX codes, and live UI preview.
 
   post-writer:
     title: "Social Post Formatter"

@@ -137,7 +137,6 @@ export const toolsByCategory: ToolCategory[] = [
       romanNumeralConverter,
       base64StringConverter,
       base64FileConverter,
-      colorConverter,
       caseConverter,
       yamlToJson,
       yamlToToml,
@@ -149,6 +148,10 @@ export const toolsByCategory: ToolCategory[] = [
       xmlToJson,
       jsonToXml,
     ],
+  },
+  {
+    name: 'design',
+    components: [findColor, colorConverter],
   },
   {
     name: 'web',
@@ -212,7 +215,7 @@ export const toolsByCategory: ToolCategory[] = [
   },
   {
     name: 'editor',
-    components: [htmlWysiwygEditor, findColor, postWriter, markdownToHtml, tongWenConverter],
+    components: [htmlWysiwygEditor, postWriter, markdownToHtml, tongWenConverter],
   },
   {
     name: 'text',

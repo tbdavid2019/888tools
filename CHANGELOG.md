@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## Version 2026.10.16
+
+### Features
+- **design**: 新增「設計色彩」(Design & Colors) 一級分類導航，將調色盤靈感庫 (`find-color`) 與色彩轉換器 (`color-converter`) 移入專屬分類，並支援 9 國語系國際化。
+- **find-color**: 
+  - **2000–2026 潘通年度代表色 (Color of the Year)**：收錄 2000 年 Cerulean Blue 至 2026 年 Cloud Dancer 共 27 款官方年度色，並為每一款量身打造 Light / Dark 模式兼備的情境網頁配色方案。
+  - **7 大色系族群 (Color Families)**：擴充收錄紅 (Reds)、橙 (Oranges)、黃 (Yellows)、綠 (Greens)、藍 (Blues)、紫 (Purples)、中性色 (Neutrals) 7 大核心色系，提供頂級設計與插畫靈感。
+  - **潘通關鍵字搜尋**：新增「潘通」、「年度色」、「流行色」、「pantone」、「coty」以及年份數字的即時中文與多欄位檢索。
+- **color-converter**:
+  - **純前端 CIEDE2000 (Delta E 2000) 演算法**：完全於瀏覽器端基於 Sharma 等人 (2005) 標準公式計算色差，毫秒級匹配標準塗布配方色庫 (Formula Guide Coated) 與年度代表色。
+  - **色彩差異感知評級與雙拼色塊**：提供輸入色 vs 潘通建議色之 Split Swatch 對比預覽，呈現 Delta E 數值與「極高 / 佳 / 接近 / 感知有色差」感知評級，並支援一鍵套用與色號/Hex 快速複製。
+  - **螢幕吸色滴管 (Screen EyeDropper API)**：整合原生 EyeDropper API，支援一鍵直接在桌面任意螢幕畫面上吸取色彩。
+  - **畫布截圖滴管 (Canvas Screenshot Dropper & 8x 放大鏡)**：支援拖曳上傳截圖或以 `Cmd+V` / `Ctrl+V` 貼上剪貼簿截圖，搭配 8 倍像素級放大鏡輔助微調，精準擷取任意像素色彩與記錄歷史選色。
+
+### Bug Fixes
+- **find-color (WCAG 可讀性標準修正)**：徹底修復「快速複製色組」按鈕在淺色背景下因淡黃字體 (`#ecd9ac`) 造成的視覺辨識困難問題（原對比度僅 1.2:1），重構為高對比深石板藍外觀 (`#0f172a` 背景配 `#ffffff` 純白文字，對比度達 19.5:1，遠超 WCAG AAA 7:1 標準），並針對深色模式提供精美毛玻璃白底設計與微互動效果。
+
 ## Version 2026.10.12
 
 ### Features

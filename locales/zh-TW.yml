@@ -82,6 +82,7 @@ tools:
     pdf: 'PDF'
     books: '書籍'
     editor: '編輯區'
+    design: '設計色彩'
 
   password-strength-analyser:
     title: 密碼強度分析器
@@ -279,8 +280,8 @@ tools:
     description: 輕鬆複製和貼上Emoji表情符號，並獲得每個表情符號的unicode和code points值.
 
   color-converter:
-    title: 顏色格式轉換器
-    description: 在 HEX、RGB、HSL 與 CSS 顏色名稱之間互相轉換。
+    title: 顏色轉換與潘通配對 (Delta E 2000)
+    description: 支援 HEX、RGB、CMYK、HSL、LCH 顏色互相轉換，搭載純前端 Delta E 2000 潘通 (Pantone) 色碼精準配對演算法，並內建螢幕與截圖滴管取色工具。
   bcrypt:
     title: Bcrypt 密碼雜湊與驗證
     description: 使用 Bcrypt 演算法進行單向密碼雜湊與比對驗證。
@@ -767,9 +768,8 @@ tools:
     description: 在瀏覽器中直接開啟並檢視 CSV、XLSX、XLS 電子表格檔案。
 
   find-color:
-    title: "Pantone 趨勢色票庫"
-    description: 收錄 Pantone 2024 至 2026 年度色與精選趨勢配色。提供 Light/Dark
-      雙模式、色碼常駐顯示、一鍵複製單色或整組色票，並支援首頁效果即時預覽。
+    title: "Pantone 潘通趨勢色票庫"
+    description: 收錄 Pantone 潘通 2000 至 2026 歷年年度代表色與精選設計趨勢配色。提供 Light/Dark 雙模式、WCAG AAA 高對比色碼常駐顯示、一鍵複製單色或整組色票，並支援真實網頁模型即時預覽。
 
   post-writer:
     title: "社群貼文排版"

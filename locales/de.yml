@@ -99,6 +99,7 @@ tools:
     pdf: PDF
     books: Bücher
     editor: Editor
+    design: Design & Farben
   password-strength-analyser:
     title: Passwortstärken-Analysator
     description: >-

@@ -76,6 +76,7 @@ tools:
     pdf: PDF
     books: Sách
     editor: Trình biên tập
+    design: Thiết kế & Màu sắc
 
   password-strength-analyser:
     title: Bộ phân tích độ mạnh mật khẩu

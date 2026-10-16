@@ -70,6 +70,7 @@ tools:
     pdf: PDF
     books: Livres
     editor: Éditeur
+    design: Design & Couleurs
 
   token-generator:
     title: Générateur de token
