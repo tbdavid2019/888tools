@@ -32,3 +32,14 @@ The system SHALL allow users to upload an image or paste a screenshot (`Cmd+V` /
 #### Scenario: Pasting and Sampling from Screenshot
 - **WHEN** a user pastes an image from the clipboard or uploads an image file
 - **THEN** the image is rendered onto an interactive canvas with an 8x zoom loupe showing the cursor's current pixel color, which can be selected on click
+
+### Requirement: CSS Color Name Precision and Approximation Callout
+The system SHALL distinguish between exact W3C CSS named colors and approximate matches, labeling approximate color names explicitly and presenting the official standard hex code, Delta E color difference, and CSS usage caution.
+
+#### Scenario: Displaying Approximate CSS Color Name
+- **WHEN** the user inputs a color that does not exactly match a standard W3C CSS named color (e.g. #3498DB)
+- **THEN** the system labels the name field as approximate, indicates the closest CSS color name (dodgerblue) along with its official standard hex code (#1E90FF), displays a side-by-side swatch comparison, and alerts the user that using the name directly in CSS will render the standard hex rather than the input color
+
+#### Scenario: Displaying Exact CSS Color Name
+- **WHEN** the user inputs a color that exactly matches an official W3C CSS named color (e.g. #1E90FF or #FF0000)
+- **THEN** the system marks the name as an exact match with zero color difference and confirms it can be safely used in CSS

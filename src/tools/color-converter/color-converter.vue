@@ -24,7 +24,7 @@ import {
   type PantoneMatch,
   searchPantoneColors,
 } from './pantone-database';
-import { hexToRgb, rgbToCmyk, rgbToHex } from './delta-e-2000';
+import { deltaE2000, hexToLab, hexToRgb, rgbToCmyk, rgbToHex } from './delta-e-2000';
 import { useCopy } from '@/composable/copy';
 
 extend([cmykPlugin, hwbPlugin, namesPlugin, lchPlugin]);
@@ -78,6 +78,41 @@ const formats = {
     placeholder: 'e.g. red',
   }),
 };
+
+// ==========================================
+// CSS Named Color Precision & Approximation
+// ==========================================
+interface CssNameInfo {
+  name: string;
+  isExact: boolean;
+  standardHex: string;
+  deltaE: number;
+}
+
+const cssNameInfo = computed<CssNameInfo | null>(() => {
+  const c = currentColor.value;
+  if (!c || !c.isValid()) {
+    return null;
+  }
+
+  const exactName = c.toName();
+  const closestName = c.toName({ closest: true });
+  if (!closestName) {
+    return null;
+  }
+
+  const isExact = Boolean(exactName && exactName.toLowerCase() === closestName.toLowerCase());
+  const standardHex = colord(closestName).toHex().toUpperCase();
+  const inputHex = c.toHex().toUpperCase();
+  const dE = Number(deltaE2000(hexToLab(inputHex), hexToLab(standardHex)).toFixed(1));
+
+  return {
+    name: closestName,
+    isExact,
+    standardHex,
+    deltaE: dE,
+  };
+});
 
 // ==========================================
 // Delta E 2000 Pantone Matching Logic
@@ -524,9 +559,9 @@ onUnmounted(() => {
             v-if="type === 'text'"
             v-model:value="formats[key].value.value"
             :test-id="`input-${key}`"
-            :label="`${label.toUpperCase()}:`"
+            :label="key === 'name' ? (cssNameInfo?.isExact ? 'NAME (精確):' : 'NAME (近似):') : `${label.toUpperCase()}:`"
             label-position="left"
-            label-width="90px"
+            label-width="105px"
             label-align="right"
             :placeholder="placeholder"
             :validation="validation"
@@ -535,6 +570,67 @@ onUnmounted(() => {
             mt-2
             @update:value="(v: string) => updateColorValue(parse(v), key)"
           />
+
+          <!-- Special Callout for CSS Name (Exact vs. Approximate) -->
+          <div v-if="key === 'name' && cssNameInfo" class="css-name-notice-wrap">
+            <div v-if="!cssNameInfo.isExact" class="css-name-notice-box is-approximate">
+              <div class="notice-header">
+                <div class="notice-title-row">
+                  <span class="notice-icon">⚠️</span>
+                  <span class="notice-title">近似色名標註：<strong>{{ cssNameInfo.name }}</strong></span>
+                  <n-tag size="tiny" type="warning" round class="notice-tag">非精確色碼</n-tag>
+                </div>
+                <span class="notice-delta-e">色差 ΔE ≈ {{ cssNameInfo.deltaE }}</span>
+              </div>
+
+              <div class="notice-compare-row">
+                <div class="swatch-item-box">
+                  <span class="swatch-circle" :style="{ backgroundColor: currentHex }" />
+                  <span class="swatch-text-meta">
+                    <span class="meta-label">目前輸入色</span>
+                    <code class="meta-code">{{ currentHex }}</code>
+                  </span>
+                </div>
+                <span class="swatch-unequal-sign">≠</span>
+                <div class="swatch-item-box">
+                  <span class="swatch-circle" :style="{ backgroundColor: cssNameInfo.standardHex }" />
+                  <span class="swatch-text-meta">
+                    <span class="meta-label">CSS {{ cssNameInfo.name }} 標準色</span>
+                    <code class="meta-code">{{ cssNameInfo.standardHex }}</code>
+                  </span>
+                </div>
+              </div>
+
+              <div class="notice-explanation">
+                <strong>注意：</strong>目前輸入之 <code>{{ currentHex }}</code> 並非 W3C 標準 CSS 具名色彩。上欄顯示之「<strong>{{ cssNameInfo.name }}</strong>」為感知最接近之近似色名。若直接在 CSS 樣式中寫 <code>color: {{ cssNameInfo.name }};</code>，瀏覽器將渲染為其官方標準色碼 <code>{{ cssNameInfo.standardHex }}</code>，顏色會與原色不同。如需 100% 精準色彩，請直接使用 HEX 或 RGB。
+              </div>
+
+              <div class="notice-actions-row">
+                <n-button size="tiny" secondary type="warning" @click="applyNewHex(cssNameInfo.standardHex)">
+                  套用 {{ cssNameInfo.name }} 標準色碼 ({{ cssNameInfo.standardHex }})
+                </n-button>
+                <n-button size="tiny" secondary @click="copyText(cssNameInfo.name, 'CSS 色名')">
+                  複製純色名: {{ cssNameInfo.name }}
+                </n-button>
+                <n-button size="tiny" secondary @click="copyText(cssNameInfo.standardHex, '標準色碼')">
+                  複製標準色碼: {{ cssNameInfo.standardHex }}
+                </n-button>
+              </div>
+            </div>
+
+            <div v-else class="css-name-notice-box is-exact">
+              <div class="notice-header">
+                <div class="notice-title-row">
+                  <span class="notice-icon">✓</span>
+                  <span class="notice-title">標準 CSS 命名色彩：<strong>{{ cssNameInfo.name }}</strong></span>
+                  <n-tag size="tiny" type="success" round class="notice-tag">100% 精確吻合</n-tag>
+                </div>
+              </div>
+              <div class="notice-explanation">
+                此色彩完全符合 W3C CSS 官方標準命名定義（標準色碼 <code>{{ cssNameInfo.standardHex }}</code>，ΔE = 0），可安全在 CSS 中直接以 <code>color: {{ cssNameInfo.name }};</code> 使用。
+              </div>
+            </div>
+          </div>
 
           <n-form-item
             v-else-if="type === 'color-picker'"
@@ -1445,5 +1541,140 @@ onUnmounted(() => {
 :deep(.c-input-text .input::placeholder),
 :deep(.c-input-text textarea::placeholder) {
   color: v-bind('themeVars.textColor3') !important;
+}
+
+/* ===================================================
+   CSS Named Color Precision & Approximation Callout
+   =================================================== */
+.css-name-notice-wrap {
+  margin-top: 10px;
+  margin-bottom: 6px;
+}
+
+.css-name-notice-box {
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  transition: all 0.2s ease;
+}
+
+.css-name-notice-box.is-approximate {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  color: #92400e;
+}
+
+:global(.dark) .css-name-notice-box.is-approximate {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.35);
+  color: #fde68a;
+}
+
+.css-name-notice-box.is-exact {
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  color: #065f46;
+}
+
+:global(.dark) .css-name-notice-box.is-exact {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.35);
+  color: #a7f3d0;
+}
+
+.notice-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.notice-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+}
+
+.notice-delta-e {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(245, 158, 11, 0.15);
+}
+
+.notice-compare-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.03);
+  flex-wrap: wrap;
+}
+
+:global(.dark) .notice-compare-row {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.swatch-item-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.swatch-circle {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(0, 0, 0, 0.15);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+}
+
+:global(.dark) .swatch-circle {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.swatch-text-meta {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.meta-label {
+  font-size: 0.68rem;
+  opacity: 0.8;
+}
+
+.meta-code {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-weight: 800;
+  font-size: 0.78rem;
+}
+
+.swatch-unequal-sign {
+  font-weight: 900;
+  font-size: 1rem;
+  opacity: 0.7;
+}
+
+.notice-explanation {
+  font-size: 0.76rem;
+  line-height: 1.5;
+  margin: 6px 0 10px 0;
+  opacity: 0.95;
+}
+
+.notice-actions-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 </style>

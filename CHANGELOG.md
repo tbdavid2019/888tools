@@ -12,6 +12,7 @@ All notable changes to this project will be documented in this file. See [standa
   - **側欄浮動釘選與懸浮預覽窗 (Sticky Floating Preview)**：修復滾動時預覽模型消失問題，透過 `align-items: start` 與 `align-self: start` 確保側欄在長清單瀏覽時全程保持吸頂浮動；並新增「展開懸浮大窗」互動彈窗與右下角常駐浮動操作按鈕 (FAB)，手機與桌面端均可隨時呼叫預覽。
   - **潘通關鍵字搜尋**：新增「潘通」、「年度色」、「流行色」、「pantone」、「coty」以及年份數字的即時中文與多欄位檢索。
 - **color-converter**:
+  - **CSS 英文色名精確標註與近似色警告 (CSS Color Name Precision & Approximation)**：精準區分 W3C CSS 官方 148 款標準命名色彩與非標準色彩之近似色。當輸入非標準色（如 `#3498DB`、`#1B4429`、`#1EA54C`、`#AABBCC`、`#FA4616`、`#0033A0`）時，欄位明確標示為「`NAME (近似):`」，並於下方呈現高識別度警告卡片，展示該色名標準定義色碼（如 `dodgerblue` 標準為 `#1E90FF`）、輸入色 vs 標準色之並列色塊、與 CIEDE2000 色差 $\Delta E$ 數值，明確提醒開發者若直接在 CSS 中撰寫色名，瀏覽器將渲染標準色碼而非原輸入色，並提供一鍵「套用標準色碼」、「複製純色名」、「複製標準 HEX」操作；若輸入完全吻合標準 CSS 色名則標註為「`NAME (精確):`」並以綠色徽章標明可安全於 CSS 中使用。
   - **純前端 CIEDE2000 (Delta E 2000) 演算法**：完全於瀏覽器端基於 Sharma 等人 (2005) 標準公式計算色差，毫秒級匹配標準塗布配方色庫 (Formula Guide Coated) 與年度代表色。
   - **色彩差異感知評級與雙拼色塊**：提供輸入色 vs 潘通建議色之 Split Swatch 對比預覽，呈現 Delta E 數值與「極高 / 佳 / 接近 / 感知有色差」感知評級，並支援一鍵套用與色號/Hex 快速複製。
   - **螢幕吸色滴管 (Screen EyeDropper API)**：整合原生 EyeDropper API，支援一鍵直接在桌面任意螢幕畫面上吸取色彩。
