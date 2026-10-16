@@ -79,7 +79,21 @@ const formats = {
   }),
 };
 
-updateColorValue(colord('#1EA54C'));
+// ==========================================
+// Delta E 2000 Pantone Matching Logic
+// ==========================================
+const pantoneMatches = ref<PantoneMatch[]>([]);
+const bestPantoneMatch = computed<PantoneMatch | null>(() => pantoneMatches.value[0] ?? null);
+const secondaryPantoneMatches = computed<PantoneMatch[]>(() => pantoneMatches.value.slice(1, 7));
+
+function calculatePantoneMatches(hex: string) {
+  try {
+    pantoneMatches.value = findClosestPantone(hex, 8);
+  }
+  catch (e) {
+    pantoneMatches.value = [];
+  }
+}
 
 function updateColorValue(value: Colord | undefined, omitLabel?: string) {
   if (value === undefined || !value.isValid()) {
@@ -105,21 +119,8 @@ function applyNewHex(hex: string) {
   }
 }
 
-// ==========================================
-// Delta E 2000 Pantone Matching Logic
-// ==========================================
-const pantoneMatches = ref<PantoneMatch[]>([]);
-const bestPantoneMatch = computed<PantoneMatch | null>(() => pantoneMatches.value[0] ?? null);
-const secondaryPantoneMatches = computed<PantoneMatch[]>(() => pantoneMatches.value.slice(1, 7));
-
-function calculatePantoneMatches(hex: string) {
-  try {
-    pantoneMatches.value = findClosestPantone(hex, 8);
-  }
-  catch (e) {
-    pantoneMatches.value = [];
-  }
-}
+// Initialize default color values
+updateColorValue(colord('#1EA54C'));
 
 // Pantone Reverse Lookup
 const pantoneSearchQuery = ref('');

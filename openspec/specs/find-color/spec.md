@@ -46,3 +46,14 @@ The system SHALL support searching palettes by Chinese keywords including "潘�
 #### Scenario: Searching by Chinese Pantone Keyword
 - **WHEN** a user enters "潘通" or a year like "2026" into the palette search box
 - **THEN** all associated Pantone Color of the Year and Pantone-curated palettes are filtered and displayed
+
+### Requirement: Floating and Sticky Preview Mockup
+The system SHALL provide a sticky floating preview window that remains visible alongside the user's viewport while scrolling through the palette directory, as well as a pop-out floating modal accessible via a header trigger or bottom-right floating action button.
+
+#### Scenario: Scrolling with Sticky Preview
+- **WHEN** the user scrolls down the palette list on desktop viewports
+- **THEN** the live mockup preview remains pinned and visible alongside the cards at the top of the viewport
+
+#### Scenario: Opening Pop-Out Floating Preview Modal
+- **WHEN** the user clicks the floating preview action button or the pop-out window button
+- **THEN** an interactive modal opens displaying the live website mockup with the currently selected palette applied

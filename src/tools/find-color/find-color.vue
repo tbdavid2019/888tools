@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useMessage, useThemeVars } from 'naive-ui';
-import { IconCheck, IconCopy, IconEye, IconSearch } from '@tabler/icons-vue';
+import { IconCheck, IconCopy, IconExternalLink, IconEye, IconPin, IconSearch } from '@tabler/icons-vue';
 import { type ColorFamily, type Palette, type PaletteColors, palettes } from './palettes';
 import { useCopy } from '@/composable/copy';
 
@@ -20,6 +20,7 @@ const activeMode = ref<Mode>('All');
 const searchQuery = ref('');
 const selectedPalette = ref<Palette>(palettes[0]);
 const lastCopiedPaletteId = ref<string | null>(null);
+const isFloatingModalOpen = ref(false);
 
 const regions: Region[] = ['All', 'Pantone COTY', 'Western', 'Japanese', 'Taiwan', 'Korean', 'Nordic', 'Mediterranean', 'Middle East'];
 const colorFamilies: { id: 'All' | ColorFamily; labelZh: string; labelEn: string; iconColor?: string }[] = [
@@ -48,6 +49,9 @@ const englishText = {
   applyPreview: 'Apply Preview',
   previewTitle: 'Live Palette Preview',
   previewSubtitle: 'Website UI Mockup',
+  floatingBadge: 'Sticky Floating',
+  openFloating: 'Pop Out Window',
+  floatingBtn: 'Live Preview',
   copyPalette: 'Copy Color Group',
   copiedPalette: 'Palette copied to clipboard',
   copiedColor: 'Copied',
@@ -97,6 +101,9 @@ const traditionalChineseText = {
   applyPreview: '套用配色預覽',
   previewTitle: '即時配色套用效果',
   previewSubtitle: '真實網頁模型展示',
+  floatingBadge: '📌 側欄浮動中',
+  openFloating: '展開懸浮大窗',
+  floatingBtn: '即時配色預覽',
   copyPalette: '快速複製色組',
   copiedPalette: '已複製整組色票',
   copiedColor: '已複製',
@@ -422,17 +429,29 @@ const mockupStyle = computed(() => {
         </n-grid>
       </div>
 
-      <!-- Preview Mockup Container -->
+      <!-- Preview Mockup Container (Sticky Floating Beside Palettes) -->
       <div class="preview-container">
         <div class="sticky-wrapper">
           <div class="preview-header-bar">
             <div>
-              <div class="preview-main-title">{{ uiText.previewTitle }}</div>
+              <div class="preview-title-row">
+                <span class="preview-main-title">{{ uiText.previewTitle }}</span>
+                <n-tag size="tiny" type="success" round class="sticky-pin-tag">
+                  <template #icon><n-icon :component="IconPin" /></template>
+                  {{ uiText.floatingBadge }}
+                </n-tag>
+              </div>
               <div class="preview-sub-title">{{ uiText.previewSubtitle }} · {{ selectedPalette.name }}</div>
             </div>
-            <n-tag size="small" type="primary" round>
-              {{ selectedPalette.mode === 'light' ? uiText.light : uiText.dark }}
-            </n-tag>
+            <div class="preview-header-actions">
+              <n-button size="tiny" secondary round @click="isFloatingModalOpen = true">
+                <template #icon><n-icon :component="IconExternalLink" /></template>
+                {{ uiText.openFloating }}
+              </n-button>
+              <n-tag size="small" type="primary" round>
+                {{ selectedPalette.mode === 'light' ? uiText.light : uiText.dark }}
+              </n-tag>
+            </div>
           </div>
 
           <div class="mockup-frame" :style="mockupStyle">
@@ -485,6 +504,72 @@ const mockupStyle = computed(() => {
         </div>
       </div>
     </div>
+
+    <!-- Floating FAB for Quick Access on Any Screen / Mobile Scrolling -->
+    <div class="floating-preview-fab" :title="`${uiText.floatingBtn}: ${selectedPalette.name}`" @click="isFloatingModalOpen = true">
+      <span class="fab-orb" :style="{ backgroundColor: selectedPalette.colors.button }" />
+      <div class="fab-label-wrap">
+        <span class="fab-label-main">🎨 {{ uiText.floatingBtn }}</span>
+        <span class="fab-label-sub">{{ selectedPalette.name }}</span>
+      </div>
+    </div>
+
+    <!-- Floating Pop-Out Modal with Full Interactive Live Mockup -->
+    <n-modal
+      v-model:show="isFloatingModalOpen"
+      preset="card"
+      class="preview-floating-modal"
+      style="max-width: 820px; width: 92vw; border-radius: 16px;"
+      :title="`${uiText.previewTitle} · ${selectedPalette.name}`"
+    >
+      <div class="mockup-frame" :style="mockupStyle">
+        <div class="mockup-browser-bar">
+          <span class="window-dot" />
+          <span class="window-dot" />
+          <span class="window-dot" />
+          <span class="browser-address">https://design-system.preview/pantone</span>
+        </div>
+
+        <div class="mockup-inner-content">
+          <div class="mockup-nav">
+            <div class="mockup-brand">
+              <span class="brand-badge-dot" />
+              <span>COLOR LAB</span>
+            </div>
+            <div class="mockup-links">
+              <span>{{ uiText.home }}</span>
+              <span>{{ uiText.cases }}</span>
+              <span>{{ uiText.about }}</span>
+            </div>
+          </div>
+
+          <div class="mockup-hero">
+            <div class="mockup-tag">{{ uiText.badge }}</div>
+            <h1 class="mockup-h1">{{ uiText.heroTitle }}</h1>
+            <p class="mockup-p">{{ uiText.heroDesc }}</p>
+            <div class="mockup-actions">
+              <button class="mockup-btn mockup-btn-primary" type="button">
+                {{ uiText.primaryAction }}
+              </button>
+              <button class="mockup-btn mockup-btn-secondary" type="button">
+                {{ uiText.secondaryAction }}
+              </button>
+            </div>
+          </div>
+
+          <div class="mockup-cards-row">
+            <div class="mockup-card">
+              <div class="mockup-card-title">{{ uiText.featureOneTitle }}</div>
+              <div class="mockup-card-desc">{{ uiText.featureOneDesc }}</div>
+            </div>
+            <div class="mockup-card">
+              <div class="mockup-card-title">{{ uiText.featureTwoTitle }}</div>
+              <div class="mockup-card-desc">{{ uiText.featureTwoDesc }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </n-modal>
   </div>
 </template>
 
@@ -585,11 +670,13 @@ const mockupStyle = computed(() => {
   display: grid;
   grid-template-columns: 1fr;
   gap: 24px;
+  align-items: start;
 }
 
 @media (min-width: 1100px) {
   .workspace-grid {
     grid-template-columns: 1fr 1fr;
+    align-items: start;
   }
 }
 
@@ -969,11 +1056,13 @@ const mockupStyle = computed(() => {
 }
 
 /* ===================================================
-   Live Mockup Preview Frame
+   Live Mockup Preview Frame (Sticky Floating Alongside Scroll)
    =================================================== */
 .preview-container {
   position: sticky;
-  top: 20px;
+  top: 24px;
+  align-self: start;
+  z-index: 20;
 }
 
 .sticky-wrapper {
@@ -982,6 +1071,9 @@ const mockupStyle = computed(() => {
   border: 1px solid rgba(0, 0, 0, 0.08);
   padding: 16px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  scrollbar-width: thin;
 }
 
 :global(.dark) .sticky-wrapper {
@@ -996,6 +1088,25 @@ const mockupStyle = computed(() => {
   gap: 12px;
   margin-bottom: 12px;
   flex-wrap: wrap;
+}
+
+.preview-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sticky-pin-tag {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.preview-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .preview-main-title {
@@ -1179,5 +1290,79 @@ const mockupStyle = computed(() => {
   line-height: 1.4;
   color: var(--text-color);
   opacity: 0.85;
+}
+
+/* ===================================================
+   Floating FAB Action Button (Bottom-Right)
+   =================================================== */
+.floating-preview-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: #0f172a;
+  color: #ffffff;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+.floating-preview-fab:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+:global(.dark) .floating-preview-fab {
+  background: #1e293b;
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+}
+
+.fab-orb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+  flex-shrink: 0;
+}
+
+.fab-label-wrap {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.fab-label-main {
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.fab-label-sub {
+  font-size: 0.7rem;
+  opacity: 0.82;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (min-width: 1100px) {
+  .floating-preview-fab {
+    opacity: 0.88;
+  }
+
+  .floating-preview-fab:hover {
+    opacity: 1;
+  }
 }
 </style>

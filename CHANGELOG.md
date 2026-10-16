@@ -9,6 +9,7 @@ All notable changes to this project will be documented in this file. See [standa
 - **find-color**: 
   - **2000–2026 潘通年度代表色 (Color of the Year)**：收錄 2000 年 Cerulean Blue 至 2026 年 Cloud Dancer 共 27 款官方年度色，並為每一款量身打造 Light / Dark 模式兼備的情境網頁配色方案。
   - **7 大色系族群 (Color Families)**：擴充收錄紅 (Reds)、橙 (Oranges)、黃 (Yellows)、綠 (Greens)、藍 (Blues)、紫 (Purples)、中性色 (Neutrals) 7 大核心色系，提供頂級設計與插畫靈感。
+  - **側欄浮動釘選與懸浮預覽窗 (Sticky Floating Preview)**：修復滾動時預覽模型消失問題，透過 `align-items: start` 與 `align-self: start` 確保側欄在長清單瀏覽時全程保持吸頂浮動；並新增「展開懸浮大窗」互動彈窗與右下角常駐浮動操作按鈕 (FAB)，手機與桌面端均可隨時呼叫預覽。
   - **潘通關鍵字搜尋**：新增「潘通」、「年度色」、「流行色」、「pantone」、「coty」以及年份數字的即時中文與多欄位檢索。
 - **color-converter**:
   - **純前端 CIEDE2000 (Delta E 2000) 演算法**：完全於瀏覽器端基於 Sharma 等人 (2005) 標準公式計算色差，毫秒級匹配標準塗布配方色庫 (Formula Guide Coated) 與年度代表色。
@@ -17,6 +18,7 @@ All notable changes to this project will be documented in this file. See [standa
   - **畫布截圖滴管 (Canvas Screenshot Dropper & 8x 放大鏡)**：支援拖曳上傳截圖或以 `Cmd+V` / `Ctrl+V` 貼上剪貼簿截圖，搭配 8 倍像素級放大鏡輔助微調，精準擷取任意像素色彩與記錄歷史選色。
 
 ### Bug Fixes
+- **color-converter (組件白畫面修復)**：修復 `color-converter.vue` 在組件初始化階段呼叫 `updateColorValue` 時因 Temporal Dead Zone (TDZ) 存取未就緒的 `pantoneMatches` 變數導致之 `ReferenceError: Cannot access 'g' before initialization` 白畫面錯誤，徹底理順響應式變數與計算函式的宣告順序。
 - **find-color (WCAG 可讀性標準修正)**：徹底修復「快速複製色組」按鈕在淺色背景下因淡黃字體 (`#ecd9ac`) 造成的視覺辨識困難問題（原對比度僅 1.2:1），重構為高對比深石板藍外觀 (`#0f172a` 背景配 `#ffffff` 純白文字，對比度達 19.5:1，遠超 WCAG AAA 7:1 標準），並針對深色模式提供精美毛玻璃白底設計與微互動效果。
 
 ## Version 2026.10.12
