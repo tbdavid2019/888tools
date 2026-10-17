@@ -46,6 +46,7 @@ interface DocState {
   version: number;
   docVer: number;
   csvVer: number;
+  isSample?: boolean;
 }
 
 interface State {
@@ -183,7 +184,7 @@ function applyDisabledCategories(d: DocState): void {
 }
 
 export function hasUnsavedResults(): boolean {
-  return state.docs.some((d) => d.items.some((it) => it.active) && !isDownloaded(d));
+  return state.docs.some((d) => !d.isSample && d.items.some((it) => it.active) && !isDownloaded(d));
 }
 
 export function createProcessView(): HTMLElement {
@@ -218,12 +219,18 @@ export function syncPatternChanges(): void {
 // Loading
 // ---------------------------------------------------------------------------------------
 /** Parsing a PDF/Word file (and loading its parser) can take a while: lock the page and show progress meanwhile. */
-async function loadFiles(files: File[], root: HTMLElement): Promise<void> {
+async function loadFiles(files: File[], root: HTMLElement, isSample = false): Promise<void> {
   const accepted = await rejectOversized(files);
-  if (accepted.length > 0) await withBusy('讀取檔案中…', () => importFiles(accepted, root));
+  if (accepted.length > 0) await withBusy('讀取檔案中…', () => importFiles(accepted, root, isSample));
 }
 
-async function importFiles(files: File[], root: HTMLElement): Promise<void> {
+async function importFiles(files: File[], root: HTMLElement, isSample = false): Promise<void> {
+  // If user uploads their own file and currently only has demo samples, auto-clear the demo sample
+  if (!isSample && state.docs.length > 0 && state.docs.every((d) => d.isSample)) {
+    state.docs = [];
+    state.active = 0;
+    state.sharedBook = null;
+  }
   const room = MAX_FILES - state.docs.length;
   if (files.length > room) {
     toast(`一次最多處理 ${MAX_FILES} 個檔案（目前已有 ${state.docs.length} 個，只能再加入 ${room} 個）`, 'error', 7000);
@@ -236,7 +243,15 @@ async function importFiles(files: File[], root: HTMLElement): Promise<void> {
     try {
       const doc = await parseWithOcr(file);
       const book = bookForNewDoc();
-      const d: DocState = { doc, items: detect(doc.text, getEffectivePatterns(), book), book, version: 0, docVer: -1, csvVer: -1 };
+      const d: DocState = {
+        doc,
+        items: detect(doc.text, getEffectivePatterns(), book),
+        book,
+        version: 0,
+        docVer: -1,
+        csvVer: -1,
+        isSample,
+      };
       applyOutputMode(d);
       applyDisabledCategories(d);
       state.docs.push(d);
@@ -294,14 +309,15 @@ function redetect(root: HTMLElement): void {
 
 function removeDoc(index: number, root: HTMLElement): void {
   const d = state.docs[index];
-  if (d.items.some((it) => it.active) && !isDownloaded(d) && !confirm(`「${d.doc.fileName}」尚未下載去識別化結果${restorable() ? '與編碼表' : ''}，確定要移除嗎？`)) return;
+  if (!d.isSample && d.items.some((it) => it.active) && !isDownloaded(d) && !confirm(`「${d.doc.fileName}」尚未下載去識別化結果${restorable() ? '與編碼表' : ''}，確定要移除嗎？`)) return;
   state.docs.splice(index, 1);
   state.active = Math.min(state.active, Math.max(0, state.docs.length - 1));
   render(root);
 }
 
 function resetAll(root: HTMLElement): void {
-  if (hasUnsavedResults() && !confirm('尚有檔案未下載去識別化結果與編碼表，確定要全部清除嗎？')) return;
+  const hasRealUnsaved = state.docs.some((d) => !d.isSample && d.items.some((it) => it.active) && !isDownloaded(d));
+  if (hasRealUnsaved && !confirm('確定要返回上傳區嗎？尚未下載的去識別化結果與編碼表將會清除。')) return;
   state.docs = [];
   state.active = 0;
   state.sharedBook = null;
@@ -329,7 +345,7 @@ function render(root: HTMLElement): void {
         el('summary', {}, '進階：跨檔案共用編碼'),
         renderCodeScope(root),
       ),
-      samplesSection('沒有檔案？用範例體驗', SAMPLES, (file) => loadFiles([file], root)),
+      samplesSection('沒有檔案？用範例體驗', SAMPLES, (file) => loadFiles([file], root, true)),
     );
     return;
   }
@@ -448,22 +464,44 @@ function renderToolbar(root: HTMLElement): HTMLElement {
     restorable() ? ['只下載編碼表 (CSV)', () => downloadCsv(d, root)] : null,
     text ? ['複製去識別化文字', () => void copyText(d)] : null,
     hasMergedTable() ? ['下載合併編碼表', downloadMerged] : null,
+    ['清空檔案並返回上傳區', () => resetAll(root)],
   ];
   const more = moreItems.some(Boolean) ? menu('更多 ▾', moreItems) : null;
+
+  // Direct file upload input
+  const uploadInput = el('input', {
+    type: 'file',
+    accept: ACCEPT_ATTR,
+    multiple: true,
+    style: 'display: none',
+  }) as HTMLInputElement;
+  uploadInput.addEventListener('change', () => {
+    if (uploadInput.files && uploadInput.files.length > 0) {
+      const files = Array.from(uploadInput.files);
+      uploadInput.value = '';
+      void loadFiles(files, root, false);
+    }
+  });
+  const uploadBtn = button('＋ 上傳新檔案', () => uploadInput.click(), 'btn btn-upload', '選擇新檔案上傳處理');
+  uploadBtn.append(uploadInput);
+
   return el(
     'div',
     { class: 'toolbar toolbar-stack' },
     el('div', { class: 'toolbar-row' },
       el('div', { class: 'file-info' },
+        button('← 返回上傳區', () => resetAll(root), 'btn btn-back', '返回檔案上傳與範例列表畫面'),
+        el('div', { class: 'toolbar-sep' }),
         el('strong', {}, doc.fileName),
         el('span', { class: 'badge' }, doc.format.toUpperCase()),
+        d.isSample ? el('span', { class: 'badge badge-sample' }, '範例') : null,
         doc.ocr ? el('span', { class: 'badge badge-ocr', 'data-tip': '此檔為掃描影像，文字由瀏覽器內的文字辨識（OCR）取得' }, '文字辨識') : null,
         el('span', { class: 'muted' }, ` ${doc.text.length.toLocaleString()} 字`),
         many ? el('span', { class: 'muted' }, `　（第 ${state.active + 1} / ${state.docs.length} 個檔案）`) : null,
       ),
       el('div', { class: 'toolbar-actions' },
+        uploadBtn,
         button('重新偵測', () => redetect(root), 'btn'),
-        button(many ? '全部清除' : '換一個檔案', () => resetAll(root), 'btn btn-ghost'),
         many
           ? button(`打包下載全部（${state.docs.length} 個檔案）`, () => void downloadAll(root), 'btn btn-primary btn-strong')
           : withTip(button(restorable() ? '下載（文件＋編碼表）' : '下載去識別化文件', () => void downloadBoth(d, root), 'btn btn-primary btn-strong'), restorable() ? '編碼表是還原的唯一憑證，請妥善保管' : '不需還原：只下載去識別化文件'),
@@ -528,6 +566,28 @@ function renderWorkspace(root: HTMLElement): HTMLElement {
     preview,
   );
   const ws = el('div', { class: 'workspace' });
+
+  // Support Drag and drop files onto the workspace anytime
+  ws.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    if (e.dataTransfer) {
+      e.dataTransfer.dropEffect = 'copy';
+      ws.classList.add('dragover');
+    }
+  });
+  ws.addEventListener('dragleave', (e) => {
+    if (!ws.contains(e.relatedTarget as Node)) {
+      ws.classList.remove('dragover');
+    }
+  });
+  ws.addEventListener('drop', (e) => {
+    e.preventDefault();
+    ws.classList.remove('dragover');
+    if (e.dataTransfer?.files?.length) {
+      void loadFiles(Array.from(e.dataTransfer.files), root, false);
+    }
+  });
+
   const refresh = () => {
     clear(outputHost);
     outputHost.append(renderOutputPanel(root));

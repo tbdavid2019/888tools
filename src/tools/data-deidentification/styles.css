@@ -145,6 +145,34 @@
 .add-popup .btn-danger-solid { background: var(--danger); border-color: var(--danger); color: #fff; }
 .deid-app-container .btn-strong { font-weight: 600; }
 .deid-app-container a.btn { text-decoration: none; display: inline-flex; align-items: center; }
+.deid-app-container .btn-back {
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--primary);
+  padding: 0.45rem 0.85rem;
+  transition: all 0.15s ease;
+}
+.deid-app-container .btn-back:hover {
+  background: var(--bg);
+  border-color: var(--primary);
+  box-shadow: 0 1px 4px rgba(47, 111, 237, 0.15);
+}
+.deid-app-container .btn-upload {
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-color: var(--primary);
+  color: var(--primary);
+  background: rgba(47, 111, 237, 0.05);
+}
+.deid-app-container .btn-upload:hover {
+  background: rgba(47, 111, 237, 0.15);
+}
 
 .deid-app-container .dropzone {
   border: 2px dashed #c3cad6; border-radius: 12px; padding: 2.5rem 1rem; text-align: center;
@@ -164,6 +192,11 @@
 
 .deid-app-container .workspace { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; align-items: start; }
 .deid-app-container .workspace.workspace-with-list { grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr); }
+.deid-app-container .workspace.dragover {
+  outline: 2px dashed var(--primary);
+  outline-offset: 4px;
+  border-radius: 10px;
+}
 @media (max-width: 900px) { .deid-app-container .workspace.workspace-with-list { grid-template-columns: 1fr; } }
 .deid-app-container .preview-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
 .deid-app-container .preview-head h3 { margin: 0; }
@@ -221,6 +254,13 @@
 .deid-app-container .badge-IBAN, .add-popup .badge-IBAN { background: var(--mark-IBAN); }
 .deid-app-container .badge-IP, .add-popup .badge-IP { background: var(--mark-IP); }
 .deid-app-container .badge-生日, .add-popup .badge-生日 { background: var(--mark-生日); }
+.deid-app-container .badge-sample, .add-popup .badge-sample {
+  background: #fef3c7; color: #92400e; border: 1px solid #fde68a; font-weight: 600;
+}
+:root.dark .deid-app-container .badge-sample,
+.dark .deid-app-container .badge-sample {
+  background: #78350f; color: #fef3c7; border-color: #92400e;
+}
 .deid-app-container .tag {
   display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; line-height: 1.5;
   font-size: 0.72rem; color: var(--muted); border: 1px solid var(--border); border-radius: 4px; padding: 0 0.35rem;
