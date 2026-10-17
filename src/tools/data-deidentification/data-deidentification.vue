@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 import './styles.css';
-import { el, installTooltips } from './ui/components';
+import { installTooltips } from './ui/components';
 import { createProcessView, hasUnsavedResults, syncPatternChanges } from './ui/process-view';
 import { createPatternsView } from './ui/patterns-view';
 import { createRestoreView } from './ui/restore-view';
+import { createHelpView } from './ui/help-view';
 
-type TabId = 'process' | 'patterns' | 'restore';
+type TabId = 'process' | 'patterns' | 'restore' | 'help';
 
 const activeTab = ref<TabId>('process');
 const containerRef = ref<HTMLDivElement | null>(null);
@@ -20,12 +21,13 @@ function activateTab(id: TabId) {
   document.querySelector('.add-popup')?.remove();
   window.getSelection()?.removeAllRanges();
 
-  for (const t of ['process', 'patterns', 'restore'] as TabId[]) {
+  for (const t of ['process', 'patterns', 'restore', 'help'] as TabId[]) {
     let v = views.get(t);
     if (!v && t === id && panelsRef.value) {
       if (t === 'process') v = createProcessView();
       else if (t === 'patterns') v = createPatternsView();
       else if (t === 'restore') v = createRestoreView();
+      else if (t === 'help') v = createHelpView();
       if (v) {
         views.set(t, v);
         panelsRef.value.append(v);
@@ -108,35 +110,20 @@ onBeforeUnmount(() => {
         >
           用編碼表還原
         </button>
-        <a
-          class="tab tab-link text-xs flex items-center gap-1"
-          href="https://github.com/dean9703111/data-deidentification#操作流程"
-          target="_blank"
-          rel="noopener"
-          title="開啟原專案 GitHub 操作說明"
+        <button
+          type="button"
+          class="tab"
+          :class="{ active: activeTab === 'help' }"
+          @click="activateTab('help')"
         >
-          說明文件 ↗
-        </a>
+          使用說明
+        </button>
       </nav>
     </header>
 
     <main class="panels" ref="panelsRef">
       <!-- Views are dynamically mounted and switched here -->
     </main>
-
-    <footer class="footer border-t border-[var(--border)] py-3 px-6 text-xs text-[var(--muted)] flex items-center justify-between flex-wrap gap-2">
-      <div>
-        <strong>文件去識別化工具</strong>
-        <span>・改編自開源專案 </span>
-        <a href="https://github.com/dean9703111/data-deidentification" target="_blank" rel="noopener" class="text-blue-500 underline">
-          dean9703111/data-deidentification
-        </a>
-        <span> (MIT License by Dean Lin)</span>
-      </div>
-      <div>
-        <span>純本機運算・所有檔案均不離開瀏覽器</span>
-      </div>
-    </footer>
   </div>
 </template>
 
