@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## Version 2026.10.18
+
+### Features
+- **data-deidentification**: 全新整合移植開源專案 `dean9703111/data-deidentification`（MIT 授權，由 Dean Lin 原創），打造 100% 純前端、零伺服器外傳之「文件個資去識別化與雙向還原」專業工具：
+  - **台灣在地與國際格式個資偵測**：支援台灣繁體中文姓名（語境排查與停用詞）、身分證字號（檢核碼）、手機/市話、台灣地址、統一編號（新舊制檢核碼）、公司行號名稱；國際格式支援電話（`libphonenumber-js`）、信用卡（Luhn 檢核）、美國 SSN、IBAN 銀行帳號、IPv4/IPv6、出生日期等 15 種標準規則，並支援自訂正則表達式（RegExp）與即時測試。
+  - **多元遮罩模式與統計保留**：支援隨機防偽編碼（`[類別:hex]`）、類別佔位（`[類別]`）、公文式空白佔位（`○○○`，保留字數節奏與符號），以及統計用部分保留（如身分證前兩碼、手機前四碼、Email 網域 `@gmail.com`）。
+  - **多格式無損排版改寫**：支援純文字/Markdown、Word (`.docx`，直接改寫文字節點，表格與樣式不破壞)、Excel (`.xlsx`，儲存格字串清洗與共用字串回收)、PDF (文字座標擷取與重建，內嵌 Noto Sans TC 稀疏字型子集防止檔案膨脹)。
+  - **掃描檔 OCR 與版面重建**：針對無文字層之掃描 PDF，整合瀏覽器端離線 Tesseract（繁中 `chi_tra` + 英文 `eng` 模型），具備自動傾斜校正 (Deskew)、表格框線重繪、勾選框（☐/☑）幾何重繪與保留非文字圖片功能。
+  - **可逆雙向還原機制**：支援產生符合 RFC 4180 標準且含 UTF-8 BOM 之 CSV 對照表（`*.mapping.csv`）；日後上傳去識別化文件與 CSV 編碼表，即可原位還原原始資料。
+  - **批量打包與人工覆核**：支援單次最多 10 個文件混合處理、單檔 100MB 記憶體上限防呆、視覺化所見即所得預覽、點擊取消/加回、圈選文字手動標記、整批共用編碼與 ZIP 打包下載。
+  - **相容與效能優化**：CSS 樣式完全命名空間隔離，防止影響全站；支援深色/淺色主題自適應；11 套單元與整合測試（199 個測試案例）全數綠燈通過。
+
 ## Version 2026.10.16
 
 ### Features

@@ -26,11 +26,12 @@
 - [Cat age calculator](https://tool.david888.com/cat-age-calculator): Convert a cat’s age to human age with detailed month precision
 - [Chmod calculator](https://tool.david888.com/chmod-calculator): Compute your chmod permissions and commands with this online chmod calculator.
 - [Chronometer](https://tool.david888.com/chronometer): Monitor the duration of a thing. Basically a chronometer with simple chronometer features.
-- [Color converter](https://tool.david888.com/color-converter): Convert color between the different formats (hex, rgb, hsl and css name)
+- [Color Converter & Pantone Matcher (Delta E 2000)](https://tool.david888.com/color-converter): Convert between HEX, RGB, CMYK, HSL, and LCH with client-side Delta E 2000 Pantone matching, screen eyedropper, and screenshot color picker.
 - [Color Correction](https://tool.david888.com/color-correction): Adjust image brightness, contrast, saturation, and apply filters like grayscale or sepia.
 - [Countdown timer](https://tool.david888.com/countdown-timer): Set a countdown and track remaining time
 - [Crontab generator](https://tool.david888.com/crontab-generator): Validate and generate crontab and get the human-readable description of the cron schedule.
 - [CSV & Excel Viewer](https://tool.david888.com/csv-excel-viewer): Open and view CSV, XLSX, XLS spreadsheets directly in the browser.
+- [Data De-identification](https://tool.david888.com/data-deidentification): 100% client-side document de-identification tool for PDF, Word, Excel, and TXT. Auto-detects PII, previews masking, and supports reversible restoration via CSV mapping table.
 - [Date-time converter](https://tool.david888.com/date-converter): Convert date and time into the various different formats
 - [Device information](https://tool.david888.com/device-information): Get information about your current device (screen size, pixel-ratio, user agent, ...)
 - [Docker run to Docker compose converter](https://tool.david888.com/docker-run-to-docker-compose-converter): Transforms "docker run" commands into docker-compose files!
@@ -82,7 +83,7 @@
 - [OTP code generator](https://tool.david888.com/otp-generator): Generate and validate time-based OTP (one time password) for multi-factor authentication.
 - [P2P File Transfer](https://tool.david888.com/p2p-file-transfer): Transfer files directly between devices using WebRTC.
 - [P2P Web Chat](https://tool.david888.com/p2p-chat): End-to-End Encrypted (E2EE) P2P chat tool using WebRTC, running entirely in browser with zero server storage.
-- [Pantone Palette Library](https://tool.david888.com/find-color): Pantone Color of the Year picks from 2024 to 2026 plus curated trend palettes. Includes Light/Dark previews, visible HEX codes, and one-click palette copy.
+- [Pantone & Trend Palette Library](https://tool.david888.com/find-color): Curated Pantone Color of the Year picks from 2000 to 2026 plus design trend palettes. Features Light/Dark modes, WCAG AAA high-contrast copyable HEX codes, and live UI preview.
 - [Password generator](https://tool.david888.com/password-generator): Generate multiple secure passwords across various formats (symbols, alphanumeric, grouped, PIN, passphrase) with crack time estimates and one-click copy.
 - [Password strength analyser](https://tool.david888.com/password-strength-analyser): Discover the strength of your password with this client-side-only password strength analyser and crack time estimation tool.
 - [PDF signature checker](https://tool.david888.com/pdf-signature-checker): Verify the signatures of a PDF file. A signed PDF file contains one or more signatures that may be used to determine whether the contents of the file have been altered since the file was signed.

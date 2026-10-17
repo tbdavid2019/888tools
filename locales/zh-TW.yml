@@ -907,3 +907,6 @@ tools:
   xml-to-json:
     title: XML 轉 JSON
     description: 將 XML 檔案解析並轉換為易於讀取的 JSON 格式。
+  data-deidentification:
+    title: 文件個資去識別化
+    description: 純前端處理、資料不離電腦的文件去識別化工具。支援 PDF/Word/Excel/TXT，自動偵測台灣與國際個資、遮罩預覽、人工覆核、CSV 編碼表可還原。

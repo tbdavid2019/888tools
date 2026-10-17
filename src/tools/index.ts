@@ -4,6 +4,7 @@ import { tool as base64StringConverter } from './base64-string-converter';
 import { tool as basicAuthGenerator } from './basic-auth-generator';
 import { tool as barcodeGenerator } from './barcode-generator';
 import { tool as emailNormalizer } from './email-normalizer';
+import { tool as dataDeidentification } from './data-deidentification';
 
 import { tool as asciiTextDrawer } from './ascii-text-drawer';
 
@@ -235,7 +236,7 @@ export const toolsByCategory: ToolCategory[] = [
   },
   {
     name: 'data',
-    components: [csvExcelViewer, phoneParserAndFormatter, ibanValidatorAndParser],
+    components: [csvExcelViewer, phoneParserAndFormatter, ibanValidatorAndParser, dataDeidentification],
   },
   {
     name: 'pdf',

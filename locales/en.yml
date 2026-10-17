@@ -996,3 +996,6 @@ tools:
   xml-to-json:
     title: XML to JSON
     description: Convert XML documents into JSON format.
+  data-deidentification:
+    title: Data De-identification
+    description: 100% client-side document de-identification tool for PDF, Word, Excel, and TXT. Auto-detects PII, previews masking, and supports reversible restoration via CSV mapping table.

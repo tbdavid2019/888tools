@@ -36,3 +36,4 @@ public/models/meeting-captions-sensevoice/sherpa-onnx-wasm-main-vad-asr.wasm
 /playwright/.cache/
 # Webkit with playwright creates a salt file
 salt
+*.tsbuildinfo

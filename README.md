@@ -100,6 +100,7 @@
 | 51  | P2P 密聊改用固定 Room ID 搭配 Cloudflare Durable Object signaling：房間不再綁定房主或單一 Peer ID，重整後可用同一網址重新加入；撤回訊息改用系統訊息樣式與虛線框顯示（https://tool.david888.com/p2p-chat ） |
 | 52  | P2P 密聊 Telegram 經典塗鴉背景新增模糊與半透明遮罩，降低背景圖案對訊息文字的干擾，並避免背景層產生額外捲軸（https://tool.david888.com/p2p-chat ） |
 | 53  | 全面支援 W3C WebMCP (Web Model Context Protocol) 瀏覽器原生 AI Agent 執行標準，透過 `document.modelContext` 暴露 17+ 款純前端工具（含同文堂繁簡轉換、UUID、Hash、Base64、JSON 格式化、JWT 解析、BIP39 等），支援 Chrome 146+ 與 Cloudflare BrowserRun 直連呼叫 |
+| 54  | 新增「文件個資去識別化」工具（Data 分類），純前端處理、資料不離電腦。支援 PDF（含掃描 OCR 文字辨識與框線重繪）/ Word / Excel / TXT / Markdown 自動偵測個資、遮罩預覽、人工覆核、CSV 編碼表可還原（https://tool.david888.com/data-deidentification ） |
 
 ## Changelog
 
@@ -166,6 +167,13 @@ P2P 聊天內容仍由瀏覽器透過 WebRTC 直連傳送；Cloudflare Worker �
 - 即時會議字幕：新增音檔上傳轉寫，支援瀏覽器可解碼的 WAV、MP3、M4A/AAC，會建立新的會議逐字稿並顯示分段進度
 - 即時會議字幕：介面改成上方「現場字幕」、下方「會議逐字稿」，讓即時觀看與會後整理用途分開
 - 即時會議字幕：Whisper Small 改用 browser `Cache Storage` 持久快取，第一次下載後會留在本機瀏覽器；頁面提供 `清模型 / 全清` 低調按鈕，並對手機瀏覽器提示長時間即時錄音風險
+### 2026-10-18
+
+- 新增「文件個資去識別化」工具：支援純瀏覽器本機 100% 離線處理，檔案絕不上傳任何伺服器（https://tool.david888.com/data-deidentification ）
+- 支援多格式遮罩與重建：包含 PDF（含文字層、向量排版、稀疏字型子集與掃描 OCR 辨識支援）、Word (DOCX)、Excel (XLSX)、純文字 (TXT) 與 Markdown
+- 台灣在地化與國際個資規則：身分證字號、統一編號（依財政部 2023 邏輯乘數檢查碼驗證）、手機號碼、市話、地址、電子郵件、公司名稱、日期生日、SSN、IBAN、信用卡號與 IP 等
+- 支援部分保留（遮罩僅保留前後 N 碼）、編碼替換（`[姓名-1]`）、CSV 編碼對照表雙向匯出與一鍵無損還原
+- 本功能基於 [dean9703111/data-deidentification](https://github.com/dean9703111/data-deidentification)（作者 Dean Lin，採用 MIT License）移植整合
 
 ### 2026-06-23
 
@@ -385,7 +393,8 @@ Big thanks to all the people who have already contributed!
 
 ## Credits
 
-Coded with ❤️ by [Corentin Thomasset](https://corentin.tech?utm_source=it-tools&utm_medium=readme).
+- Coded with ❤️ by [Corentin Thomasset](https://corentin.tech?utm_source=it-tools&utm_medium=readme).
+- Special thanks to [Dean Lin](https://github.com/dean9703111) for [data-deidentification](https://github.com/dean9703111/data-deidentification) (MIT License), providing the complete core algorithms and format processors for client-side data de-identification and restoration.
 
 This project is continuously deployed using [GitHub Pages](https://pages.github.com/) and GitHub Actions.
 
