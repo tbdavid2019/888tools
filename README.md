@@ -101,10 +101,24 @@
 | 52  | P2P 密聊 Telegram 經典塗鴉背景新增模糊與半透明遮罩，降低背景圖案對訊息文字的干擾，並避免背景層產生額外捲軸（https://tool.david888.com/p2p-chat ） |
 | 53  | 全面支援 W3C WebMCP (Web Model Context Protocol) 瀏覽器原生 AI Agent 執行標準，透過 `document.modelContext` 暴露 17+ 款純前端工具（含同文堂繁簡轉換、UUID、Hash、Base64、JSON 格式化、JWT 解析、BIP39 等），支援 Chrome 146+ 與 Cloudflare BrowserRun 直連呼叫 |
 | 54  | 新增「文件個資去識別化」工具（Data 分類），純前端處理、資料不離電腦。支援 PDF（含掃描 OCR 文字辨識與框線重繪）/ Word / Excel / TXT / Markdown 自動偵測個資、遮罩預覽、人工覆核、CSV 編碼表可還原（https://tool.david888.com/data-deidentification ） |
+| 55  | 新增「WCAG 色彩對比檢測器」工具（設計色彩 分類），嚴格依照 W3C WCAG 2.1 標準計算色彩對比度與 4 位小數相對亮度，支援 AA/AAA 大字與一般字及 SC 1.4.11 UI 非文字元件檢測、HSL/RGB 滑桿微調、智慧無障礙修正建議（Auto-Fix）、常用色票庫與所見即所得之可編輯真實排版預覽（https://tool.david888.com/color-contrast-checker ） |
 
 ## Changelog
 
-### 2026-09-11
+### 2026-10-22
+
+- **新增「WCAG 色彩對比檢測器」專業無障礙工具 (`/color-contrast-checker`)**：
+  - 掛載於「設計色彩 (`design`)」分類，嚴格依據 W3C WCAG 2.1 SC 1.4.3 / 1.4.6 / 1.4.11 規範計算對比度（1.00:1 ~ 21.00:1）與 4 位小數相對亮度（Relative Luminance）。
+  - **五大合規指標判讀**：涵蓋 AA 大字體 (`≥ 3:1`)、AA 一般文字 (`≥ 4.5:1`)、AAA 大字體 (`≥ 4.5:1`)、AAA 一般文字 (`≥ 7:1`) 及 UI 元件/圖示邊框 (`≥ 3:1`)，修正邊界值判定並杜絕假陽性進位。
+  - **智慧極端低對比安全底襯 (`isPoorContrast`)**：當色彩對比度 `< 3:1` 時自動啟用深色防護底襯，確保分數與檢核徽章在任何極端同色下皆 100% 清晰可讀。
+  - **雙模式 HSL / RGB 雙向即時控制器**：支援原生取色器、HEX 輸入防抖、Chromium 螢幕吸管 API (`window.EyeDropper`)、3/4/6/8 碼 HEX 與 `rgb()` / `hsl()` 色碼貼上解析，以及 HSL 彩虹軌道與 RGB 數值即時無縫聯動。
+  - **智慧無障礙修正建議 (Smart Auto-Fix Suggestions)**：未達標時保持原始色相與飽和度，自動微調明度（Lightness）搜尋最接近之 AA 與 AAA 推薦色，支援一鍵點擊套用；針對中明度色無單色解時提供清晰的導引說明卡。
+  - **常用色票庫與自訂持久化儲存**：預設收錄 4 組 2md 經典與高對比色票，支援一鍵對調色彩 (`Reverse colours`)、儲存配色至 `localStorage` (`useStorage`)、一鍵複製標準 CSS 變數。
+  - **可編輯真實排版與 UI 元件即時預覽**：提供可點擊直接編輯之 24px 大字體、16px 正文，以及實心按鈕、外框按鈕、狀態標籤與輸入框的真實互動效果預覽。
+  - **完整測試覆蓋**：純函式單元測試 28 組全數通過，達成 TypeScript 零錯誤與 Impeccable 靜態設計檢測零違規。
+- **全站 2md 品牌色彩與 WCAG AAA 深度整合**：全面重構全站深淺雙主題配色，文字對比度達 14.45:1，杜絕任何淺色背景低對比或黃底白字問題。
+- **智慧電視 (Smart TV) 瀏覽器深度相容性優化**：降級 ES2020/Safari14 建置目標，補齊重要 Polyfill，WebMCP 外掛非同步延遲載入防白屏，強化時區純函數解析與視窗全螢幕相容。
+- **搜尋體驗優化**：擴充 `online-clock` 關鍵字，提升時間相關搜尋排名，指令面板長清單滾動體驗優化。
 
 - **WebMCP 工具庫擴充至 39 款**：
   - 新增 Windows Excel 專用抗 BOM CSV 轉換工具（`convert_to_excel_csv`），自動附加 UTF-8 BOM (`\uFEFF`)，徹底解決 Excel 雙擊中文亂碼問題。

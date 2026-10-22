@@ -13,7 +13,7 @@ All notable changes to this project will be documented in this file. See [standa
   - **智慧無障礙修正建議 (Smart Auto-Fix Suggestions)**：未達標時保持原始色相 (Hue) 與飽和度 (Saturation)，以步進演算法搜尋距離最近且能通過 AA (4.5:1) 與 AAA (7.0:1) 的推薦前景色與推薦背景色，支援一鍵點擊快速修正套用。
   - **常用色票庫與自訂儲存**：內建 4 組 2md 與經典無障礙配色，支援使用 `@vueuse/core` 本地持久化儲存 (`useStorage`)、一鍵對調色彩 (`Reverse colours`)、複製標準 CSS 變數，並可單鍵刪除色票。
   - **即時排版與 UI 元件預覽**：提供可直接編輯之 24px 大字體、16px 正文、實心按鈕、外框按鈕、狀態標籤與輸入框即時視覺預覽，完全符合 `impeccable` 工藝品質規範。
-  - **單元測試與型別安全**：全套模型純函式覆蓋 27 組單元測試，包含邊界門檻與自動修正演算法，並達成 TypeScript 零錯誤。
+  - **單元測試與型別安全**：全套模型純函式覆蓋 28 組單元測試，包含邊界門檻與自動修正演算法，並達成 TypeScript 零錯誤。
 
 - **WCAG AA/AAA 色彩方案與 2md 設計語彙整合 (`2md.aiurl.tw`)**:
   - 重構全站淺色與深色調色盤 (`src/theme/palette.ts`)，引進 `https://2md.aiurl.tw` 經典番紅花黃 (`#FFB010` Saffron)、暖奶油 (`#FFF9E8` Warm Cream)、米黃畫布 (`#FFF0CC` Canvas)、深青海軍藍 (`#17324D` Deep Blue)、陶土磚紅 (`#A9471D` Clay) 與濃墨黑 (`#2B251A` Ink)。
