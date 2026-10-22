@@ -186,21 +186,33 @@ tools:
 
   online-clock:
     title: 線上時鐘
-    description: 切換數位、模擬、翻頁與中文字時鐘樣式，支援全球時區、日期、秒數與網路時間 (time) 校時
+    description: 切換數位、類比、翻頁與中文字時鐘樣式，支援全球時區、日期、秒數與網路時間 (time) 校時
     timezone: 時區
     showSeconds: 顯示秒
     showDate: 顯示日期
     fullscreen: 全螢幕
     exitFullscreen: 退出全螢幕
     modes:
-      digital: 數位時鐘
-      analog: 模擬時鐘
-      flip: 翻頁時鐘
-      chinese: 中文字時鐘
+      digital: 數位
+      analog: 類比
+      flip: 翻頁
+      chinese: 中文字
     useNetworkTime: 網路校時
     syncing: '校時中...'
     syncError: 校時失敗
     offset: '偏差: {value}秒'
+    weekFormat: '第 {week} 週'
+    currentTimeIn: '{location} 現在時間'
+    sunInfo: '太陽：↑ {sunrise} ↓ {sunset} ({hours}小時 {minutes}分)'
+    locateMe: '使用精確位置計算日出日落'
+    cities:
+      taipei: 臺北
+      losAngeles: 洛杉磯
+      newYork: 紐約
+      london: 倫敦
+      paris: 巴黎
+      beijing: 北京
+      tokyo: 東京
   password-generator:
     title: 密碼產生器
     description: 依據不同安全組合（符號、英數、易讀分組、純數字 PIN、好記密語）一鍵產生多組強固密碼，附帶破解時間預估與一鍵複製。

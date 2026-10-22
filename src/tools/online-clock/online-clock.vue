@@ -17,6 +17,44 @@ export interface ZonedTimeParts {
   hh12: string;
 }
 
+export interface SolarTimesResult {
+  sunrise: string;
+  sunset: string;
+  dayLengthHours: number;
+  dayLengthMinutes: number;
+}
+
+export interface TimezoneGeoInfo {
+  lat: number;
+  lng: number;
+  nameZh: string;
+  nameEn: string;
+}
+
+export const TIMEZONE_GEO_MAP: Record<string, TimezoneGeoInfo> = {
+  'Asia/Taipei': { lat: 25.0330, lng: 121.5654, nameZh: '台灣臺北市', nameEn: 'Taipei, Taiwan' },
+  'America/Los_Angeles': { lat: 34.0522, lng: -118.2437, nameZh: '美國洛杉磯', nameEn: 'Los Angeles, USA' },
+  'America/New_York': { lat: 40.7128, lng: -74.0060, nameZh: '美國紐約', nameEn: 'New York, USA' },
+  'Europe/London': { lat: 51.5074, lng: -0.1278, nameZh: '英國倫敦', nameEn: 'London, UK' },
+  'Europe/Paris': { lat: 48.8566, lng: 2.3522, nameZh: '法國巴黎', nameEn: 'Paris, France' },
+  'Asia/Shanghai': { lat: 39.9042, lng: 116.4074, nameZh: '中國北京', nameEn: 'Beijing, China' },
+  'Asia/Tokyo': { lat: 35.6762, lng: 139.6503, nameZh: '日本東京', nameEn: 'Tokyo, Japan' },
+  'Asia/Hong_Kong': { lat: 22.3193, lng: 114.1694, nameZh: '香港', nameEn: 'Hong Kong' },
+  'Asia/Singapore': { lat: 1.3521, lng: 103.8198, nameZh: '新加坡', nameEn: 'Singapore' },
+  'Asia/Seoul': { lat: 37.5665, lng: 126.9780, nameZh: '韓國首爾', nameEn: 'Seoul, South Korea' },
+  'Asia/Bangkok': { lat: 13.7563, lng: 100.5018, nameZh: '泰國曼谷', nameEn: 'Bangkok, Thailand' },
+  'Asia/Dubai': { lat: 25.2048, lng: 55.2708, nameZh: '阿聯杜拜', nameEn: 'Dubai, UAE' },
+  'Asia/Kolkata': { lat: 22.5726, lng: 88.3639, nameZh: '印度加爾各答', nameEn: 'Kolkata, India' },
+  'Asia/Jakarta': { lat: -6.2088, lng: 106.8456, nameZh: '印尼雅加達', nameEn: 'Jakarta, Indonesia' },
+  'Europe/Berlin': { lat: 52.5200, lng: 13.4050, nameZh: '德國柏林', nameEn: 'Berlin, Germany' },
+  'Europe/Moscow': { lat: 55.7558, lng: 37.6173, nameZh: '俄羅斯莫斯科', nameEn: 'Moscow, Russia' },
+  'America/Chicago': { lat: 41.8781, lng: -87.6298, nameZh: '美國芝加哥', nameEn: 'Chicago, USA' },
+  'America/Denver': { lat: 39.7392, lng: -104.9903, nameZh: '美國丹佛', nameEn: 'Denver, USA' },
+  'America/Sao_Paulo': { lat: -23.5505, lng: -46.6333, nameZh: '巴西聖保羅', nameEn: 'São Paulo, Brazil' },
+  'Australia/Sydney': { lat: -33.8688, lng: 151.2093, nameZh: '澳洲雪梨', nameEn: 'Sydney, Australia' },
+  'UTC': { lat: 51.4769, lng: 0.0000, nameZh: '世界協調時間 (UTC)', nameEn: 'Coordinated Universal Time (UTC)' },
+};
+
 export function getDefaultTimezone(): string {
   try {
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -105,6 +143,90 @@ export function getZonedTimeParts(date: Date, timeZone: string, use12h = false):
     period,
     hours12,
     hh12: pad(hours12),
+  };
+}
+
+export function getISOWeekNumber(year: number, month: number, day: number): number {
+  const d = new Date(Date.UTC(year, month - 1, day));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+}
+
+export function getSolarTimes(
+  date: Date,
+  lat: number,
+  lng: number,
+  timeZone: string,
+): SolarTimesResult | null {
+  if (!date || Number.isNaN(date.getTime()) || !isValidTimezone(timeZone)) {
+    return null;
+  }
+  if (typeof lat !== 'number' || typeof lng !== 'number' || Number.isNaN(lat) || Number.isNaN(lng)) {
+    return null;
+  }
+  if (lat > 90 || lat < -90 || lng > 180 || lng < -180) {
+    return null;
+  }
+
+  const parts = getZonedTimeParts(date, timeZone);
+  const { year, month, day } = parts;
+
+  const startOfYear = new Date(Date.UTC(year, 0, 1));
+  const currentDayUtc = new Date(Date.UTC(year, month - 1, day));
+  const dayOfYear = Math.floor((currentDayUtc.getTime() - startOfYear.getTime()) / 86400000) + 1;
+
+  const gamma = ((2 * Math.PI) / 365) * (dayOfYear - 1);
+  const eqTime = 229.18 * (
+    0.000075
+    + 0.001868 * Math.cos(gamma)
+    - 0.032077 * Math.sin(gamma)
+    - 0.014615 * Math.cos(2 * gamma)
+    - 0.040849 * Math.sin(2 * gamma)
+  );
+
+  const decl = 0.006918
+    - 0.399912 * Math.cos(gamma)
+    + 0.070257 * Math.sin(gamma)
+    - 0.006758 * Math.cos(2 * gamma)
+    + 0.000907 * Math.sin(2 * gamma)
+    - 0.002697 * Math.cos(3 * gamma)
+    + 0.00148 * Math.sin(3 * gamma);
+
+  const latRad = (lat * Math.PI) / 180;
+  const zenithRad = (90.833 * Math.PI) / 180;
+
+  const cosHa = Math.cos(zenithRad) / (Math.cos(latRad) * Math.cos(decl)) - Math.tan(latRad) * Math.tan(decl);
+
+  if (cosHa > 1 || cosHa < -1) {
+    return null; // Polar day or polar night
+  }
+
+  const haDeg = (Math.acos(cosHa) * 180) / Math.PI;
+  const sunriseUtcMins = 720 - 4 * (lng + haDeg) - eqTime;
+  const sunsetUtcMins = 720 - 4 * (lng - haDeg) - eqTime;
+
+  const sunriseDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0) + Math.round(sunriseUtcMins) * 60000);
+  const sunsetDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0) + Math.round(sunsetUtcMins) * 60000);
+
+  const srParts = getZonedTimeParts(sunriseDate, timeZone);
+  const ssParts = getZonedTimeParts(sunsetDate, timeZone);
+
+  const sunrise = `${srParts.hh}:${srParts.mm}`;
+  const sunset = `${ssParts.hh}:${ssParts.mm}`;
+
+  let diffMins = Math.round((sunsetDate.getTime() - sunriseDate.getTime()) / 60000);
+  if (diffMins < 0) diffMins += 1440;
+
+  const dayLengthHours = Math.floor(diffMins / 60);
+  const dayLengthMinutes = diffMins % 60;
+
+  return {
+    sunrise,
+    sunset,
+    dayLengthHours,
+    dayLengthMinutes,
   };
 }
 </script>
@@ -220,6 +342,43 @@ const onUserInteraction = (e?: Event) => {
   }
 };
 
+watch(isClockFullscreen, (val) => {
+  if (val) {
+    showControlsTemporarily();
+  } else {
+    controlsVisible.value = false;
+    if (controlsTimer) {
+      clearTimeout(controlsTimer);
+      controlsTimer = null;
+    }
+  }
+});
+
+const userCoords = ref<{ lat: number; lng: number } | null>(null);
+
+function requestGeolocation() {
+  if (typeof navigator !== 'undefined' && navigator && 'geolocation' in navigator && navigator.geolocation?.getCurrentPosition) {
+    try {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          if (pos?.coords) {
+            userCoords.value = {
+              lat: pos.coords.latitude,
+              lng: pos.coords.longitude,
+            };
+          }
+        },
+        () => {
+          // ignore
+        },
+        { timeout: 5000, maximumAge: 300000 },
+      );
+    } catch {
+      // ignore
+    }
+  }
+}
+
 onMounted(() => {
   if (typeof window !== 'undefined') {
     window.addEventListener('mousemove', onUserInteraction, { passive: true });
@@ -227,6 +386,7 @@ onMounted(() => {
     window.addEventListener('touchstart', onUserInteraction, { passive: true });
     window.addEventListener('pointerdown', onUserInteraction, { passive: true });
   }
+  requestGeolocation();
 });
 
 onUnmounted(() => {
@@ -331,6 +491,8 @@ const parts = computed(() => getZonedTimeParts(adjustedNow.value, timezone.value
 const dateFormatterCache = new Map<string, Intl.DateTimeFormat>();
 const dateText = computed(() => {
   const p = parts.value;
+  const weekNumber = getISOWeekNumber(p.year, p.month, p.day);
+  const weekStr = t('tools.online-clock.weekFormat', { week: weekNumber });
   try {
     const cacheKey = `${locale.value}__${timezone.value}`;
     let fmt = dateFormatterCache.get(cacheKey);
@@ -344,10 +506,83 @@ const dateText = computed(() => {
       });
       dateFormatterCache.set(cacheKey, fmt);
     }
-    return fmt.format(adjustedNow.value);
+    let formatted = fmt.format(adjustedNow.value);
+    if (locale.value.startsWith('zh')) {
+      formatted = formatted.replace(/([0-9]+日)\s*(星期[一二三四五六日天])/, '$1 $2');
+    }
+    return `${formatted} ・ ${weekStr}`;
   } catch {
-    return `${p.yearPad}-${p.monthPad}-${p.dayPad}`;
+    return `${p.yearPad}-${p.monthPad}-${p.dayPad} ・ ${weekStr}`;
   }
+});
+
+const currentCoords = computed<{ lat: number; lng: number } | null>(() => {
+  if (timezone.value === initialTimezone && userCoords.value) {
+    return userCoords.value;
+  }
+  const geo = TIMEZONE_GEO_MAP[timezone.value];
+  if (geo) {
+    return { lat: geo.lat, lng: geo.lng };
+  }
+  return null;
+});
+
+const currentLocationName = computed(() => {
+  const geo = TIMEZONE_GEO_MAP[timezone.value];
+  if (geo) {
+    return locale.value.startsWith('zh') ? geo.nameZh : geo.nameEn;
+  }
+  return timezone.value.split('/').pop()?.replace(/_/g, ' ') || timezone.value;
+});
+
+const locationLeadText = computed(() => {
+  return t('tools.online-clock.currentTimeIn', { location: currentLocationName.value });
+});
+
+const currentMinuteDate = computed(() => new Date(Math.floor(adjustedNow.value.getTime() / 60000) * 60000));
+
+const solarTimes = computed(() => {
+  if (!currentCoords.value) return null;
+  const solarDate = new Date(Date.UTC(parts.value.year, parts.value.month - 1, parts.value.day, 12, 0, 0));
+  return getSolarTimes(
+    solarDate,
+    currentCoords.value.lat,
+    currentCoords.value.lng,
+    timezone.value,
+  );
+});
+
+const solarInfoText = computed(() => {
+  if (!solarTimes.value) return '';
+  return t('tools.online-clock.sunInfo', {
+    sunrise: solarTimes.value.sunrise,
+    sunset: solarTimes.value.sunset,
+    hours: solarTimes.value.dayLengthHours,
+    minutes: solarTimes.value.dayLengthMinutes,
+  });
+});
+
+const WORLD_CITY_DEFS = [
+  { key: 'losAngeles', timezone: 'America/Los_Angeles' },
+  { key: 'newYork', timezone: 'America/New_York' },
+  { key: 'london', timezone: 'Europe/London' },
+  { key: 'paris', timezone: 'Europe/Paris' },
+  { key: 'beijing', timezone: 'Asia/Shanghai' },
+  { key: 'taipei', timezone: 'Asia/Taipei' },
+  { key: 'tokyo', timezone: 'Asia/Tokyo' },
+] as const;
+
+const worldCities = computed(() => {
+  return WORLD_CITY_DEFS.map((city) => {
+    const p = getZonedTimeParts(currentMinuteDate.value, city.timezone, use12HourFormat.value);
+    const time = `${p.hh}:${p.mm}${use12HourFormat.value ? ` ${p.period}` : ''}`;
+    return {
+      key: city.key,
+      timezone: city.timezone,
+      name: t(`tools.online-clock.cities.${city.key}`),
+      time,
+    };
+  });
 });
 
 const timeText = computed(() => {
@@ -484,6 +719,7 @@ const secondRotation = computed(() => {
       fullscreen: isClockFullscreen,
       'pseudo-fullscreen': isPseudoFullscreen,
       'is-dark': styleStore.isDarkTheme,
+      'cursor-hidden': isClockFullscreen && !controlsVisible,
     }"
   >
     <div class="header" :class="{ 'controls-active': controlsVisible }">
@@ -529,14 +765,40 @@ const secondRotation = computed(() => {
       </div>
     </div>
 
-    <div v-if="useNetworkTime && timeOffset !== 0" class="offset-info">
+    <div
+      v-if="useNetworkTime && timeOffset !== 0"
+      class="offset-info"
+      :class="{ 'controls-active': controlsVisible }"
+    >
       {{ t('tools.online-clock.offset', { value: (timeOffset / 1000).toFixed(2) }) }}
     </div>
-    <div v-if="syncError" class="offset-info error">
+    <div
+      v-if="syncError"
+      class="offset-info error"
+      :class="{ 'controls-active': controlsVisible }"
+    >
       {{ t('tools.online-clock.syncError') }}
     </div>
 
+    <div class="location-lead" :class="{ 'controls-active': controlsVisible }">
+      {{ locationLeadText }}
+    </div>
+
     <div v-if="showDate" class="date">{{ dateText }}</div>
+
+    <div v-if="showDate && solarTimes" class="solar-info" :class="{ 'controls-active': controlsVisible }">
+      <span>{{ solarInfoText }}</span>
+      <button
+        v-if="timezone === initialTimezone && !userCoords"
+        type="button"
+        class="locate-btn"
+        :title="t('tools.online-clock.locateMe')"
+        :aria-label="t('tools.online-clock.locateMe')"
+        @click="requestGeolocation"
+      >
+        📍
+      </button>
+    </div>
 
     <div v-if="mode === 'digital'" class="digital">
       <div class="digital-time">{{ timeText }}</div>
@@ -597,11 +859,12 @@ const secondRotation = computed(() => {
       </div>
     </div>
 
-    <div class="tabs">
+    <div class="tabs" :class="{ 'controls-active': controlsVisible }">
       <button
         type="button"
         class="tab-btn"
         :class="{ active: mode === 'digital' }"
+        :aria-pressed="mode === 'digital'"
         @click="mode = 'digital'"
       >
         {{ t('tools.online-clock.modes.digital') }}
@@ -610,6 +873,7 @@ const secondRotation = computed(() => {
         type="button"
         class="tab-btn"
         :class="{ active: mode === 'analog' }"
+        :aria-pressed="mode === 'analog'"
         @click="mode = 'analog'"
       >
         {{ t('tools.online-clock.modes.analog') }}
@@ -618,6 +882,7 @@ const secondRotation = computed(() => {
         type="button"
         class="tab-btn"
         :class="{ active: mode === 'flip' }"
+        :aria-pressed="mode === 'flip'"
         @click="mode = 'flip'"
       >
         {{ t('tools.online-clock.modes.flip') }}
@@ -626,9 +891,25 @@ const secondRotation = computed(() => {
         type="button"
         class="tab-btn"
         :class="{ active: mode === 'chinese' }"
+        :aria-pressed="mode === 'chinese'"
         @click="mode = 'chinese'"
       >
         {{ t('tools.online-clock.modes.chinese') }}
+      </button>
+    </div>
+
+    <div class="world-cities" :class="{ 'controls-active': controlsVisible }">
+      <button
+        v-for="city in worldCities"
+        :key="city.timezone"
+        type="button"
+        class="city-card"
+        :class="{ active: timezone === city.timezone }"
+        :aria-pressed="timezone === city.timezone"
+        @click="timezone = city.timezone"
+      >
+        <span class="city-name">{{ city.name }}</span>
+        <span class="city-time">{{ city.time }}</span>
       </button>
     </div>
   </div>
@@ -719,6 +1000,7 @@ const secondRotation = computed(() => {
   width: 100vw;
   height: 100vh;
   z-index: 9999;
+  overflow-y: auto;
 }
 
 .header {
@@ -753,6 +1035,40 @@ const secondRotation = computed(() => {
 .clock-page.fullscreen .header:hover,
 .clock-page.fullscreen .header:focus-within,
 .clock-page.fullscreen .header.controls-active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.clock-page.fullscreen.cursor-hidden,
+.clock-page.fullscreen.cursor-hidden * {
+  cursor: none !important;
+}
+
+.clock-page.fullscreen .tabs,
+.clock-page.fullscreen .world-cities,
+.clock-page.fullscreen .solar-info,
+.clock-page.fullscreen .location-lead,
+.clock-page.fullscreen .offset-info {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.clock-page.fullscreen .tabs:hover,
+.clock-page.fullscreen .tabs:focus-within,
+.clock-page.fullscreen .tabs.controls-active,
+.clock-page.fullscreen .world-cities:hover,
+.clock-page.fullscreen .world-cities:focus-within,
+.clock-page.fullscreen .world-cities.controls-active,
+.clock-page.fullscreen .solar-info:hover,
+.clock-page.fullscreen .solar-info:focus-within,
+.clock-page.fullscreen .solar-info.controls-active,
+.clock-page.fullscreen .location-lead:hover,
+.clock-page.fullscreen .location-lead:focus-within,
+.clock-page.fullscreen .location-lead.controls-active,
+.clock-page.fullscreen .offset-info:hover,
+.clock-page.fullscreen .offset-info:focus-within,
+.clock-page.fullscreen .offset-info.controls-active {
   opacity: 1;
   pointer-events: auto;
 }
@@ -819,12 +1135,59 @@ const secondRotation = computed(() => {
   font-family: 'Maple Mono', 'JetBrains Mono', monospace !important;
 }
 
-.date {
+.location-lead {
   text-align: center;
   margin-top: 14px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--clock-text);
+  letter-spacing: 0.5px;
+}
+
+.date {
+  text-align: center;
+  margin-top: 6px;
   color: var(--clock-muted);
   font-weight: 600;
-  font-size: 16px;
+  font-size: 15px;
+}
+
+.solar-info {
+  text-align: center;
+  margin-top: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--clock-muted);
+  font-variant-numeric: tabular-nums;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.locate-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0 4px;
+  font-size: 13px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.8;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  outline: none;
+}
+
+.locate-btn:hover {
+  opacity: 1;
+  transform: scale(1.15);
+}
+
+.locate-btn:focus-visible {
+  outline: 2px solid var(--clock-primary);
+  border-radius: 4px;
 }
 
 .digital {
@@ -870,11 +1233,24 @@ const secondRotation = computed(() => {
   height: min(760px, 82vmin);
 }
 
+.clock-page.fullscreen .location-lead {
+  font-size: clamp(18px, 3.5vw, 28px);
+  color: var(--clock-text);
+  margin-bottom: 4px;
+}
+
 .clock-page.fullscreen .date {
   font-size: 24px;
   font-size: clamp(16px, 3vw, 32px);
   margin-bottom: 2vh;
   color: var(--clock-text);
+}
+
+.clock-page.fullscreen .solar-info {
+  font-size: clamp(13px, 2vw, 18px);
+  color: var(--clock-muted);
+  margin-top: 6px;
+  margin-bottom: 2vh;
 }
 
 .clock-page.fullscreen .digital-time {
@@ -1150,6 +1526,73 @@ const secondRotation = computed(() => {
   color: var(--clock-primary-text);
   font-weight: 700;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.world-cities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+  margin: 18px auto 0;
+  max-width: 100%;
+}
+
+.city-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: var(--clock-canvas);
+  border: 1.5px solid var(--clock-border);
+  color: var(--clock-text);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-width: 84px;
+  font-family: inherit;
+  outline: none;
+}
+
+.city-card:hover {
+  border-color: var(--clock-primary);
+  transform: translateY(-1px);
+}
+
+.city-card:focus-visible {
+  outline: 3px solid var(--clock-primary);
+  outline-offset: 2px;
+}
+
+.city-card.active {
+  background: var(--clock-primary);
+  color: #2B251A;
+  border-color: var(--clock-navy);
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.city-card.active .city-name,
+.city-card.active .city-time {
+  color: #2B251A;
+}
+
+.city-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--clock-text);
+  transition: color 0.15s ease;
+}
+
+.city-time {
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-family: 'Maple Mono', 'JetBrains Mono', monospace !important;
+  color: var(--clock-muted);
+  transition: color 0.15s ease;
 }
 
 @media (max-width: 600px) {

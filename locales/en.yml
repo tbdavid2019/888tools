@@ -204,12 +204,24 @@ tools:
     modes:
       digital: Digital
       analog: Analog
-      flip: Flip clock
-      chinese: Chinese clock
+      flip: Flip
+      chinese: Chinese
     useNetworkTime: Network time sync
     syncing: 'Syncing...'
     syncError: Sync failed
     offset: 'Offset: {value}s'
+    weekFormat: 'Week {week}'
+    currentTimeIn: 'Time in {location} now'
+    sunInfo: 'Sun: ↑ {sunrise} ↓ {sunset} ({hours}h {minutes}m)'
+    locateMe: 'Use exact location for sun times'
+    cities:
+      taipei: Taipei
+      losAngeles: Los Angeles
+      newYork: New York
+      london: London
+      paris: Paris
+      beijing: Beijing
+      tokyo: Tokyo
 
   password-generator:
     title: Password generator
