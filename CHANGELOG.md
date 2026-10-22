@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file. See [standa
 ## Version 2026.10.22
 
 ### Features & Enhancements
+- **WCAG 色彩對比檢測器 (`color-contrast-checker`)**:
+  - 新增「設計色彩 (`design`)」分類專業工具：嚴格依據 W3C WCAG 2.1 標準即時檢測前景色與背景色的相對亮度與色彩對比度（1.00:1 ~ 21.00:1）。
+  - **五大 WCAG 指標即時判讀**：涵蓋 AA 大字體 (`≥ 3:1`)、AA 一般文字 (`≥ 4.5:1`)、AAA 大字體 (`≥ 4.5:1`)、AAA 一般文字 (`≥ 7:1`) 及 WCAG 2.1 SC 1.4.11 非文字 UI 元件與圖示 (`≥ 3:1`)，嚴格修正邊界門檻判定 (`>=`)。
+  - **智慧極端低對比防護底襯 (`isPoorContrast`)**：當色彩對比度 `< 3:1` 時，主看板自動啟用高對比安全底襯，確保在同色或極端配色下依然 100% 清晰可讀。
+  - **雙模式 (HSL / RGB) 精確微調與取色**：支援原生取色器、HEX 即時鍵入、點擊複製色碼、Chromium 螢幕吸管 API (`window.EyeDropper`)，以及 HSL（色相彩虹軌道、飽和度、明度）與 RGB 雙向無縫即時聯動。
+  - **智慧無障礙修正建議 (Smart Auto-Fix Suggestions)**：未達標時保持原始色相 (Hue) 與飽和度 (Saturation)，以步進演算法搜尋距離最近且能通過 AA (4.5:1) 與 AAA (7.0:1) 的推薦前景色與推薦背景色，支援一鍵點擊快速修正套用。
+  - **常用色票庫與自訂儲存**：內建 4 組 2md 與經典無障礙配色，支援使用 `@vueuse/core` 本地持久化儲存 (`useStorage`)、一鍵對調色彩 (`Reverse colours`)、複製標準 CSS 變數，並可單鍵刪除色票。
+  - **即時排版與 UI 元件預覽**：提供可直接編輯之 24px 大字體、16px 正文、實心按鈕、外框按鈕、狀態標籤與輸入框即時視覺預覽，完全符合 `impeccable` 工藝品質規範。
+  - **單元測試與型別安全**：全套模型純函式覆蓋 27 組單元測試，包含邊界門檻與自動修正演算法，並達成 TypeScript 零錯誤。
+
 - **WCAG AA/AAA 色彩方案與 2md 設計語彙整合 (`2md.aiurl.tw`)**:
   - 重構全站淺色與深色調色盤 (`src/theme/palette.ts`)，引進 `https://2md.aiurl.tw` 經典番紅花黃 (`#FFB010` Saffron)、暖奶油 (`#FFF9E8` Warm Cream)、米黃畫布 (`#FFF0CC` Canvas)、深青海軍藍 (`#17324D` Deep Blue)、陶土磚紅 (`#A9471D` Clay) 與濃墨黑 (`#2B251A` Ink)。
   - 全站文字色彩嚴格符合 WCAG AA/AAA 標準（主要內文對比度達 14.45:1，次要文字 ≥ 7.0:1，黃底黑字對比度達 8.30:1，杜絕任何淺色背景低對比或黃底白字問題）。

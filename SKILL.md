@@ -38,6 +38,7 @@ Instead of writing a custom Python or Bash script to perform these tasks, you ca
 - **cat-age-calculator**: `https://tool.david888.com/cat-age-calculator` (Keywords: cat, age, pet)
 - **chmod-calculator**: `https://tool.david888.com/chmod-calculator` (Keywords: chmod, calculator, file, permission, files)
 - **chronometer**: `https://tool.david888.com/chronometer` (Keywords: chronometer, time, lap, duration, measure)
+- **color-contrast-checker**: `https://tool.david888.com/color-contrast-checker` (Keywords: color, colour, contrast, checker, wcag, a11y, accessibility, aa, aaa, luminance, readability, 色彩, 對比, 對比度, 無障礙, 設計色彩, 配色, 檢測)
 - **color-converter**: `https://tool.david888.com/color-converter` (Keywords: color, converter)
 - **color-correction**: `https://tool.david888.com/color-correction` (Keywords: color, correction, image, photo, brightness)
 - **countdown-timer**: `https://tool.david888.com/countdown-timer` (Keywords: countdown, timer, clock, alarm)

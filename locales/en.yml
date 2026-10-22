@@ -864,6 +864,91 @@ tools:
     title: "Pantone & Trend Palette Library"
     description: Curated Pantone Color of the Year picks from 2000 to 2026 plus design trend palettes. Features Light/Dark modes, WCAG AAA high-contrast copyable HEX codes, and live UI preview.
 
+  color-contrast-checker:
+    title: WCAG Color Contrast Checker
+    description: Check foreground and background color contrast ratios in real time according to WCAG 2.1 guidelines. Features AA/AAA compliance ratings, non-text UI component checks, HSL/RGB sliders, smart auto-fix suggestions, custom saved swatches, and live typography mockups.
+    scoreBanner:
+      contrastRatio: Contrast Ratio
+      overallGrade: Overall Grade
+      luminance: Relative Luminance
+      colorName: Closest CSS Name
+      poorContrastWarning: Current colors have very low contrast. A safety backdrop has been applied to guarantee legibility.
+    levels:
+      aaLarge: AA Large (≥ 3:1)
+      aaLargeDesc: 18pt (24px) or 14pt (~18.66px) bold text
+      aaNormal: AA Normal (≥ 4.5:1)
+      aaNormalDesc: Standard body text (16px / 1rem) threshold
+      aaaLarge: AAA Large (≥ 4.5:1)
+      aaaLargeDesc: Enhanced contrast threshold for large text
+      aaaNormal: AAA Normal (≥ 7:1)
+      aaaNormalDesc: Enhanced contrast threshold for body text
+      uiComponents: UI Components & Icons (≥ 3:1)
+      uiComponentsDesc: WCAG 2.1 SC 1.4.11 non-text contrast
+      pass: Pass
+      fail: Fail
+    actions:
+      reverse: Reverse colours
+      reverseTooltip: Swap foreground and background colors
+      save: Save colours
+      saveTooltip: Save current color combination to favorites
+      copyCss: Copy CSS Variables
+      cssCopied: CSS variables copied to clipboard
+      colorCopied: Color code copied
+      swatchSaved: Color pair saved to swatches
+      swatchExists: Color pair already exists in saved swatches
+      swatchRemoved: Swatch removed
+      removeSwatchTooltip: Remove this swatch
+      savedSwatches: Saved Swatches
+      presetSwatches: Curated Presets
+      resetSwatches: Reset to defaults
+    controls:
+      background: Background
+      foreground: Foreground
+      colorPicker: Pick Color
+      hexPlaceholder: Enter HEX code (e.g. #17324D)
+      eyedropper: Eyedropper
+      eyedropperNotSupported: Eyedropper API is not supported in your browser
+      modeHsl: HSL Sliders
+      modeRgb: RGB Sliders
+      hue: Hue
+      saturation: Saturation
+      lightness: Lightness
+      red: Red
+      green: Green
+      blue: Blue
+    suggestions:
+      title: Smart Auto-Fix Suggestions
+      subtitle: Preserves hue and saturation while automatically adjusting lightness to meet WCAG standards
+      allPassedTitle: Excellent Contrast!
+      allPassedDesc: Current combination passes WCAG AAA standard (≥ 7.0:1), providing top-tier accessible legibility.
+      noSingleColorFixTitle: Single-Color Lightness Limit Reached
+      noSingleColorFixDesc: This pair already passes AA, but because the anchor color has mid-range luminance, adjusting only one color cannot reach AAA (7.0:1). Adjust both background and foreground lightness together.
+      fixForegroundAA: Adjust Foreground for AA (4.5:1)
+      fixForegroundAAA: Adjust Foreground for AAA (7.0:1)
+      fixBackgroundAA: Adjust Background for AA (4.5:1)
+      fixBackgroundAAA: Adjust Background for AAA (7.0:1)
+      applySuggestion: Apply Color
+      originalColor: Current Color
+      recommendedColor: Recommended Color
+    preview:
+      title: Live Copy & UI Components Preview
+      subtitle: Test headings, body text, and non-text UI elements directly in your chosen colors
+      largeTitleSample: Build Clear and Accessible Digital Experiences
+      largeTitleEditHint: (Large text preview - 24px Bold / Click to edit text)
+      normalBodySample: Good color contrast is a fundamental pillar of web accessibility. Whether for aging readers, people with low vision, or users in bright outdoor sunlight, WCAG-compliant colors ensure comfortable, inclusive readability.
+      normalBodyEditHint: (Body text preview - 16px Regular / Click to edit text)
+      componentsTitle: Non-text UI Components & Form Elements (SC 1.4.11)
+      passAaLarge: '✓ Pass AA Large (≥ 3:1)'
+      failAaLarge: '✗ Fail AA Large'
+      passAaNormal: '✓ Pass AA Normal (≥ 4.5:1)'
+      failAaNormal: '✗ Fail AA Normal'
+      passUi: '✓ Pass UI Non-text (≥ 3:1)'
+      failUi: '✗ Fail UI Non-text'
+      buttonFilled: Primary Button
+      buttonOutlined: Outlined Button
+      tagBadge: Status Badge
+      inputPlaceholder: Interactive form input...
+
   post-writer:
     title: "Social Post Formatter"
     description: Format and beautify social media posts. Supports magazine style,

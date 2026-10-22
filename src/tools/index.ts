@@ -49,6 +49,7 @@ import { tool as ipv4SubnetCalculator } from './ipv4-subnet-calculator';
 import { tool as dockerRunToDockerComposeConverter } from './docker-run-to-docker-compose-converter';
 import { tool as htmlWysiwygEditor } from './html-wysiwyg-editor';
 import { tool as findColor } from './find-color';
+import { tool as colorContrastChecker } from './color-contrast-checker';
 import { tool as postWriter } from './post-writer';
 import { tool as countdownTimer } from './countdown-timer';
 import { tool as rsaKeyPairGenerator } from './rsa-key-pair-generator';
@@ -152,7 +153,7 @@ export const toolsByCategory: ToolCategory[] = [
   },
   {
     name: 'design',
-    components: [findColor, colorConverter],
+    components: [findColor, colorConverter, colorContrastChecker],
   },
   {
     name: 'web',

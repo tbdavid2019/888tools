@@ -121,6 +121,7 @@
 - [User-agent parser](https://tool.david888.com/user-agent-parser): Detect and parse Browser, Engine, OS, CPU, and Device type/model from an user-agent string.
 - [UUIDs generator](https://tool.david888.com/uuid-generator): A Universally Unique Identifier (UUID) is a 128-bit number used to identify information in computer systems. The number of possible UUIDs is 16^32, which is 2^128 or about 3.4x10^38 (which is a lot!).
 - [Video Converter](https://tool.david888.com/video-converter): Trim and convert video files (MP4, WebM) using browser capabilities.
+- [WCAG Color Contrast Checker](https://tool.david888.com/color-contrast-checker): Check foreground and background color contrast ratios in real time according to WCAG 2.1 guidelines. Features AA/AAA compliance ratings, non-text UI component checks, HSL/RGB sliders, smart auto-fix suggestions, custom saved swatches, and live typography mockups.
 - [WiFi QR Code generator](https://tool.david888.com/wifi-qrcode-generator): Generate and download QR codes for quick connections to WiFi networks.
 - [World clock](https://tool.david888.com/world-clock): View current time across popular cities and switch 12h/24h format
 - [XML formatter](https://tool.david888.com/xml-formatter): Prettify your XML string into a friendly, human-readable format.

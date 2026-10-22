@@ -784,6 +784,91 @@ tools:
     title: "Pantone 潘通趨勢色票庫"
     description: 收錄 Pantone 潘通 2000 至 2026 歷年年度代表色與精選設計趨勢配色。提供 Light/Dark 雙模式、WCAG AAA 高對比色碼常駐顯示、一鍵複製單色或整組色票，並支援真實網頁模型即時預覽。
 
+  color-contrast-checker:
+    title: WCAG 色彩對比檢測器
+    description: 依照 WCAG 2.1 標準即時檢測前景色與背景色的色彩對比度，支援 AA/AAA 等級判讀、非文字 UI 元件對比、HSL/RGB 精確微調、智慧無障礙修正建議、自訂色票庫與真實 UI 排版預覽。
+    scoreBanner:
+      contrastRatio: 對比度
+      overallGrade: 總體評級
+      luminance: 相對亮度
+      colorName: 近似色名
+      poorContrastWarning: 目前配色對比度極低，已啟用安全防護底襯以確保介面可讀性。
+    levels:
+      aaLarge: AA 大字體 (≥ 3:1)
+      aaLargeDesc: 18pt (24px) 或 14pt (約 18.66px) 粗體字
+      aaNormal: AA 一般文字 (≥ 4.5:1)
+      aaNormalDesc: 一般內文 (16px / 1rem) 標準門檻
+      aaaLarge: AAA 大字體 (≥ 4.5:1)
+      aaaLargeDesc: 大字體最高無障礙標準
+      aaaNormal: AAA 一般文字 (≥ 7:1)
+      aaaNormalDesc: 一般內文最高無障礙標準
+      uiComponents: UI 元件與圖示 (≥ 3:1)
+      uiComponentsDesc: WCAG 2.1 SC 1.4.11 非文字對比
+      pass: 通過
+      fail: 未通過
+    actions:
+      reverse: 對調色彩
+      reverseTooltip: 對調前景色與背景色
+      save: 儲存色票
+      saveTooltip: 儲存目前配色至常用色票組
+      copyCss: 複製 CSS 變數
+      cssCopied: 已複製 CSS 變數至剪貼簿
+      colorCopied: 已複製色碼
+      swatchSaved: 已將配色儲存至常用色票組
+      swatchExists: 此配色已存在於常用色票組中
+      swatchRemoved: 已移除該色票
+      removeSwatchTooltip: 移除此色票
+      savedSwatches: 常用色票組
+      presetSwatches: 精選推薦配色
+      resetSwatches: 重置為預設
+    controls:
+      background: 背景色 (Background)
+      foreground: 前景色 (Foreground)
+      colorPicker: 選擇顏色
+      hexPlaceholder: 請輸入 HEX 色碼 (如 #17324D)
+      eyedropper: 螢幕吸管
+      eyedropperNotSupported: 您的瀏覽器不支援螢幕吸管 API
+      modeHsl: HSL 微調
+      modeRgb: RGB 微調
+      hue: 色相 (Hue)
+      saturation: 飽和度 (Saturation)
+      lightness: 亮度 (Lightness)
+      red: 紅色 (Red)
+      green: 綠色 (Green)
+      blue: 藍色 (Blue)
+    suggestions:
+      title: 智慧無障礙修正建議
+      subtitle: 保持原始色相與飽和度，自動微調明度以達 WCAG 標準
+      allPassedTitle: 完美達標！
+      allPassedDesc: 目前配色已通過 WCAG AAA 最高標準 (≥ 7.0:1)，具備頂級無障礙可讀性。
+      noSingleColorFixTitle: 單色微調已達當前明度上限
+      noSingleColorFixDesc: 目前已通過 AA 標準，但因基準色位於中明度區間，僅調整單一顏色的明度無法達到 AAA (7.0:1)。建議同時微調背景與前景的明度差距。
+      fixForegroundAA: 調整前景色達 AA (4.5:1)
+      fixForegroundAAA: 調整前景色達 AAA (7.0:1)
+      fixBackgroundAA: 調整背景色達 AA (4.5:1)
+      fixBackgroundAAA: 調整背景色達 AAA (7.0:1)
+      applySuggestion: 套用推薦色
+      originalColor: 目前顏色
+      recommendedColor: 推薦顏色
+    preview:
+      title: 即時排版與 UI 元件預覽
+      subtitle: 在所選配色下測試標題、長內文與非文字 UI 互動元件
+      largeTitleSample: 打造清晰無障礙的卓越數位體驗
+      largeTitleEditHint: （大字體預覽 - 24px Bold / 可直接點擊編輯文案）
+      normalBodySample: 良好的色彩對比是無障礙設計（Accessibility）的基石。無論是年長者、視力減退者或在戶外強光環境下的使用者，符合 WCAG 標準的介面都能提供舒適且易於閱讀的視覺層次。
+      normalBodyEditHint: （一般內文預覽 - 16px Regular / 可直接點擊編輯文案）
+      componentsTitle: 非文字 UI 元件與互動狀態 (SC 1.4.11)
+      passAaLarge: '✓ 通過 AA 大字體 (≥ 3:1)'
+      failAaLarge: '✗ 未通過 AA 大字體'
+      passAaNormal: '✓ 通過 AA 一般文字 (≥ 4.5:1)'
+      failAaNormal: '✗ 未通過 AA 一般文字'
+      passUi: '✓ 通過 UI 非文字元件 (≥ 3:1)'
+      failUi: '✗ 未通過 UI 非文字元件'
+      buttonFilled: 主要操作按鈕
+      buttonOutlined: 外框按鈕
+      tagBadge: 狀態標籤
+      inputPlaceholder: 互動文字輸入框...
+
   post-writer:
     title: "社群貼文排版"
     description: 全程本機處理，提供雜誌感排版與 Broetry 文體排版，自動換行、全形標點符號轉換、標題框線裝飾，並提供 FB/IG/Threads
