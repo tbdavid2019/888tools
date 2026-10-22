@@ -223,6 +223,7 @@ describe('Online Clock Component Rendering & Fullscreen Fallback', () => {
     }
     (i18n.global.locale as any).value = 'zh-TW';
     vi.unstubAllGlobals();
+    vi.useRealTimers();
   });
 
   it('mounts cleanly and handles invalid timezone in localStorage gracefully', () => {
@@ -526,6 +527,77 @@ describe('Online Clock Component Rendering & Fullscreen Fallback', () => {
     await fsBtn.trigger('click');
     // Because jsdom has no native requestFullscreen, it triggers pseudo-fullscreen fallback
     expect(wrapper.classes()).toContain('fullscreen');
+  });
+
+  it('smoothly advances secondRotation and minuteRotation monotonically across boundaries without jumping backwards', async () => {
+    vi.useFakeTimers({
+      shouldClearNativeTimers: true,
+      toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'requestAnimationFrame', 'cancelAnimationFrame', 'Date'],
+    });
+    vi.setSystemTime(new Date('2026-10-22T10:00:05.990Z'));
+    localStorage.setItem('onlineClock/mode', 'analog');
+    localStorage.setItem('onlineClock/useNetworkTime', 'false');
+    localStorage.setItem('onlineClock/timezone', 'UTC');
+
+    const wrapper = mount(OnlineClock, {
+      global: {
+        plugins: [i18n],
+        stubs: {
+          'n-select': true,
+          'n-switch': true,
+        },
+      },
+    });
+    wrappers.push(wrapper);
+
+    await wrapper.vm.$nextTick();
+
+    const rot1 = (wrapper.vm as any).secondRotation;
+    expect(rot1).toBeCloseTo(35.94, 2);
+
+    // Advance to cross the second boundary into 10:00:06.01x
+    vi.advanceTimersByTime(25);
+    await wrapper.vm.$nextTick();
+
+    const rot2 = (wrapper.vm as any).secondRotation;
+    expect(rot2).toBeCloseTo(36.06, 1);
+    expect(rot2).toBeGreaterThan(rot1);
+
+    // Ensure it did not jump backward to ~30deg
+    expect(rot2).not.toBeLessThan(35);
+
+    // Verify DOM style reflects the rotation
+    const secondHand = wrapper.find('.hand.second');
+    expect(secondHand.exists()).toBe(true);
+    expect(secondHand.attributes('style')).toContain('rotate(36.');
+
+    // Advance timers smoothly to minute boundary (10:00:59.990)
+    // 59.990 - 6.015 = 53975ms
+    vi.advanceTimersByTime(53975);
+    await wrapper.vm.$nextTick();
+
+    const minRot1 = (wrapper.vm as any).minuteRotation;
+    expect(minRot1).toBeCloseTo(5.999, 2);
+
+    // Cross into next minute (10:01:00.015)
+    vi.advanceTimersByTime(25);
+    await wrapper.vm.$nextTick();
+
+    const minRot2 = (wrapper.vm as any).minuteRotation;
+    expect(minRot2).toBeCloseTo(6.0015, 2);
+    expect(minRot2).toBeGreaterThan(minRot1);
+    expect(minRot2).not.toBeLessThan(5.5);
+
+    // Verify showSeconds toggle controls second hand visibility in analog mode
+    expect(wrapper.find('.hand.second').exists()).toBe(true);
+    (wrapper.vm as any).showSeconds = false;
+    await wrapper.vm.$nextTick();
+    expect(wrapper.find('.hand.second').exists()).toBe(false);
+    (wrapper.vm as any).showSeconds = true;
+    await wrapper.vm.$nextTick();
+    expect(wrapper.find('.hand.second').exists()).toBe(true);
+
+    vi.useRealTimers();
   });
 });
 

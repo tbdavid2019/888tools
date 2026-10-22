@@ -488,6 +488,11 @@ const smoothAdjustedNow = computed(() => {
 
 const parts = computed(() => getZonedTimeParts(adjustedNow.value, timezone.value, use12HourFormat.value));
 
+const analogParts = computed(() => {
+  const sourceDate = mode.value === 'analog' ? smoothAdjustedNow.value : adjustedNow.value;
+  return getZonedTimeParts(sourceDate, timezone.value, use12HourFormat.value);
+});
+
 const dateFormatterCache = new Map<string, Intl.DateTimeFormat>();
 const dateText = computed(() => {
   const p = parts.value;
@@ -687,7 +692,7 @@ const timezones = computed(() => {
 });
 
 const hourRotation = computed(() => {
-  const p = parts.value;
+  const p = analogParts.value;
   const ms = mode.value === 'analog' ? smoothAdjustedNow.value.getMilliseconds() : 0;
   return (p.hours % 12) * 30
     + p.minutes * 0.5
@@ -696,7 +701,7 @@ const hourRotation = computed(() => {
 });
 
 const minuteRotation = computed(() => {
-  const p = parts.value;
+  const p = analogParts.value;
   const ms = mode.value === 'analog' ? smoothAdjustedNow.value.getMilliseconds() : 0;
   return p.minutes * 6
     + p.seconds * 0.1
@@ -704,10 +709,21 @@ const minuteRotation = computed(() => {
 });
 
 const secondRotation = computed(() => {
-  const p = parts.value;
+  const p = analogParts.value;
   const ms = mode.value === 'analog' ? smoothAdjustedNow.value.getMilliseconds() : 0;
   return p.seconds * 6
     + ms * (6 / 1000);
+});
+
+defineExpose({
+  mode,
+  timezone,
+  showSeconds,
+  parts,
+  analogParts,
+  hourRotation,
+  minuteRotation,
+  secondRotation,
 });
 </script>
 
@@ -818,7 +834,7 @@ const secondRotation = computed(() => {
         </div>
         <div class="hand hour" :style="{ transform: `rotate(${hourRotation}deg)` }" />
         <div class="hand minute" :style="{ transform: `rotate(${minuteRotation}deg)` }" />
-        <div class="hand second" :style="{ transform: `rotate(${secondRotation}deg)` }" />
+        <div v-if="showSeconds" class="hand second" :style="{ transform: `rotate(${secondRotation}deg)` }" />
         <div class="center-dot" />
       </div>
     </div>
@@ -987,7 +1003,7 @@ const secondRotation = computed(() => {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  padding: 32px 20px 40px;
+  padding: 76px 24px 24px;
   box-sizing: border-box;
 }
 
@@ -1212,6 +1228,7 @@ const secondRotation = computed(() => {
 
 .clock-page.fullscreen .analog {
   width: 100%;
+  margin: 8px 0 12px;
 }
 
 .dial {
@@ -1227,35 +1244,71 @@ const secondRotation = computed(() => {
 }
 
 .clock-page.fullscreen .dial {
-  width: 600px;
-  height: 600px;
-  width: min(760px, 82vmin);
-  height: min(760px, 82vmin);
+  width: 520px;
+  height: 520px;
+  width: min(520px, 54vmin);
+  height: min(520px, 54vmin);
 }
 
 .clock-page.fullscreen .location-lead {
-  font-size: clamp(18px, 3.5vw, 28px);
+  margin-top: 0;
+  margin-bottom: 2px;
+  font-size: 20px;
+  font-size: clamp(16px, 2.2vw, 24px);
   color: var(--clock-text);
-  margin-bottom: 4px;
 }
 
 .clock-page.fullscreen .date {
-  font-size: 24px;
-  font-size: clamp(16px, 3vw, 32px);
-  margin-bottom: 2vh;
+  margin-top: 2px;
+  margin-bottom: 2px;
+  font-size: 18px;
+  font-size: clamp(15px, 2vw, 22px);
   color: var(--clock-text);
 }
 
 .clock-page.fullscreen .solar-info {
-  font-size: clamp(13px, 2vw, 18px);
+  margin-top: 2px;
+  margin-bottom: 10px;
+  font-size: 14px;
+  font-size: clamp(12px, 1.5vw, 16px);
   color: var(--clock-muted);
-  margin-top: 6px;
-  margin-bottom: 2vh;
+}
+
+.clock-page.fullscreen .tabs {
+  margin-top: 10px;
+}
+
+.clock-page.fullscreen .world-cities {
+  position: absolute;
+  left: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  flex-direction: column;
+  flex-wrap: nowrap;
+  gap: 8px;
+  margin: 0;
+  z-index: 10;
+  max-height: calc(100vh - 140px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+}
+
+@media (max-width: 1150px), (max-height: 560px) {
+  .clock-page.fullscreen .world-cities {
+    position: static;
+    transform: none;
+    flex-direction: row;
+    flex-wrap: wrap;
+    overflow: visible;
+    max-height: none;
+    margin-top: 12px;
+  }
 }
 
 .clock-page.fullscreen .digital-time {
-  font-size: 160px;
-  font-size: clamp(80px, 20vw, 240px);
+  font-size: 150px;
+  font-size: clamp(72px, 15vw, 220px);
 }
 
 .clock-page.fullscreen .flip :deep(.flip-card) {
