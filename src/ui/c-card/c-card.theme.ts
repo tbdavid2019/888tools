@@ -3,11 +3,11 @@ import { kanagawaDarkPalette, kanagawaLightPalette } from '@/theme/palette';
 
 export const { useTheme } = defineThemes({
   dark: {
-    backgroundColor: 'rgba(42, 42, 55, 0.78)',
-    borderColor: kanagawaDarkPalette.border,
+    backgroundColor: 'rgba(23, 38, 54, 0.92)',
+    borderColor: '#385370',
   },
   light: {
-    backgroundColor: 'rgba(236, 232, 212, 0.94)',
-    borderColor: 'rgba(31, 31, 40, 0.16)',
+    backgroundColor: 'rgba(255, 249, 232, 0.96)',
+    borderColor: '#C9AD6A',
   },
 });

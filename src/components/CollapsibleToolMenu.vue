@@ -12,8 +12,8 @@ const route = useRoute();
 const styleStore = useStyleStore();
 const activePalette = computed(() => (styleStore.isDarkTheme ? kanagawaDarkPalette : kanagawaLightPalette));
 const isMenuCollapsed = computed(() => styleStore.isMenuCollapsed);
-const selectedItemTextColor = computed(() => (styleStore.isDarkTheme ? activePalette.value.button : activePalette.value.buttonPressed));
-const selectedItemBackground = computed(() => (styleStore.isDarkTheme ? 'rgba(126, 156, 216, 0.18)' : 'rgba(75, 103, 161, 0.18)'));
+const selectedItemTextColor = computed(() => (styleStore.isDarkTheme ? '#2B251A' : '#2B251A'));
+const selectedItemBackground = computed(() => '#FFB010');
 
 const makeLabel = (tool: Tool) => () => h(RouterLink, { to: tool.path }, { default: () => tool.name });
 const makeIcon = (tool: Tool) => () => h(MenuIconItem, { tool });
@@ -149,15 +149,13 @@ watch(
   user-select: none;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   color: v-bind('activePalette.text');
-  opacity: 0.85;
 
   &:hover {
-    opacity: 1;
-    background: v-bind('styleStore.isDarkTheme ? "rgba(126, 156, 216, 0.12)" : "rgba(75, 103, 161, 0.1)"');
+    background: rgba(255, 176, 16, 0.22);
   }
 
   &.is-open {
-    opacity: 1;
+    background: rgba(255, 176, 16, 0.12);
   }
 }
 

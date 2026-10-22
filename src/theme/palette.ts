@@ -1,37 +1,45 @@
 export const kanagawaDarkPalette = {
-  background: '#1F1F28', // sumiInk1
-  surface: '#2A2A37',    // sumiInk3
-  surfaceMuted: '#363646', // sumiInk4
-  heading: '#DCD7BA',    // fujiWhite
-  text: '#DCD7BA',       // fujiWhite
-  textMuted: '#C8C093',  // oldWhite
-  button: '#7E9CD8',     // crystalBlue
-  buttonHover: '#7FB4CA', // springWater
-  buttonPressed: '#223249', // waveBlue2
-  accent: '#98BB6C',     // springGreen
-  accentSoft: '#6A9589', // waveAqua1
-  border: '#54546D',     // sumiInk6
-  overlayBorder: 'rgba(220, 215, 186, 0.2)',
-  shadow: '0 14px 30px rgba(0, 0, 0, 0.5)',
-  glassBackgroundRgb: '31, 31, 40',
+  background: '#101B27', // deep midnight blue
+  surface: '#172636',    // deep navy card surface
+  surfaceMuted: '#21354B', // elevated navy surface
+  heading: '#FFF9E8',    // warm cream (14.61:1 on surface)
+  text: '#F5EEDC',       // warm cream text (13.5:1 on surface)
+  textMuted: '#C9BDA3',  // warm sand muted (8.26:1 on surface)
+  button: '#FFB010',     // saffron primary in dark mode (8.39:1 on surface)
+  buttonHover: '#FFC13B',
+  buttonPressed: '#E09600',
+  accent: '#FFB010',     // saffron
+  accentSoft: '#263C54', // muted navy highlight
+  saffron: '#FFB010',
+  saffronHover: '#FFC13B',
+  clay: '#E07A4F',
+  border: '#385370',
+  inputBorder: '#4E6E8E',
+  overlayBorder: 'rgba(255, 249, 232, 0.20)',
+  shadow: '0 14px 30px rgba(0, 0, 0, 0.48)',
+  glassBackgroundRgb: '23, 38, 54',
 } as const;
 
 export const kanagawaLightPalette = {
-  background: '#E6E2CC', // Lotus White
-  surface: '#DCD7BA',    // Fuji White
-  surfaceMuted: '#C8C093', // Old White
-  heading: '#1F1F28',    // Sumi Ink 1
-  text: '#2A2A37',       // Sumi Ink 3
-  textMuted: '#54546D',  // Sumi Ink 6
-  button: '#4B67A1',     // deeper blue for light mode contrast
-  buttonHover: '#39598D',
-  buttonPressed: '#223249', // Wave Blue 2
-  accent: '#5F7A33',
-  accentSoft: '#A8BE84',
-  border: '#8D8A7A',
-  overlayBorder: 'rgba(31, 31, 40, 0.18)',
-  shadow: '0 12px 28px rgba(31, 31, 40, 0.12)',
-  glassBackgroundRgb: '220, 215, 186',
+  background: '#FFF0CC', // 2md canvas
+  surface: '#FFF9E8',    // 2md warm-cream
+  surfaceMuted: '#FFE8AD', // warm saffron tint
+  heading: '#2B251A',    // 2md ink (14.45:1 on surface)
+  text: '#2B251A',       // 2md ink (14.45:1 on surface)
+  textMuted: '#5C503A',  // warm deep umber (7.50:1 on surface, 6.98:1 on background)
+  button: '#17324D',     // 2md deep-blue (12.48:1 on surface)
+  buttonHover: '#0F2336',
+  buttonPressed: '#2B251A',
+  accent: '#9E3F17',     // 2md clay (6.28:1 on surface)
+  accentSoft: '#FFE49E', // warm saffron soft highlight
+  saffron: '#FFB010',    // 2md primary saffron
+  saffronHover: '#F2A600',
+  clay: '#A9471D',
+  border: '#C9AD6A',     // warm gold border
+  inputBorder: '#6B5B38', // 2md input-border
+  overlayBorder: 'rgba(23, 50, 77, 0.22)',
+  shadow: '0 10px 26px rgba(43, 37, 26, 0.10)',
+  glassBackgroundRgb: '255, 249, 232',
 } as const;
 
 // Keep warmPalette for backwards compatibility in case any file relies on it

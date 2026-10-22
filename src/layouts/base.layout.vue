@@ -22,7 +22,7 @@ const { t } = useI18n();
 
 const layoutBackgroundColor = computed(() => {
   if (!styleStore.isBingWallpaperEnabled) {
-    return 'transparent';
+    return activePalette.value.surface;
   }
   const opacity = styleStore.isDarkTheme ? styleStore.cardOpacity : Math.max(styleStore.cardOpacity, 0.9);
   return `rgba(${activePalette.value.glassBackgroundRgb}, ${opacity})`;
@@ -41,7 +41,8 @@ const allToolsCount = computed(() => {
   return toolsByCategory.value.reduce((acc, category) => acc + category.components.length, 0);
 });
 
-const currentTool = computed(() => allTools.value.find(tool => tool.path === route.path));
+const normalizePath = (p: string) => p.replace(/\/+$/, '') || '/';
+const currentTool = computed(() => allTools.value.find(tool => normalizePath(tool.path) === normalizePath(route.path)));
 const breadcrumbItems = computed(() => {
   if (!route.meta?.isTool) {
     return [
@@ -208,7 +209,7 @@ const breadcrumbItems = computed(() => {
 
 .sider-card {
   border-radius: 20px;
-  background: v-bind('styleStore.isDarkTheme ? "rgba(42, 42, 55, 0.78)" : "rgba(220, 215, 186, 0.82)"');
+  background: v-bind('styleStore.isDarkTheme ? "rgba(23, 38, 54, 0.92)" : "rgba(255, 249, 232, 0.96)"');
   border: 1px solid v-bind('activePalette.border');
   box-shadow: v-bind('activePalette.shadow');
   backdrop-filter: blur(16px);
@@ -237,7 +238,7 @@ const breadcrumbItems = computed(() => {
   margin: 0 0 10px;
   padding: 10px 6px;
   border-radius: 20px;
-  background: v-bind('styleStore.isDarkTheme ? "rgba(42, 42, 55, 0.78)" : "rgba(220, 215, 186, 0.82)"');
+  background: v-bind('styleStore.isDarkTheme ? "rgba(23, 38, 54, 0.92)" : "rgba(255, 249, 232, 0.96)"');
   border: 1px solid v-bind('activePalette.border');
   box-shadow: v-bind('activePalette.shadow');
   display: flex;

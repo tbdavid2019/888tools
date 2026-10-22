@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { onUnmounted, ref, watch } from 'vue';
 
 const props = defineProps<{
   value: string;
@@ -8,21 +8,34 @@ const props = defineProps<{
 const current = ref(props.value);
 const next = ref(props.value);
 const isFlipping = ref(false);
+let flipTimer: ReturnType<typeof setTimeout> | null = null;
 
 watch(
   () => props.value,
   (newVal, oldVal) => {
     if (newVal === oldVal) return;
+    if (flipTimer) {
+      clearTimeout(flipTimer);
+      flipTimer = null;
+    }
     current.value = oldVal || newVal;
     next.value = newVal;
     isFlipping.value = true;
 
-    setTimeout(() => {
+    flipTimer = setTimeout(() => {
       isFlipping.value = false;
       current.value = newVal;
+      flipTimer = null;
     }, 600); // Match CSS animation duration
   },
 );
+
+onUnmounted(() => {
+  if (flipTimer) {
+    clearTimeout(flipTimer);
+    flipTimer = null;
+  }
+});
 </script>
 
 <template>
@@ -44,7 +57,7 @@ watch(
       {{ next }}
       <div class="shadow-bottom"></div>
     </div>
-    
+
     <!-- Divider line -->
     <div class="divider"></div>
   </div>
@@ -53,27 +66,36 @@ watch(
 <style scoped>
 .flip-card {
   position: relative;
+  width: 72px;
   width: clamp(52px, 11vw, 92px);
+  height: 104px;
   height: clamp(78px, 14vw, 128px);
-  background: #1a1d24;
+  background: var(--clock-flip-bg, #17324D);
   border-radius: 8px;
+  border: 1px solid var(--clock-flip-border, #0F2336);
+  font-size: 48px;
   font-size: clamp(36px, 7vw, 64px);
   font-weight: 700;
-  color: #e5e7eb;
+  color: var(--clock-flip-text, #FFF9E8);
   perspective: 300px;
   box-shadow: 0 8px 14px rgba(0, 0, 0, 0.35);
 }
 
 .digit {
   position: absolute;
+  top: 0;
   left: 0;
+  right: 0;
+  bottom: 0;
   width: 100%;
   height: 50%;
   overflow: hidden;
   display: flex;
   justify-content: center;
-  background: #1a1d24;
+  background: var(--clock-flip-bg, #17324D);
+  color: var(--clock-flip-text, #FFF9E8);
   backface-visibility: hidden;
+  line-height: 104px;
   line-height: clamp(78px, 14vw, 128px); /* Line height = full card height to center text vertically across halves */
 }
 
@@ -81,11 +103,12 @@ watch(
   top: 0;
   align-items: flex-start;
   border-radius: 8px 8px 0 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
   z-index: 1;
 }
 
 .bottom-bg {
+  top: auto;
   bottom: 0;
   align-items: flex-end;
   border-radius: 0 0 8px 8px;
@@ -96,7 +119,7 @@ watch(
   top: 0;
   align-items: flex-start;
   border-radius: 8px 8px 0 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
   transform-origin: bottom;
   z-index: 2;
 }
@@ -106,6 +129,7 @@ watch(
 }
 
 .leaf-bottom {
+  top: auto;
   bottom: 0;
   align-items: flex-end;
   border-radius: 0 0 8px 8px;
@@ -121,7 +145,10 @@ watch(
 .shadow-top,
 .shadow-bottom {
   position: absolute;
+  top: 0;
   left: 0;
+  right: 0;
+  bottom: 0;
   width: 100%;
   height: 100%;
   z-index: 3;
@@ -138,6 +165,7 @@ watch(
 }
 
 .shadow-bottom {
+  top: auto;
   bottom: 0;
   background: linear-gradient(to top, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.4) 100%);
   opacity: 1;
@@ -151,6 +179,7 @@ watch(
   position: absolute;
   top: 50%;
   left: 0;
+  right: 0;
   width: 100%;
   height: 1px;
   background: rgba(0, 0, 0, 0.4);

@@ -1,22 +1,264 @@
+<script lang="ts">
+export interface ZonedTimeParts {
+  year: number;
+  month: number;
+  day: number;
+  hours: number;
+  minutes: number;
+  seconds: number;
+  hh: string;
+  mm: string;
+  ss: string;
+  yearPad: string;
+  monthPad: string;
+  dayPad: string;
+  period: string;
+  hours12: number;
+  hh12: string;
+}
+
+export function getDefaultTimezone(): string {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (tz && typeof tz === 'string' && tz.trim().length > 0) {
+      return tz;
+    }
+  } catch {
+    // ignore
+  }
+  return 'Asia/Taipei';
+}
+
+export function isValidTimezone(tz: string): boolean {
+  if (!tz || typeof tz !== 'string') return false;
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: tz }).format();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+const formatterCache = new Map<string, Intl.DateTimeFormat>();
+function getFormatter(timeZone: string): Intl.DateTimeFormat {
+  let f = formatterCache.get(timeZone);
+  if (!f) {
+    f = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      hour12: false,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+    formatterCache.set(timeZone, f);
+  }
+  return f;
+}
+
+export function getZonedTimeParts(date: Date, timeZone: string, use12h = false): ZonedTimeParts {
+  const safeDate = Number.isNaN(date.getTime()) ? new Date() : date;
+  let year = safeDate.getFullYear();
+  let month = safeDate.getMonth() + 1;
+  let day = safeDate.getDate();
+  let hours = safeDate.getHours();
+  let minutes = safeDate.getMinutes();
+  let seconds = safeDate.getSeconds();
+
+  try {
+    const formatter = getFormatter(timeZone);
+    const formattedParts = formatter.formatToParts(safeDate);
+    for (const part of formattedParts) {
+      if (part.type === 'year') year = parseInt(part.value, 10);
+      else if (part.type === 'month') month = parseInt(part.value, 10);
+      else if (part.type === 'day') day = parseInt(part.value, 10);
+      else if (part.type === 'hour') hours = parseInt(part.value, 10) % 24;
+      else if (part.type === 'minute') minutes = parseInt(part.value, 10);
+      else if (part.type === 'second') seconds = parseInt(part.value, 10);
+    }
+  } catch {
+    // fallback cleanly to safeDate local time
+  }
+
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  const period = hours >= 12 ? 'PM' : 'AM';
+  let hours12 = hours % 12;
+  if (hours12 === 0) hours12 = 12;
+
+  const displayHours = use12h ? hours12 : hours;
+
+  return {
+    year,
+    month,
+    day,
+    hours,
+    minutes,
+    seconds,
+    hh: pad(displayHours),
+    mm: pad(minutes),
+    ss: pad(seconds),
+    yearPad: String(year),
+    monthPad: pad(month),
+    dayPad: pad(day),
+    period,
+    hours12,
+    hh12: pad(hours12),
+  };
+}
+</script>
+
 <script setup lang="ts">
-import { computed, ref, watch, onMounted } from 'vue';
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useFullscreen, useLocalStorage, useNow } from '@vueuse/core';
+import { useFullscreen, useLocalStorage, useNow, onKeyStroke } from '@vueuse/core';
 import FlipCard from './FlipCard.vue';
+import { useStyleStore } from '@/stores/style.store';
 
 const { t, locale } = useI18n();
+const styleStore = useStyleStore();
 
 const mode = useLocalStorage<'digital' | 'analog' | 'flip' | 'chinese'>('onlineClock/mode', 'digital');
 const showSeconds = useLocalStorage<boolean>('onlineClock/showSeconds', true);
 const showDate = useLocalStorage<boolean>('onlineClock/showDate', true);
 const use12HourFormat = useLocalStorage<boolean>('onlineClock/use12HourFormat', false);
-const timezone = useLocalStorage<string>('onlineClock/timezone', Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC');
+
+const initialTimezone = getDefaultTimezone();
+const timezone = useLocalStorage<string>('onlineClock/timezone', initialTimezone);
+if (!isValidTimezone(timezone.value)) {
+  timezone.value = initialTimezone;
+}
+watch(timezone, (newTz) => {
+  if (!isValidTimezone(newTz)) {
+    timezone.value = getDefaultTimezone();
+  }
+});
+
 const useNetworkTime = useLocalStorage<boolean>('onlineClock/useNetworkTime', true);
 const clockRef = ref<HTMLElement | null>(null);
-const { isFullscreen, toggle: toggleFullscreen } = useFullscreen(clockRef);
+const { isFullscreen, isSupported: isFullscreenSupported, toggle: toggleNativeFullscreen } = useFullscreen(clockRef);
+const isPseudoFullscreen = ref(false);
+const isClockFullscreen = computed(() => isFullscreen.value || isPseudoFullscreen.value);
+
+watch(isFullscreen, (val) => {
+  if (val) {
+    isPseudoFullscreen.value = false;
+  }
+});
+
+function hasActiveNativeFullscreen(): boolean {
+  if (typeof document === 'undefined') return false;
+  const doc = document as Document & {
+    webkitFullscreenElement?: Element | null;
+    mozFullScreenElement?: Element | null;
+    msFullscreenElement?: Element | null;
+  };
+  return Boolean(
+    isFullscreen.value
+    || doc.fullscreenElement
+    || doc.webkitFullscreenElement
+    || doc.mozFullScreenElement
+    || doc.msFullscreenElement,
+  );
+}
+
+async function handleToggleFullscreen() {
+  if (isPseudoFullscreen.value) {
+    isPseudoFullscreen.value = false;
+    return;
+  }
+  if (hasActiveNativeFullscreen()) {
+    try {
+      await toggleNativeFullscreen();
+    } catch {
+      // ignore
+    }
+    return;
+  }
+  if (!isFullscreenSupported.value) {
+    isPseudoFullscreen.value = true;
+    return;
+  }
+  try {
+    await toggleNativeFullscreen();
+    if (!hasActiveNativeFullscreen()) {
+      isPseudoFullscreen.value = true;
+    }
+  } catch {
+    isPseudoFullscreen.value = true;
+  }
+}
+
+onKeyStroke(['Escape', 'Back', 'BrowserBack', 'GoBack'], () => {
+  if (isPseudoFullscreen.value) {
+    isPseudoFullscreen.value = false;
+  }
+});
+
+const controlsVisible = ref(false);
+let controlsTimer: any = null;
+function showControlsTemporarily() {
+  controlsVisible.value = true;
+  if (controlsTimer) clearTimeout(controlsTimer);
+  controlsTimer = setTimeout(() => {
+    controlsVisible.value = false;
+  }, 4000);
+}
+
+const onUserInteraction = (e?: Event) => {
+  if (e && e.type === 'keydown' && isPseudoFullscreen.value) {
+    const ke = e as KeyboardEvent;
+    // Support Samsung Tizen (10009) and LG webOS (461) hardware Back buttons
+    if (ke.keyCode === 10009 || ke.keyCode === 461) {
+      isPseudoFullscreen.value = false;
+      return;
+    }
+  }
+  if (isClockFullscreen.value) {
+    showControlsTemporarily();
+  }
+};
+
+onMounted(() => {
+  if (typeof window !== 'undefined') {
+    window.addEventListener('mousemove', onUserInteraction, { passive: true });
+    window.addEventListener('keydown', onUserInteraction, { passive: true });
+    window.addEventListener('touchstart', onUserInteraction, { passive: true });
+    window.addEventListener('pointerdown', onUserInteraction, { passive: true });
+  }
+});
+
+onUnmounted(() => {
+  if (controlsTimer) {
+    clearTimeout(controlsTimer);
+    controlsTimer = null;
+  }
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('mousemove', onUserInteraction);
+    window.removeEventListener('keydown', onUserInteraction);
+    window.removeEventListener('touchstart', onUserInteraction);
+    window.removeEventListener('pointerdown', onUserInteraction);
+  }
+});
 
 const now = useNow({ interval: 1000 });
-const smoothNow = useNow({ interval: 'requestAnimationFrame' });
+const { now: smoothNow, pause: pauseSmoothNow, resume: resumeSmoothNow } = useNow({
+  interval: 'requestAnimationFrame',
+  controls: true,
+});
+
+watch(
+  mode,
+  (currentMode) => {
+    if (currentMode === 'analog') {
+      resumeSmoothNow();
+    } else {
+      pauseSmoothNow();
+    }
+  },
+  { immediate: true },
+);
 
 const timeOffset = ref(0);
 const isSyncing = ref(false);
@@ -30,24 +272,32 @@ const syncTime = async () => {
 
   isSyncing.value = true;
   syncError.value = false;
+  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const timeoutId = controller ? setTimeout(() => controller.abort(), 5000) : null;
   try {
     const start = Date.now();
-    const response = await fetch(window.location.href, { method: 'HEAD', cache: 'no-store' });
+    const response = await fetch(window.location.href, {
+      method: 'HEAD',
+      cache: 'no-store',
+      signal: controller?.signal,
+    });
     const end = Date.now();
-    
+
     const dateHeader = response.headers.get('date');
     if (!dateHeader) throw new Error('No Date header');
 
     const serverTime = new Date(dateHeader).getTime();
+    if (Number.isNaN(serverTime)) throw new Error('Invalid Date header');
+
     const latency = (end - start) / 2;
     const estimatedServerTime = serverTime + latency;
-    
-    // Offset = Server Time - Local Time
+
     timeOffset.value = estimatedServerTime - end;
   } catch (e) {
     console.error('Time sync failed', e);
     syncError.value = true;
   } finally {
+    if (timeoutId) clearTimeout(timeoutId);
     isSyncing.value = false;
   }
 };
@@ -71,75 +321,46 @@ const adjustedNow = computed(() => {
   return new Date(now.value.getTime() + timeOffset.value);
 });
 
-const zonedNow = computed(() => {
-  try {
-    const iso = adjustedNow.value.toLocaleString('en-US', { timeZone: timezone.value });
-    return new Date(iso);
-  } catch (e) {
-    console.warn('Timezone not supported, fallback to local', e);
-    return adjustedNow.value;
-  }
-});
-
-// For Analog Clock only (Smooth Animation)
 const smoothAdjustedNow = computed(() => {
   if (timeOffset.value === 0) return smoothNow.value;
   return new Date(smoothNow.value.getTime() + timeOffset.value);
 });
 
-const smoothZonedNow = computed(() => {
+const parts = computed(() => getZonedTimeParts(adjustedNow.value, timezone.value, use12HourFormat.value));
+
+const dateFormatterCache = new Map<string, Intl.DateTimeFormat>();
+const dateText = computed(() => {
+  const p = parts.value;
   try {
-    const iso = smoothAdjustedNow.value.toLocaleString('en-US', { timeZone: timezone.value });
-    return new Date(iso);
-  } catch (e) {
-    return smoothAdjustedNow.value;
+    const cacheKey = `${locale.value}__${timezone.value}`;
+    let fmt = dateFormatterCache.get(cacheKey);
+    if (!fmt) {
+      fmt = new Intl.DateTimeFormat(locale.value, {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        weekday: 'long',
+        timeZone: timezone.value,
+      });
+      dateFormatterCache.set(cacheKey, fmt);
+    }
+    return fmt.format(adjustedNow.value);
+  } catch {
+    return `${p.yearPad}-${p.monthPad}-${p.dayPad}`;
   }
 });
 
-const parts = computed(() => {
-  const date = zonedNow.value;
-  let hours = date.getHours();
-  const minutes = date.getMinutes();
-  const seconds = date.getSeconds();
-
-  if (use12HourFormat.value) {
-    hours = hours % 12;
-    if (hours === 0) hours = 12;
-  }
-
-  const pad = (v: number) => v.toString().padStart(2, '0');
-  return {
-    hours,
-    minutes,
-    seconds,
-    hh: pad(hours),
-    mm: pad(minutes),
-    ss: pad(seconds),
-    date,
-  };
+const timeText = computed(() => {
+  const p = parts.value;
+  return `${p.hh}:${p.mm}${showSeconds.value ? `:${p.ss}` : ''}${use12HourFormat.value ? ` ${p.period}` : ''}`;
 });
 
-const dateText = computed(() =>
-  new Intl.DateTimeFormat(locale.value, { dateStyle: 'full', timeZone: timezone.value }).format(zonedNow.value),
-);
-
-const timeText = computed(() =>
-  new Intl.DateTimeFormat(locale.value, {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: showSeconds.value ? '2-digit' : undefined,
-    hour12: use12HourFormat.value,
-    timeZone: timezone.value,
-  }).format(zonedNow.value),
-);
-
-// Chinese Clock Logic
 const numberToChinese = (num: number) => {
   const digits = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
   return num
     .toString()
     .split('')
-    .map(digit => digits[parseInt(digit)])
+    .map(digit => digits[parseInt(digit, 10)])
     .join('');
 };
 
@@ -152,30 +373,27 @@ const getChinesePeriod = (hour: number) => {
 };
 
 const chineseParts = computed(() => {
-  const date = zonedNow.value;
-  const h = date.getHours();
-  const m = date.getMinutes();
-  const s = date.getSeconds();
+  const p = parts.value;
+  const h = p.hours;
+  const m = p.minutes;
+  const s = p.seconds;
 
   const createChar = (char: string, type: 'period' | 'number' | 'unit') => ({ char, type });
   const strToChars = (str: string, type: 'period' | 'number' | 'unit') => str.split('').map(c => createChar(c, type));
 
-  const parts: { char: string; type: 'period' | 'number' | 'unit' }[] = [];
+  const res: { char: string; type: 'period' | 'number' | 'unit' }[] = [];
 
-  // Period (12h only)
   if (use12HourFormat.value) {
     const period = getChinesePeriod(h);
-    parts.push(...strToChars(period, 'period'));
+    res.push(...strToChars(period, 'period'));
   }
 
-  // Hour
   let displayH = h;
   if (use12HourFormat.value) {
-      displayH = h % 12;
-      if (displayH === 0) displayH = 12;
+    displayH = h % 12;
+    if (displayH === 0) displayH = 12;
   }
-  
-  // Natural Chinese Number for Hour (0-23 or 1-12)
+
   const getNaturalChinese = (num: number) => {
     const digits = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
     if (num <= 10) {
@@ -183,36 +401,42 @@ const chineseParts = computed(() => {
       return digits[num];
     }
     if (num < 20) {
-      return '十' + digits[num % 10];
+      return `十${digits[num % 10]}`;
     }
-    // 20-23
     const unit = num % 10;
     if (unit === 0) return '二十';
-    return '二十' + digits[unit];
+    return `二十${digits[unit]}`;
   };
 
-  parts.push(...strToChars(getNaturalChinese(displayH), 'number'));
-  parts.push(createChar('時', 'unit'));
+  res.push(...strToChars(getNaturalChinese(displayH), 'number'));
+  res.push(createChar('時', 'unit'));
 
-  // Minute
-  parts.push(...strToChars(numberToChinese(m), 'number'));
-  parts.push(createChar('分', 'unit'));
+  res.push(...strToChars(numberToChinese(m), 'number'));
+  res.push(createChar('分', 'unit'));
 
-  // Second
   if (showSeconds.value) {
-      parts.push(...strToChars(numberToChinese(s), 'number'));
-      parts.push(createChar('秒', 'unit'));
+    res.push(...strToChars(numberToChinese(s), 'number'));
+    res.push(createChar('秒', 'unit'));
   }
 
-  return parts;
+  return res;
 });
 
 const timezones = computed(() => {
-  // Keep list short enough but still useful; sorted so UX is predictable.
   const tzList =
     (Intl as any).supportedValuesOf?.('timeZone') ??
     [
       'UTC',
+      'Asia/Taipei',
+      'Asia/Tokyo',
+      'Asia/Seoul',
+      'Asia/Hong_Kong',
+      'Asia/Singapore',
+      'Asia/Shanghai',
+      'Asia/Bangkok',
+      'Asia/Jakarta',
+      'Asia/Dubai',
+      'Asia/Kolkata',
       'Europe/London',
       'Europe/Paris',
       'Europe/Berlin',
@@ -222,52 +446,47 @@ const timezones = computed(() => {
       'America/Denver',
       'America/Los_Angeles',
       'America/Sao_Paulo',
-      'Asia/Dubai',
-      'Asia/Kolkata',
-      'Asia/Bangkok',
-      'Asia/Jakarta',
-      'Asia/Shanghai',
-      'Asia/Tokyo',
-      'Asia/Seoul',
-      'Asia/Taipei',
-      'Asia/Hong_Kong',
-      'Asia/Singapore',
       'Australia/Sydney',
     ];
   return tzList.map((tz: string) => ({ label: tz, value: tz }));
 });
 
 const hourRotation = computed(() => {
-    // Use smoothZonedNow for continuous movement
-    const date = smoothZonedNow.value;
-    return (date.getHours() % 12) * 30 
-      + date.getMinutes() * 0.5 
-      + date.getSeconds() * (0.5 / 60)
-      + date.getMilliseconds() * (0.5 / 60 / 1000);
-});
-const minuteRotation = computed(() => {
-    // Use smoothZonedNow for continuous movement
-    const date = smoothZonedNow.value;
-    return date.getMinutes() * 6 
-      + date.getSeconds() * 0.1
-      + date.getMilliseconds() * (0.1 / 1000);
-});
-const secondRotation = computed(() => {
-    // Use smoothZonedNow for continuous movement
-    const date = smoothZonedNow.value;
-    return date.getSeconds() * 6 
-      + date.getMilliseconds() * (6 / 1000);
+  const p = parts.value;
+  const ms = mode.value === 'analog' ? smoothAdjustedNow.value.getMilliseconds() : 0;
+  return (p.hours % 12) * 30
+    + p.minutes * 0.5
+    + p.seconds * (0.5 / 60)
+    + ms * (0.5 / 60 / 1000);
 });
 
-const flipDigits = computed(() => {
-  const digits = `${parts.value.hh}${parts.value.mm}${showSeconds.value ? parts.value.ss : ''}`;
-  return digits.split('');
+const minuteRotation = computed(() => {
+  const p = parts.value;
+  const ms = mode.value === 'analog' ? smoothAdjustedNow.value.getMilliseconds() : 0;
+  return p.minutes * 6
+    + p.seconds * 0.1
+    + ms * (0.1 / 1000);
+});
+
+const secondRotation = computed(() => {
+  const p = parts.value;
+  const ms = mode.value === 'analog' ? smoothAdjustedNow.value.getMilliseconds() : 0;
+  return p.seconds * 6
+    + ms * (6 / 1000);
 });
 </script>
 
 <template>
-  <div ref="clockRef" class="clock-page" :class="{ fullscreen: isFullscreen }">
-    <div class="header">
+  <div
+    ref="clockRef"
+    class="clock-page"
+    :class="{
+      fullscreen: isClockFullscreen,
+      'pseudo-fullscreen': isPseudoFullscreen,
+      'is-dark': styleStore.isDarkTheme,
+    }"
+  >
+    <div class="header" :class="{ 'controls-active': controlsVisible }">
       <div class="title">{{ t('tools.online-clock.title') }}</div>
       <div class="controls">
         <n-select
@@ -293,13 +512,20 @@ const flipDigits = computed(() => {
         <div class="control">
           <n-switch v-model:value="useNetworkTime" size="small" :loading="isSyncing" />
           <span>{{ t('tools.online-clock.useNetworkTime') }}</span>
-          <c-button v-if="useNetworkTime" size="tiny" circle quaternary @click="syncTime">
+          <button
+            v-if="useNetworkTime"
+            type="button"
+            class="sync-btn"
+            :disabled="isSyncing"
+            :aria-label="t('tools.online-clock.useNetworkTime')"
+            @click="syncTime"
+          >
             <span class="icon-refresh" :class="{ spinning: isSyncing }">↻</span>
-          </c-button>
+          </button>
         </div>
-        <c-button size="small" quaternary @click="toggleFullscreen">
-          {{ isFullscreen ? t('tools.online-clock.exitFullscreen') : t('tools.online-clock.fullscreen') }}
-        </c-button>
+        <button type="button" class="fullscreen-btn" @click="handleToggleFullscreen">
+          {{ isClockFullscreen ? t('tools.online-clock.exitFullscreen') : t('tools.online-clock.fullscreen') }}
+        </button>
       </div>
     </div>
 
@@ -328,16 +554,16 @@ const flipDigits = computed(() => {
             <span class="number" :style="{ transform: `rotate(${-n * 30}deg)` }">{{ n }}</span>
           </div>
         </div>
-        <div class="hand hour" :style="{ '--rot': `${hourRotation}deg` }" />
-        <div class="hand minute" :style="{ '--rot': `${minuteRotation}deg` }" />
-        <div class="hand second" :style="{ '--rot': `${secondRotation}deg` }" />
+        <div class="hand hour" :style="{ transform: `rotate(${hourRotation}deg)` }" />
+        <div class="hand minute" :style="{ transform: `rotate(${minuteRotation}deg)` }" />
+        <div class="hand second" :style="{ transform: `rotate(${secondRotation}deg)` }" />
         <div class="center-dot" />
       </div>
     </div>
 
     <div v-else-if="mode === 'flip'" class="flip">
       <div v-if="use12HourFormat" class="flip-period">
-          {{ zonedNow.getHours() >= 12 ? 'PM' : 'AM' }}
+        {{ parts.period }}
       </div>
       <div class="flip-group">
         <FlipCard :value="parts.hh[0]" />
@@ -357,9 +583,9 @@ const flipDigits = computed(() => {
 
     <div v-else class="chinese">
       <div class="chinese-row main">
-        <div 
-          v-for="(item, index) in chineseParts" 
-          :key="index" 
+        <div
+          v-for="(item, index) in chineseParts"
+          :key="index"
           class="char-block"
           :class="[
             `type-${item.type}`,
@@ -372,34 +598,109 @@ const flipDigits = computed(() => {
     </div>
 
     <div class="tabs">
-      <c-button quaternary :type="mode === 'digital' ? 'primary' : 'default'" @click="mode = 'digital'">
+      <button
+        type="button"
+        class="tab-btn"
+        :class="{ active: mode === 'digital' }"
+        @click="mode = 'digital'"
+      >
         {{ t('tools.online-clock.modes.digital') }}
-      </c-button>
-      <c-button quaternary :type="mode === 'analog' ? 'primary' : 'default'" @click="mode = 'analog'">
+      </button>
+      <button
+        type="button"
+        class="tab-btn"
+        :class="{ active: mode === 'analog' }"
+        @click="mode = 'analog'"
+      >
         {{ t('tools.online-clock.modes.analog') }}
-      </c-button>
-      <c-button quaternary :type="mode === 'flip' ? 'primary' : 'default'" @click="mode = 'flip'">
+      </button>
+      <button
+        type="button"
+        class="tab-btn"
+        :class="{ active: mode === 'flip' }"
+        @click="mode = 'flip'"
+      >
         {{ t('tools.online-clock.modes.flip') }}
-      </c-button>
-      <c-button quaternary :type="mode === 'chinese' ? 'primary' : 'default'" @click="mode = 'chinese'">
-        {{ '中文字時鐘' }}
-      </c-button>
+      </button>
+      <button
+        type="button"
+        class="tab-btn"
+        :class="{ active: mode === 'chinese' }"
+        @click="mode = 'chinese'"
+      >
+        {{ t('tools.online-clock.modes.chinese') }}
+      </button>
     </div>
   </div>
 </template>
 
 <style scoped>
+/* Light Mode CSS variables (2md.aiurl.tw WCAG AAA Palette) */
 .clock-page {
-  background: #0e0f14;
-  color: #d3d6dc;
+  --clock-bg: #FFF9E8;
+  --clock-canvas: #FFF0CC;
+  --clock-border: #17324D;
+  --clock-card-border: #C9AD6A;
+  --clock-text: #2B251A;
+  --clock-muted: #5C503A;
+  --clock-primary: #FFB010;
+  --clock-primary-text: #2B251A;
+  --clock-navy: #17324D;
+  --clock-navy-text: #FFF9E8;
+  --clock-clay: #9E3F17;
+  --clock-dial-bg: #FFF0CC;
+  --clock-dial-border: #17324D;
+  --clock-tick-minor: #6B5B38;
+  --clock-tick-major: #17324D;
+  --clock-hand-hour: #17324D;
+  --clock-hand-minute: #2B251A;
+  --clock-hand-second: #A9471D;
+  --clock-flip-bg: #17324D;
+  --clock-flip-text: #FFF9E8;
+  --clock-flip-border: #0F2336;
+
+  background: var(--clock-bg);
+  color: var(--clock-text);
   padding: 28px 16px 32px;
   border-radius: 16px;
+  border: 1px solid var(--clock-card-border);
+  box-shadow: 0 10px 26px rgba(43, 37, 26, 0.10);
+  transition: background-color 0.2s ease, color 0.2s ease;
+  box-sizing: border-box;
+}
+
+/* Dark Mode CSS variables */
+.clock-page.is-dark {
+  --clock-bg: #101B27;
+  --clock-canvas: #172636;
+  --clock-border: #385370;
+  --clock-card-border: #385370;
+  --clock-text: #FFF9E8;
+  --clock-muted: #C9BDA3;
+  --clock-primary: #FFB010;
+  --clock-primary-text: #2B251A;
+  --clock-navy: #172636;
+  --clock-navy-text: #FFF9E8;
+  --clock-clay: #FFB010;
+  --clock-dial-bg: #172636;
+  --clock-dial-border: #FFB010;
+  --clock-tick-minor: #8FA6BF;
+  --clock-tick-major: #FFB010;
+  --clock-hand-hour: #FFF9E8;
+  --clock-hand-minute: #C9BDA3;
+  --clock-hand-second: #FFB010;
+  --clock-flip-bg: #17324D;
+  --clock-flip-text: #FFF9E8;
+  --clock-flip-border: #385370;
+
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.48);
 }
 
 .clock-page.fullscreen {
   width: 100vw;
   min-height: 100vh;
   border-radius: 0;
+  border: none;
   margin: 0;
   display: flex;
   flex-direction: column;
@@ -407,7 +708,17 @@ const flipDigits = computed(() => {
   align-items: center;
   padding: 32px 20px 40px;
   box-sizing: border-box;
-  color: #f5f6fa;
+}
+
+.clock-page.pseudo-fullscreen {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9999;
 }
 
 .header {
@@ -422,43 +733,84 @@ const flipDigits = computed(() => {
   position: absolute;
   top: 0;
   left: 0;
+  right: 0;
   width: 100%;
   max-width: 100%;
   padding: 20px 40px;
-  background: linear-gradient(to bottom, rgba(14, 15, 20, 0.95), rgba(14, 15, 20, 0));
+  background: linear-gradient(to bottom, rgba(23, 50, 77, 0.96), rgba(23, 50, 77, 0));
+  color: #FFF9E8;
   opacity: 0;
+  pointer-events: none;
   transition: opacity 0.3s ease;
   z-index: 10;
 }
 
-.clock-page.fullscreen .header:hover {
+.clock-page.fullscreen .title,
+.clock-page.fullscreen .control {
+  color: #FFF9E8;
+}
+
+.clock-page.fullscreen .header:hover,
+.clock-page.fullscreen .header:focus-within,
+.clock-page.fullscreen .header.controls-active {
   opacity: 1;
+  pointer-events: auto;
 }
 
 .title {
   font-size: 24px;
   font-weight: 700;
+  color: var(--clock-text);
 }
 
 .controls {
   display: flex;
   gap: 10px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .control {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #e5e7eb;
+  color: var(--clock-text);
   font-size: 13px;
+  font-weight: 500;
 }
 
 .tz {
-  width: 220px;
+  width: 200px;
 }
 
-/* Font Updates */
+.fullscreen-btn,
+.sync-btn {
+  background: #FFB010;
+  color: #2B251A;
+  border: 2px solid #17324D;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fullscreen-btn:hover,
+.sync-btn:hover {
+  background: #F2A600;
+  transform: translateY(-1px);
+}
+
+.sync-btn {
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+/* Font Families */
 .date,
 .digital-time,
 .number,
@@ -469,8 +821,10 @@ const flipDigits = computed(() => {
 
 .date {
   text-align: center;
-  margin-top: 12px;
-  color: #9ba1ad;
+  margin-top: 14px;
+  color: var(--clock-muted);
+  font-weight: 600;
+  font-size: 16px;
 }
 
 .digital {
@@ -479,15 +833,18 @@ const flipDigits = computed(() => {
 }
 
 .digital-time {
+  font-size: 72px;
   font-size: clamp(48px, 8vw, 96px);
   font-weight: 700;
   letter-spacing: 2px;
+  color: var(--clock-text);
+  font-variant-numeric: tabular-nums;
 }
 
 .analog {
   display: flex;
   justify-content: center;
-  margin: 28px 0 12px;
+  margin: 28px 0 16px;
 }
 
 .clock-page.fullscreen .analog {
@@ -496,40 +853,56 @@ const flipDigits = computed(() => {
 
 .dial {
   position: relative;
+  width: 340px;
+  height: 340px;
   width: min(420px, 80vw);
-  aspect-ratio: 1 / 1;
+  height: min(420px, 80vw);
   border-radius: 50%;
-  background: radial-gradient(circle, #1c1f28 0%, #0f121a 70%);
-  box-shadow: 0 0 0 2px #1f232d, inset 0 0 0 1px #2a2f3a;
+  background: var(--clock-dial-bg);
+  border: 3px solid var(--clock-dial-border);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
 }
 
 .clock-page.fullscreen .dial {
-  width: min(800px, 90vmin);
+  width: 600px;
+  height: 600px;
+  width: min(760px, 82vmin);
+  height: min(760px, 82vmin);
 }
 
 .clock-page.fullscreen .date {
+  font-size: 24px;
   font-size: clamp(16px, 3vw, 32px);
   margin-bottom: 2vh;
+  color: var(--clock-text);
 }
 
 .clock-page.fullscreen .digital-time {
-  font-size: clamp(80px, 25vw, 300px);
+  font-size: 160px;
+  font-size: clamp(80px, 20vw, 240px);
 }
 
 .clock-page.fullscreen .flip :deep(.flip-card) {
+  width: 140px;
   width: clamp(80px, 14vw, 200px);
+  height: 200px;
   height: clamp(120px, 20vw, 300px);
+  font-size: 110px;
   font-size: clamp(60px, 10vw, 180px);
   perspective: 800px;
 }
 
 .clock-page.fullscreen .flip :deep(.digit) {
+  line-height: 200px;
   line-height: clamp(120px, 20vw, 300px);
 }
 
 .ticks {
   position: absolute;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
 }
 
 .tick-wrapper {
@@ -543,25 +916,26 @@ const flipDigits = computed(() => {
 
 .tick {
   position: absolute;
-  top: 12px;
+  top: 10px;
   left: -1px;
   width: 2px;
-  height: 10px;
-  background: #3a404d;
-  opacity: 0.6;
+  height: 8px;
+  background: var(--clock-tick-minor);
 }
 
 .tick.bold {
-  height: 16px;
+  height: 14px;
   width: 3px;
   left: -1.5px;
-  background: #d3d6dc;
-  opacity: 1;
+  background: var(--clock-tick-major);
 }
 
 .numbers {
   position: absolute;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   pointer-events: none;
 }
 
@@ -576,13 +950,14 @@ const flipDigits = computed(() => {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  padding-top: 32px; /* Distance from edge */
+  padding-top: 28px;
 }
 
 .number {
-  color: #cfd2d9;
+  color: var(--clock-tick-major);
   font-weight: 700;
-  font-size: clamp(42px, 6vw, 54px);
+  font-size: 46px;
+  font-size: clamp(36px, 5vw, 50px);
   display: block;
 }
 
@@ -591,56 +966,57 @@ const flipDigits = computed(() => {
   bottom: 50%;
   left: 50%;
   transform-origin: bottom center;
-  transform: rotate(var(--rot));
   border-radius: 6px;
 }
 
 .hand.hour {
   width: 10px;
   height: 24%;
-  background: #d3d6dc;
+  background: var(--clock-hand-hour);
   margin-left: -5px;
 }
 
 .hand.minute {
   width: 8px;
   height: 35%;
-  background: #9ba1ad;
+  background: var(--clock-hand-minute);
   margin-left: -4px;
 }
 
 .hand.second {
   width: 4px;
-  height: 40%;
-  background: #f59e0b;
+  height: 42%;
+  background: var(--clock-hand-second);
   margin-left: -2px;
 }
 
 .center-dot {
   position: absolute;
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
-  background: #d3d6dc;
+  background: var(--clock-hand-second);
+  border: 3px solid var(--clock-dial-border);
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  box-shadow: 0 0 0 4px #0f121a;
 }
 
 .flip {
-  margin: 24px auto 8px;
+  margin: 24px auto 12px;
   display: flex;
   justify-content: center;
   align-items: center;
+  gap: 16px;
   gap: clamp(12px, 2vw, 24px);
   position: relative;
 }
 
 .flip-period {
+  font-size: 24px;
   font-size: clamp(16px, 3vw, 32px);
   font-weight: 700;
-  color: #9ba1ad;
+  color: var(--clock-text);
   margin-right: 8px;
 }
 
@@ -662,9 +1038,9 @@ const flipDigits = computed(() => {
 }
 
 .chinese-row.main {
+  font-size: 44px;
   font-size: clamp(24px, 5vw, 64px);
   font-weight: 700;
-  color: #f5f6fa;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -675,67 +1051,105 @@ const flipDigits = computed(() => {
   display: inline-flex;
   justify-content: center;
   align-items: center;
-  padding: 0 0.2em;
-  min-width: 0.8em;
+  padding: 0 0.25em;
+  min-width: 0.9em;
   height: 1.4em;
   border-radius: 8px;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 
-/* Odd/Even Coloring & Blocks */
 .char-block.odd {
-  background: rgba(255, 255, 255, 0.08);
-  color: #f5f6fa;
+  background: #17324D;
+  color: #FFF9E8;
+  border: 2px solid #17324D;
 }
 
 .char-block.even {
-  background: rgba(255, 255, 255, 0.03);
-  color: #d3d6dc;
+  background: var(--clock-canvas);
+  color: var(--clock-text);
+  border: 2px solid var(--clock-border);
 }
 
-/* Semantic Styling */
 .char-block.type-period {
-  font-size: 0.6em;
+  background: #FFB010;
+  color: #2B251A;
+  border: 2px solid #17324D;
+  font-size: 0.65em;
   align-self: center;
   margin-top: 0.5em;
-  color: #fbbf24; /* Amber */
-  background: rgba(251, 191, 36, 0.1);
+  font-weight: 700;
 }
 
 .char-block.type-unit {
-  font-size: 0.6em;
-  align-self: center;
   background: transparent;
-  color: #9ba1ad;
-  margin-top: 0.5em; /* visual alignment */
+  color: var(--clock-clay);
+  font-weight: 800;
+  font-size: 0.65em;
+  align-self: center;
+  margin-top: 0.5em;
+  border: none;
 }
 
-/* Hover effect */
 .char-block:hover {
-  transform: translateY(-4px);
-  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
 .clock-page.fullscreen .chinese-row.main {
+  font-size: 80px;
   font-size: clamp(40px, 10vw, 120px);
 }
 
+/* Tabs: section-nav design inspired by 2md.aiurl.tw */
 .tabs {
   display: flex;
-  gap: 10px;
+  gap: 6px;
   justify-content: center;
-  margin-top: 18px;
+  align-items: center;
+  margin: 20px auto 0;
+  background: var(--clock-navy);
+  padding: 6px;
+  border-radius: 12px;
+  border: 2px solid var(--clock-border);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  max-width: fit-content;
   flex-wrap: wrap;
 }
 
-/* Force lighter text color for buttons in dark mode */
-.tabs :deep(button),
-.controls :deep(button) {
-  color: #e0e0e0 !important;
+.tab-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 16px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  background: transparent;
+  color: var(--clock-navy-text);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  outline: none;
 }
 
-.tabs :deep(button.n-button--primary-type) {
-  color: #fff !important;
+.tab-btn:hover {
+  background: var(--clock-primary);
+  color: var(--clock-primary-text);
+}
+
+.tab-btn:focus-visible,
+.fullscreen-btn:focus-visible,
+.sync-btn:focus-visible {
+  outline: 3px solid var(--clock-primary);
+  outline-offset: 2px;
+}
+
+.tab-btn.active {
+  background: var(--clock-primary);
+  color: var(--clock-primary-text);
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 @media (max-width: 600px) {
@@ -753,7 +1167,7 @@ const flipDigits = computed(() => {
 .offset-info {
   text-align: center;
   font-size: 12px;
-  color: #9ba1ad;
+  color: var(--clock-muted);
   margin-top: 4px;
 }
 

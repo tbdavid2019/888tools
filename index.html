@@ -22,7 +22,7 @@
     <link rel="icon" type="image/png" sizes="16x16" href="%BASE_URL%favicon-16x16.png" />
     <link rel="mask-icon" href="/888-tool-icon.svg" color="#14b8a6" />
     <meta name="msapplication-TileColor" content="#da532c" />
-    <meta name="theme-color" content="#18a058" />
+    <meta name="theme-color" content="#FFB010" />
     <meta name="webmcp:enabled" content="true" />
     <meta name="webmcp:version" content="1.0" />
 
@@ -46,6 +46,74 @@
     />
     <meta name="twitter:image" content="banner.png?v=3" />
     <meta name="twitter:image:alt" content="888 TOOL" />
+    <script>
+      (function () {
+        if (typeof globalThis === 'undefined') {
+          window.globalThis = window;
+        }
+        if (!Object.hasOwn) {
+          Object.hasOwn = function (obj, prop) {
+            return Object.prototype.hasOwnProperty.call(obj, prop);
+          };
+        }
+        if (!String.prototype.replaceAll) {
+          String.prototype.replaceAll = function (str, newStr) {
+            if (Object.prototype.toString.call(str).toLowerCase() === '[object regexp]') {
+              return this.replace(str, newStr);
+            }
+            return this.replace(new RegExp(String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), newStr);
+          };
+        }
+        if (!Array.prototype.at) {
+          Array.prototype.at = function (n) {
+            n = Math.trunc(n) || 0;
+            if (n < 0) n += this.length;
+            if (n < 0 || n >= this.length) return undefined;
+            return this[n];
+          };
+        }
+        if (!String.prototype.at) {
+          String.prototype.at = function (n) {
+            n = Math.trunc(n) || 0;
+            if (n < 0) n += this.length;
+            if (n < 0 || n >= this.length) return undefined;
+            return this.charAt(n);
+          };
+        }
+        if (!Promise.allSettled) {
+          Promise.allSettled = function (promises) {
+            return Promise.all(
+              Array.from(promises).map(function (p) {
+                return Promise.resolve(p).then(
+                  function (v) { return { status: 'fulfilled', value: v }; },
+                  function (r) { return { status: 'rejected', reason: r }; }
+                );
+              })
+            );
+          };
+        }
+        if (typeof window !== 'undefined' && typeof window.ResizeObserver === 'undefined') {
+          var SafeResizeObserver = function (cb) {
+            this._cb = cb;
+          };
+          SafeResizeObserver.prototype.observe = function (el) {
+            if (typeof this._cb === 'function' && el && typeof el.getBoundingClientRect === 'function') {
+              var cb = this._cb;
+              var self = this;
+              setTimeout(function () {
+                try {
+                  var rect = el.getBoundingClientRect();
+                  cb([{ target: el, contentRect: rect }], self);
+                } catch (e) {}
+              }, 0);
+            }
+          };
+          SafeResizeObserver.prototype.unobserve = function () {};
+          SafeResizeObserver.prototype.disconnect = function () {};
+          window.ResizeObserver = SafeResizeObserver;
+        }
+      })();
+    </script>
     <script>
       (function () {
         var isReloading = false;
@@ -84,6 +152,7 @@
         });
       })();
     </script>
+    <script defer src="https://flow.aiurl.tw/script.js?siteId=68e118f6-de08-440c-9220-eb1e5c4334d5"></script>
   </head>
   <body>
     <div id="app"></div>

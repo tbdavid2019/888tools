@@ -27,6 +27,8 @@ const layoutBackgroundColor = computed(() => {
   return `rgba(${activePalette.value.glassBackgroundRgb}, ${opacity})`;
 });
 
+const bodyBackgroundColor = computed(() => (styleStore.isBingWallpaperEnabled ? 'transparent' : activePalette.value.background));
+
 const storedLocale = useStorage('locale', 'zh-TW');
 if (storedLocale.value === 'zh') {
   storedLocale.value = 'zh-TW';
@@ -84,7 +86,8 @@ body {
   min-height: 100%;
   margin: 0;
   padding: 0;
-  background-color: transparent !important;
+  background-color: v-bind('bodyBackgroundColor');
+  color: v-bind('activePalette.text');
   font-family: 'JetBrains Mono', 'Gen Jyuu Gothic', 'Maple Mono', 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
   font-size: 16.5px;
   line-height: 1.55;
@@ -94,7 +97,8 @@ html {
   height: 100%;
   margin: 0;
   padding: 0;
-  background-color: transparent !important;
+  background-color: v-bind('bodyBackgroundColor');
+  color: v-bind('activePalette.text');
   font-family: 'JetBrains Mono', 'Gen Jyuu Gothic', 'Maple Mono', 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
   font-size: 16.5px;
 }
@@ -102,6 +106,8 @@ html {
 #app,
 .n-config-provider {
   font-family: 'JetBrains Mono', 'Gen Jyuu Gothic', 'Maple Mono', 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+  background-color: v-bind('bodyBackgroundColor');
+  color: v-bind('activePalette.text');
 }
 
 * {

@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## Version 2026.10.22
+
+### Features & Enhancements
+- **WCAG AA/AAA 色彩方案與 2md 設計語彙整合 (`2md.aiurl.tw`)**:
+  - 重構全站淺色與深色調色盤 (`src/theme/palette.ts`)，引進 `https://2md.aiurl.tw` 經典番紅花黃 (`#FFB010` Saffron)、暖奶油 (`#FFF9E8` Warm Cream)、米黃畫布 (`#FFF0CC` Canvas)、深青海軍藍 (`#17324D` Deep Blue)、陶土磚紅 (`#A9471D` Clay) 與濃墨黑 (`#2B251A` Ink)。
+  - 全站文字色彩嚴格符合 WCAG AA/AAA 標準（主要內文對比度達 14.45:1，次要文字 ≥ 7.0:1，黃底黑字對比度達 8.30:1，杜絕任何淺色背景低對比或黃底白字問題）。
+  - 深色模式採用深邃午夜海軍藍 (`#101B27` 背景 / `#172636` 卡片表面)，搭配暖奶油白文字 (13.5:1) 與番紅花黃高對比按鈕/文字 (8.39:1)。
+  - 桌布預設改為關閉（儲存鍵升級為 `isBingWallpaperEnabled:v2`，預設為 `false`，預設呈現乾淨暖雅之 2md 米黃畫布底色），預設卡片透明度提升至 `0.95`。
+  - 優化 UnoCSS 配置、選單、按鈕、卡片 (`c-card`)、工具卡片 (`ToolCard`)、彩色卡片 (`ColoredCard`) 與指令面板 (`CommandPalette`)，全面消除低對比文字與透明度過低問題。
+
+- **智慧電視 (Smart TV) 瀏覽器深度相容性優化**:
+  - **建置目標相容性升級**：`vite.config.ts` 建置目標調整為 `['es2020', 'chrome80', 'safari14']`，兼顧含 BigInt 字面值之離線 OCR 模組與舊型智慧電視 WebView / 舊版瀏覽器核心。
+  - **全域關鍵 Polyfill**：`index.html` 內嵌 `globalThis`、`Object.hasOwn`、`String.prototype.replaceAll`、`Array.prototype.at`、`String.prototype.at`、`Promise.allSettled` 與防崩潰之 `ResizeObserver` 輕量相容層。
+  - **WebMCP 外掛非同步延遲載入**：將 40 組重型 WebMCP 工具延遲至首屏渲染後非同步註冊並增加例外防護，避免電視晶片卡頓或加密函式庫例外導致應用白畫面。
+  - **時區解析防崩潰**：以純函數 `getZonedTimeParts` 取代高頻率 `new Date(toLocaleString())`，安全處理 `formatToParts`，快取 `Intl.DateTimeFormat` 實例，時鐘指針 60fps 平滑旋轉零記憶體震盪；加入安全時區驗證與回退，防止 `localStorage` 異常時區導致 `RangeError: Invalid time value`。
+  - **TV 全螢幕回退相容 (Pseudo-Fullscreen)**：針對多數電視瀏覽器限制原生 `requestFullscreen` 的問題，實作視窗置頂全螢幕回退模式，支援遙控器移動游標、觸控或按鍵喚醒控制列，並支援 `Escape` 鍵退出。
+  - **CSS 相容性降級處理**：移除 `inset`，補充 `top/right/bottom/left`；在所有 `clamp()`、`min()` 與 `aspect-ratio` 前加入固定像素與視窗單位回退尺寸；時鐘指針以直接行內樣式 `rotate(${deg}deg)` 取代 CSS 變數插值，支援所有舊版 Webkit/Blink 電視瀏覽器。
+  - **網址結尾斜線相容**：強化 GitHub Pages 路由尾斜線 (`/online-clock/`) 正規化比對，防止推薦清單與最近使用工具判定失效。
+
+- **搜尋體驗優化 (搜尋「time」精準召回線上時鐘)**：
+  - 擴充 `online-clock` 關鍵字，納入 `time`、`clock`、`online-clock`、`timer`、`watch`、`digital`、`analog`、`flip`、`timezone`、`ntp`、`時鐘`、`時間`、`線上時鐘`、`翻頁時鐘`、`數位時鐘`、`模擬時鐘`、`電子鐘`、`網路校時`。
+  - 在分類導航中將 `onlineClock` 調整至「測量度量」(measurement) 分類首位。
+  - `useFuzzySearch` 支援響應式 `MaybeRef<Data[]>` 資料源。
+  - 指令面板 (Command Palette) 搜尋結果提升權重與排序邏輯，對完全吻合與前綴吻合進行 Tier 0/1 優先置頂，分類上限擴充至 12 筆並支援長清單滾動。
+
 ## Version 2026.10.18
 
 ### Features

@@ -7,8 +7,8 @@ export const useStyleStore = defineStore('style', () => {
   const isSmallScreen = useMediaQuery('(max-width: 900px)');
   const desktopMenuCollapsed = useStorage('desktopMenuCollapsed', false);
   const mobileMenuCollapsed = ref(true);
-  const isBingWallpaperEnabled = useStorage('isBingWallpaperEnabled', true);
-  const cardOpacity = useStorage('cardOpacity', 0.8);
+  const isBingWallpaperEnabled = useStorage('isBingWallpaperEnabled:v2', false);
+  const cardOpacity = useStorage('cardOpacity', 0.95);
 
   const isMenuCollapsed = computed({
     get: () => (isSmallScreen.value ? mobileMenuCollapsed.value : desktopMenuCollapsed.value),

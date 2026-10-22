@@ -131,6 +131,6 @@ export default defineConfig({
     },
   },
   build: {
-    target: 'esnext',
+    target: ['es2020', 'chrome80', 'safari14'],
   },
 });

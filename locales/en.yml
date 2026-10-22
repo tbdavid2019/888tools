@@ -205,6 +205,11 @@ tools:
       digital: Digital
       analog: Analog
       flip: Flip clock
+      chinese: Chinese clock
+    useNetworkTime: Network time sync
+    syncing: 'Syncing...'
+    syncError: Sync failed
+    offset: 'Offset: {value}s'
 
   password-generator:
     title: Password generator

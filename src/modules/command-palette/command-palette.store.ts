@@ -17,15 +17,15 @@ export const useCommandPaletteStore = defineStore('command-palette', () => {
   const router = useRouter();
   const searchPrompt = ref('');
 
-  const toolsOptions = toolStore.tools.map(tool => ({
+  const toolsOptions = computed(() => toolStore.tools.map(tool => ({
     ...tool,
     to: tool.path,
     toolCategory: tool.category,
     category: 'Tools',
-  }));
+  })));
 
-  const searchOptions: PaletteOption[] = [
-    ...toolsOptions,
+  const searchOptions = computed<PaletteOption[]>(() => [
+    ...toolsOptions.value,
     {
       name: 'Random tool',
       description: 'Get a random tool from the list.',
@@ -70,19 +70,60 @@ export const useCommandPaletteStore = defineStore('command-palette', () => {
       keywords: ['about', 'learn', 'more', 'info', 'information'],
       icon: InfoIcon,
     },
-  ];
+  ]);
 
   const { searchResult } = useFuzzySearch({
     search: searchPrompt,
     data: searchOptions,
     options: {
-      keys: [{ name: 'name', weight: 2 }, 'description', 'keywords', 'category'],
+      keys: [
+        { name: 'name', weight: 3 },
+        { name: 'keywords', weight: 2.5 },
+        { name: 'to', weight: 2 },
+        { name: 'description', weight: 1 },
+        { name: 'category', weight: 0.5 },
+      ],
       threshold: 0.3,
+      ignoreLocation: true,
     },
   });
 
-  const filteredSearchResult = computed(() =>
-    _.chain(searchResult.value).groupBy('category').mapValues(categoryOptions => _.take(categoryOptions, 5)).value());
+  const filteredSearchResult = computed(() => {
+    const rawResults = searchResult.value;
+    const query = searchPrompt.value.trim().toLowerCase();
+
+    const sortedResults = !query
+      ? rawResults
+      : [...rawResults].sort((a, b) => {
+          const getMatchTier = (opt: PaletteOption) => {
+            const name = (opt.name || '').toLowerCase();
+            const toRaw = opt.to;
+            const toStr = typeof toRaw === 'string'
+              ? toRaw
+              : (typeof toRaw === 'object' && toRaw !== null && 'path' in toRaw ? String((toRaw as { path?: string }).path || '') : '');
+            const to = toStr.replace(/^\//, '').toLowerCase();
+            const keywords = (opt.keywords || []).map(k => k.toLowerCase());
+
+            if (name === query || to === query || keywords.includes(query)) {
+              return 0; // exact
+            }
+            if (name.startsWith(query) || to.startsWith(query) || keywords.some(k => k.startsWith(query))) {
+              return 1; // prefix
+            }
+            if (name.includes(query) || to.includes(query) || keywords.some(k => k.includes(query))) {
+              return 2; // contains
+            }
+            return 3; // fuzzy
+          };
+
+          return getMatchTier(a) - getMatchTier(b);
+        });
+
+    return _.chain(sortedResults)
+      .groupBy('category')
+      .mapValues(categoryOptions => _.take(categoryOptions, 12))
+      .value();
+  });
 
   return {
     filteredSearchResult,

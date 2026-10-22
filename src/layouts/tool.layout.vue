@@ -68,12 +68,13 @@ useHead(head);
 const { t } = useI18n();
 const { locale } = useI18n();
 
-const i18nKey = computed<string>(() => route.path.trim().replace('/', ''));
+const normalizePath = (p: string) => p.replace(/\/+$/, '') || '/';
+const i18nKey = computed<string>(() => route.path.trim().replace(/\//g, ''));
 const toolTitle = computed<string>(() => t(`tools.${i18nKey.value}.title`, String(route.meta.name)));
 const toolDescription = computed<string>(() => t(`tools.${i18nKey.value}.description`, String(route.meta.description)));
 const isZh = computed(() => locale.value.startsWith('zh'));
 const recommendedTools = computed(() => [...toolStore.tools]
-  .filter(tool => tool.path !== route.path)
+  .filter(tool => normalizePath(tool.path) !== normalizePath(route.path))
   .sort(() => Math.random() - 0.5)
   .slice(0, 4));
 

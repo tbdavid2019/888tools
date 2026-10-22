@@ -9,7 +9,7 @@ const styleStore = useStyleStore();
 
 const gradientBackground = computed(() => {
   const opacity = styleStore.cardOpacity;
-  return `linear-gradient(48deg, rgba(37, 99, 108, ${opacity}) 0%, rgba(59, 149, 111, ${opacity}) 60%, rgba(20, 160, 88, ${opacity}) 100%)`;
+  return `linear-gradient(48deg, rgba(23, 50, 77, ${opacity}) 0%, rgba(30, 63, 96, ${opacity}) 100%)`;
 });
 </script>
 
@@ -31,21 +31,21 @@ const gradientBackground = computed(() => {
 <style lang="less" scoped>
 .colored-card {
   background: v-bind('gradientBackground');
-  color: #fff;
+  color: #FFF9E8;
   border: none;
 
   .icon {
-    opacity: 0.7;
+    opacity: 0.85;
   }
 
   .title {
-    color: #fff;
+    color: #FFF9E8;
 
     margin: 5px 0;
   }
 
   .description {
-    opacity: 0.8;
+    opacity: 0.9;
 
     margin: 5px 0;
 
@@ -56,7 +56,7 @@ const gradientBackground = computed(() => {
       transition: color ease 0.2s;
 
       &:hover {
-        color: rgb(20, 20, 20);
+        color: #FFB010;
       }
     }
   }

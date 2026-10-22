@@ -50,7 +50,7 @@ const activePalette = computed(() => (styleStore.isDarkTheme ? kanagawaDarkPalet
 .appearance-settings {
   padding: 18px 16px 20px;
   margin-top: 12px;
-  background: v-bind('styleStore.isDarkTheme ? "rgba(42, 42, 55, 0.78)" : "rgba(220, 215, 186, 0.82)"');
+  background: v-bind('styleStore.isDarkTheme ? "rgba(23, 38, 54, 0.92)" : "rgba(255, 249, 232, 0.96)"');
   border: 1px solid v-bind('activePalette.border');
   border-radius: 20px;
   box-shadow: v-bind('activePalette.shadow');
@@ -113,7 +113,7 @@ const activePalette = computed(() => (styleStore.isDarkTheme ? kanagawaDarkPalet
   align-items: center;
   justify-content: center;
   gap: 2px;
-  background: v-bind('styleStore.isDarkTheme ? "rgba(42, 42, 55, 0.78)" : "rgba(220, 215, 186, 0.82)"');
+  background: v-bind('styleStore.isDarkTheme ? "rgba(23, 38, 54, 0.92)" : "rgba(255, 249, 232, 0.96)"');
   border: 1px solid v-bind('activePalette.border');
   box-shadow: v-bind('activePalette.shadow');
   color: v-bind('activePalette.textMuted');

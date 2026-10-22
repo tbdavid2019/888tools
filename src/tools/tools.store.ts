@@ -1,14 +1,31 @@
 import { type MaybeRef, get, useStorage } from '@vueuse/core';
 import { defineStore } from 'pinia';
-import type { Ref } from 'vue';
+import { type Ref, hasInjectionContext } from 'vue';
 import _ from 'lodash';
 import type { Tool, ToolCategory, ToolWithCategory } from './tools.types';
 import { toolsWithCategory } from './index';
+import { translate } from '@/plugins/i18n.plugin';
 
 export const useToolStore = defineStore('tools', () => {
   const favoriteToolsName = useStorage('favoriteToolsName', []) as Ref<string[]>;
   const recentToolsPath = useStorage('recentToolsPath', []) as Ref<string[]>;
-  const { t } = useI18n();
+
+  let t = (key: string, fallback?: string) => {
+    try {
+      const res = translate(key);
+      return res !== key ? res : (fallback ?? key);
+    } catch {
+      return fallback ?? key;
+    }
+  };
+  if (hasInjectionContext()) {
+    try {
+      const i18n = useI18n();
+      t = i18n.t;
+    } catch {
+      // In test or non-setup contexts, fallback gracefully
+    }
+  }
 
   const tools = computed<ToolWithCategory[]>(() => toolsWithCategory.map((tool) => {
     const toolI18nKey = tool.path.replace(/\//g, '');
@@ -73,8 +90,9 @@ export const useToolStore = defineStore('tools', () => {
     },
 
     addToolToRecent(toolOrPath: MaybeRef<Tool> | string) {
-      const rawPath = typeof toolOrPath === 'string' ? toolOrPath : get(toolOrPath).path;
+      let rawPath = typeof toolOrPath === 'string' ? toolOrPath : get(toolOrPath).path;
       if (!rawPath) return;
+      rawPath = rawPath.replace(/\/+$/, '') || '/';
 
       const filtered = recentToolsPath.value.filter(p => p !== rawPath);
       filtered.unshift(rawPath);

@@ -3,26 +3,25 @@ import { useThemeVars } from 'naive-ui';
 import FavoriteButton from './FavoriteButton.vue';
 import type { Tool } from '@/tools/tools.types';
 import { useToolStore } from '@/tools/tools.store';
+import { useStyleStore } from '@/stores/style.store';
 
 const props = defineProps<{ tool: Tool & { category: string } }>();
 const { tool } = toRefs(props);
 const theme = useThemeVars();
 const toolStore = useToolStore();
+const styleStore = useStyleStore();
 </script>
 
 <template>
   <router-link :to="tool.path" class="decoration-none" @click="toolStore.addToolToRecent(tool.path)">
-    <c-card class="tool-card h-full transition transition-duration-0.5s !border-2px !hover:border-primary">
+    <c-card class="tool-card h-full transition transition-duration-0.5s !border-2px !hover:border-primary dark:!hover:border-saffron">
       <div flex items-center justify-between>
-        <n-icon class="text-neutral-400 dark:text-neutral-600" size="40" :component="tool.icon" />
+        <n-icon class="tool-icon" size="40" :component="tool.icon" />
 
         <div flex items-center gap-8px>
           <div
             v-if="tool.isNew"
-            class="rounded-full px-8px py-3px text-xs text-white dark:text-neutral-800"
-            :style="{
-              'background-color': theme.primaryColor,
-            }"
+            class="rounded-full px-8px py-3px text-xs new-badge"
           >
             {{ $t('toolCard.new') }}
           </div>
@@ -43,6 +42,18 @@ const toolStore = useToolStore();
 </template>
 
 <style scoped lang="less">
+.tool-icon {
+  color: v-bind('styleStore.isDarkTheme ? "#FFB010" : "#17324D"');
+  transition: color 0.2s ease;
+}
+
+.new-badge {
+  background-color: #FFB010;
+  color: #2B251A;
+  border: 1px solid #17324D;
+  font-weight: 700;
+}
+
 .tool-card {
   min-height: 246px;
 }

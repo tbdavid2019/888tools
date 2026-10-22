@@ -124,7 +124,7 @@ import { tool as passwordGenerator } from './password-generator';
 export const toolsByCategory: ToolCategory[] = [
   {
     name: 'measurement',
-    components: [chronometer, countdownTimer, worldClock, temperatureConverter, benchmarkBuilder, birthdayCalculator, dogAgeCalculator, catAgeCalculator, onlineClock],
+    components: [onlineClock, worldClock, chronometer, countdownTimer, temperatureConverter, benchmarkBuilder, birthdayCalculator, dogAgeCalculator, catAgeCalculator],
   },
   {
     name: 'crypto',

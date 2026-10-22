@@ -40,19 +40,19 @@ export const lightThemeOverrides: GlobalThemeOverrides = {
 
   Menu: {
     itemHeight: '38px',
-    itemColorActive: 'rgba(75, 103, 161, 0.18)',
-    itemColorActiveHover: 'rgba(75, 103, 161, 0.22)',
-    itemColorActiveCollapsed: 'rgba(75, 103, 161, 0.18)',
+    itemColorActive: '#FFB010',
+    itemColorActiveHover: '#F2A600',
+    itemColorActiveCollapsed: '#FFB010',
     itemTextColor: kanagawaLightPalette.text,
     itemTextColorHover: kanagawaLightPalette.heading,
-    itemTextColorActive: kanagawaLightPalette.buttonPressed,
-    itemTextColorActiveHover: kanagawaLightPalette.buttonPressed,
-    itemTextColorChildActive: kanagawaLightPalette.buttonPressed,
-    itemTextColorChildActiveHover: kanagawaLightPalette.buttonPressed,
+    itemTextColorActive: '#2B251A',
+    itemTextColorActiveHover: '#2B251A',
+    itemTextColorChildActive: '#2B251A',
+    itemTextColorChildActiveHover: '#2B251A',
     itemIconColor: kanagawaLightPalette.textMuted,
     itemIconColorHover: kanagawaLightPalette.heading,
-    itemIconColorActive: kanagawaLightPalette.button,
-    itemIconColorActiveHover: kanagawaLightPalette.button,
+    itemIconColorActive: '#2B251A',
+    itemIconColorActiveHover: '#2B251A',
   },
 
   Layout: {
@@ -67,9 +67,12 @@ export const lightThemeOverrides: GlobalThemeOverrides = {
   },
 
   Button: {
-    textColorTextPrimary: kanagawaLightPalette.buttonPressed,
-    textColorTextPrimaryHover: kanagawaLightPalette.buttonHover,
-    textColorTextPrimaryPressed: kanagawaLightPalette.buttonPressed,
+    textColorPrimary: '#FFF9E8',
+    colorPrimary: '#17324D',
+    colorHoverPrimary: '#0F2336',
+    textColorTextPrimary: '#17324D',
+    textColorTextPrimaryHover: '#0F2336',
+    textColorTextPrimaryPressed: '#2B251A',
   },
 
   Select: {
@@ -158,6 +161,13 @@ export const darkThemeOverrides: GlobalThemeOverrides = {
 
   Menu: {
     itemHeight: '38px',
+  },
+
+  Button: {
+    textColorPrimary: '#2B251A',
+    textColorHoverPrimary: '#2B251A',
+    textColorPressedPrimary: '#2B251A',
+    textColorFocusPrimary: '#2B251A',
   },
 
   Select: {

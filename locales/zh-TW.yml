@@ -186,7 +186,7 @@ tools:
 
   online-clock:
     title: 線上時鐘
-    description: 切換數位、模擬、翻頁樣式，支援時區、日期與秒數顯示
+    description: 切換數位、模擬、翻頁與中文字時鐘樣式，支援全球時區、日期、秒數與網路時間 (time) 校時
     timezone: 時區
     showSeconds: 顯示秒
     showDate: 顯示日期
@@ -196,6 +196,7 @@ tools:
       digital: 數位時鐘
       analog: 模擬時鐘
       flip: 翻頁時鐘
+      chinese: 中文字時鐘
     useNetworkTime: 網路校時
     syncing: '校時中...'
     syncError: 校時失敗
