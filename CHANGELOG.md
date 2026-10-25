@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## Version 2026.10.25
+
+### Runtime & Security Hardening
+- **容器建置基底與 Node.js 執行期升級至 Node.js 26 (`v26.12.1`)**:
+  - `Dockerfile` 建置階段基底更新為 `node:26.12.1-alpine`。
+  - `.nvmrc` 更新為 `26.12.1`，同步升級 GitHub Pages CI/CD 建置環境。
+  - 全面啟用最新 V8 引擎，加速 Vite 前端打包與靜態預渲染（Prerender）建置流程。
+  - 完整防護 October 2026 官方安全公告 CVE（包含 CVE-2026-111497 Brotli 解碼器越界寫入 RCE 漏洞、CVE-2026-105482 DNS 截斷、CVE-2026-105483/106069 TLS 主機名檢查繞過）。
+
 ## Version 2026.10.22
 
 ### Features & Enhancements
