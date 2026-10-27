@@ -185,7 +185,7 @@ watch(
 }
 
 .category-count-pill {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   padding: 1px 7px;
   border-radius: 10px;

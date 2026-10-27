@@ -233,7 +233,7 @@ const contentFlexBasis = computed(() => '520px');
   h2 {
     margin: 0;
     color: v-bind('activePalette.heading');
-    font-size: 24px;
+    font-size: 20px;
     font-weight: 700;
     letter-spacing: 0.02em;
   }
@@ -241,7 +241,7 @@ const contentFlexBasis = computed(() => '520px');
   p {
     margin: 5px 0 0;
     color: v-bind('activePalette.textMuted');
-    font-size: 15px;
+    font-size: 14px;
   }
 }
 
@@ -251,7 +251,7 @@ const contentFlexBasis = computed(() => '520px');
   border-radius: 999px;
   padding: 6px 12px;
   color: v-bind('activePalette.textMuted');
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 700;
   letter-spacing: 0.04em;
 }
@@ -263,7 +263,7 @@ const contentFlexBasis = computed(() => '520px');
 }
 
 .recommended-tools-grid :deep(.tool-card) {
-  min-height: 220px;
+  min-height: 175px;
 }
 
 @media (max-width: 700px) {
@@ -304,7 +304,7 @@ const contentFlexBasis = computed(() => '520px');
     flex-direction: column;
 
     h2 {
-      font-size: 22px;
+      font-size: 18px;
     }
   }
 

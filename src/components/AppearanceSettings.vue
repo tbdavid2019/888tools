@@ -117,7 +117,7 @@ const activePalette = computed(() => (styleStore.isDarkTheme ? kanagawaDarkPalet
   border: 1px solid v-bind('activePalette.border');
   box-shadow: v-bind('activePalette.shadow');
   color: v-bind('activePalette.textMuted');
-  font-size: 10px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 600;
 }
 </style>

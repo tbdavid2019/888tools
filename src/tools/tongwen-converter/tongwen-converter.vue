@@ -356,7 +356,7 @@ async function handleCopyOutput() {
 }
 
 .control-label {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: v-bind('activePalette.textMuted');
   font-family: inherit;
@@ -385,7 +385,7 @@ async function handleCopyOutput() {
   background: transparent;
   color: v-bind('activePalette.textMuted');
   cursor: pointer;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   font-family: inherit;
   transition: all 0.2s ease;
@@ -405,12 +405,12 @@ async function handleCopyOutput() {
 }
 
 .arrow-glyph {
-  opacity: 0.65;
-  font-size: 11px;
+  opacity: 0.75;
+  font-size: 12px;
 }
 
 .count-badge {
-  font-size: 11px;
+  font-size: 12px;
   padding: 1px 6px;
   border-radius: 6px;
   background: rgba(0, 0, 0, 0.12);
@@ -419,7 +419,7 @@ async function handleCopyOutput() {
 
 .check-badge {
   color: #10b981;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .icon-action-btn {
@@ -469,7 +469,7 @@ async function handleCopyOutput() {
   border: 1px solid v-bind('activePalette.border');
   background: v-bind('activePalette.surface');
   color: v-bind('activePalette.text');
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
@@ -511,7 +511,7 @@ async function handleCopyOutput() {
   align-items: center;
   padding: 5px 12px;
   border-radius: 8px;
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 600;
   color: v-bind('activePalette.textMuted');
   background: v-bind('activePalette.surfaceMuted');
@@ -540,22 +540,22 @@ async function handleCopyOutput() {
   min-height: 340px;
   max-height: 55vh;
   overflow-y: auto !important;
-  line-height: 1.6;
+  line-height: 1.65;
   font-family: 'JetBrains Mono', 'Maple Mono', 'Gen Jyuu Gothic', 'Noto Sans TC', sans-serif !important;
-  font-size: 14px;
+  font-size: 15px;
   color: v-bind('activePalette.text') !important;
   padding: 10px 4px !important;
 }
 
 .converter-textarea :deep(textarea::placeholder) {
   color: v-bind('activePalette.textMuted');
-  opacity: 0.7;
+  opacity: 0.8;
 }
 
 .note-text {
   margin-top: 14px;
-  font-size: 12px;
+  font-size: 14px;
+  line-height: 1.6;
   color: v-bind('activePalette.textMuted');
-  opacity: 0.85;
 }
 </style>
