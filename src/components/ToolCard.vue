@@ -55,34 +55,34 @@ const styleStore = useStyleStore();
 }
 
 .tool-card {
-  min-height: 175px;
+  min-height: 246px;
 }
 
 .tool-title {
   color: v-bind('theme.textColor1');
-  font-weight: 650;
-  font-size: 1.05rem;
-  line-height: 1.35;
+  font-weight: 700;
+  font-size: 1.85rem;
+  line-height: 1.25;
 }
 
 .tool-description {
   color: v-bind('theme.textColor2');
-  font-size: 0.875rem;
-  line-height: 1.55;
+  font-size: 1.02rem;
+  line-height: 1.7;
 }
 
 @media (max-width: 900px) {
   .tool-card {
-    min-height: 160px;
+    min-height: 220px;
   }
 
   .tool-title {
-    font-size: 1rem;
+    font-size: 1.5rem;
   }
 
   .tool-description {
-    font-size: 0.85rem;
-    line-height: 1.5;
+    font-size: 0.98rem;
+    line-height: 1.6;
   }
 }
 </style>

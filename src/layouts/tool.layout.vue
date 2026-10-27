@@ -233,15 +233,15 @@ const contentFlexBasis = computed(() => '520px');
   h2 {
     margin: 0;
     color: v-bind('activePalette.heading');
-    font-size: 20px;
+    font-size: 26px;
     font-weight: 700;
     letter-spacing: 0.02em;
   }
 
   p {
-    margin: 5px 0 0;
+    margin: 6px 0 0;
     color: v-bind('activePalette.textMuted');
-    font-size: 14px;
+    font-size: 16px;
   }
 }
 
@@ -249,9 +249,9 @@ const contentFlexBasis = computed(() => '520px');
   flex: 0 0 auto;
   border: 1px solid v-bind('activePalette.overlayBorder');
   border-radius: 999px;
-  padding: 6px 12px;
+  padding: 6px 14px;
   color: v-bind('activePalette.textMuted');
-  font-size: 12.5px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.04em;
 }
@@ -263,7 +263,7 @@ const contentFlexBasis = computed(() => '520px');
 }
 
 .recommended-tools-grid :deep(.tool-card) {
-  min-height: 175px;
+  min-height: 246px;
 }
 
 @media (max-width: 700px) {
@@ -304,7 +304,7 @@ const contentFlexBasis = computed(() => '520px');
     flex-direction: column;
 
     h2 {
-      font-size: 18px;
+      font-size: 22px;
     }
   }
 

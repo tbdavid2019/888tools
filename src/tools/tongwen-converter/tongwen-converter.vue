@@ -356,8 +356,8 @@ async function handleCopyOutput() {
 }
 
 .control-label {
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 650;
   color: v-bind('activePalette.textMuted');
   font-family: inherit;
 }
@@ -379,14 +379,14 @@ async function handleCopyOutput() {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 6px 14px;
+  padding: 7px 16px;
   border-radius: 8px;
   border: none;
   background: transparent;
   color: v-bind('activePalette.textMuted');
   cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 650;
   font-family: inherit;
   transition: all 0.2s ease;
   outline: none;
@@ -406,12 +406,12 @@ async function handleCopyOutput() {
 
 .arrow-glyph {
   opacity: 0.75;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .count-badge {
-  font-size: 12px;
-  padding: 1px 6px;
+  font-size: 13px;
+  padding: 2px 7px;
   border-radius: 6px;
   background: rgba(0, 0, 0, 0.12);
   color: inherit;
@@ -419,7 +419,7 @@ async function handleCopyOutput() {
 
 .check-badge {
   color: #10b981;
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .icon-action-btn {
@@ -464,12 +464,12 @@ async function handleCopyOutput() {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 6px 14px;
+  padding: 7px 16px;
   border-radius: 8px;
   border: 1px solid v-bind('activePalette.border');
   background: v-bind('activePalette.surface');
   color: v-bind('activePalette.text');
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
@@ -500,8 +500,8 @@ async function handleCopyOutput() {
 }
 
 .tool-btn.highlight-copy {
-  padding: 7px 18px;
-  font-size: 14px;
+  padding: 8px 20px;
+  font-size: 16px;
   font-weight: 700;
 }
 
@@ -509,9 +509,9 @@ async function handleCopyOutput() {
 .hud-pill {
   display: inline-flex;
   align-items: center;
-  padding: 5px 12px;
+  padding: 6px 14px;
   border-radius: 8px;
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 600;
   color: v-bind('activePalette.textMuted');
   background: v-bind('activePalette.surfaceMuted');
@@ -540,11 +540,11 @@ async function handleCopyOutput() {
   min-height: 340px;
   max-height: 55vh;
   overflow-y: auto !important;
-  line-height: 1.65;
+  line-height: 1.7;
   font-family: 'JetBrains Mono', 'Maple Mono', 'Gen Jyuu Gothic', 'Noto Sans TC', sans-serif !important;
-  font-size: 15px;
+  font-size: 16px;
   color: v-bind('activePalette.text') !important;
-  padding: 10px 4px !important;
+  padding: 12px 6px !important;
 }
 
 .converter-textarea :deep(textarea::placeholder) {
@@ -553,9 +553,10 @@ async function handleCopyOutput() {
 }
 
 .note-text {
-  margin-top: 14px;
-  font-size: 14px;
-  line-height: 1.6;
+  margin-top: 16px;
+  font-size: 15px;
+  font-weight: 550;
+  line-height: 1.7;
   color: v-bind('activePalette.textMuted');
 }
 </style>

@@ -5,10 +5,14 @@ All notable changes to this project will be documented in this file. See [standa
 ## Version 2026.10.27
 
 ### Features & Enhancements
-- **全站字體階層標準化與中文最小字級規範 (Typography Hierarchy & Minimum Font Size Standardization)**:
-  - **解決字體忽大忽小與失衡問題**：修復工具卡片標題過度膨脹（原 `1.85rem` / 30.5px 縮減為優雅之 `1.05rem` / ~16.8px），調整卡片高度（`175px`）與次要說明（`0.875rem` / 14px），恢復標準排版階層（區塊大標 20px > 卡片標題 17px > 說明 14px）。
-  - **嚴格實施中文最小字級可讀性規範**：針對漢字筆畫複雜度（如「繁」、「體」、「囊」），全站徹底消除 10px / 11px 筆畫粘連之微型文字，微型狀態膠囊最低底線嚴格鎖定於 12px~12.5px；同文堂附註說明 (`.note-text`) 全面提升為 14px 並移除低透明度虛化，確保 WCAG AAA 頂級清晰度。
-  - **標準化全域 Root 字級**：`html` 設定為標準 16px，`body` 設定為 15px，消除非整數 `16.5px` 造成的 rem 碎裂與縮放不穩定。
+- **字級體驗大幅提升：保留喜愛之大標卡片風格，全面放大過小字體消除割裂感 (Generous Typography & Prominent Cards)**:
+  - **保留並強化工具卡片大字風采**：維持使用者喜愛之鮮明突出工具卡片（標題 `1.85rem` / ~30.5px 700 字重，內文 `1.02rem` / ~16.8px，卡片高 `246px`）。
+  - **同步放大上方所有過小字體**：
+    - 同文堂附註說明 (`.note-text`) 放大至 **`15px` (550 字重)**，行高 `1.7`，文字清晰飽滿，徹底告別微縮文字。
+    - 推薦工具區塊大標題提升至 **`26px`**，副標題「再試試這些工具，探索更多可能。」放大至 **`16px`**，與卡片大字相互呼應。
+    - 側邊選單 (`CollapsibleToolMenu`) 標題放大至 **`16px`**，工具項目放大至 **`15.5px`**，按鈕容器擴大至 `42px`。
+    - 轉換器文字框 (`textarea`) 放大至 **`16px`**，各項操作按鈕提升至 **`15px`**，複製按鈕提升至 **`16px`**。
+  - **維持 16.5px 舒適基底**：全站維持 `16.5px` 根字級，確保各端閱讀寬廣舒適。
 - **同文堂繁簡轉換器 (`tongwen-converter`) UX 現代化重構**:
   - **全站中英文字體統一重構**：嚴格依規範設定全站中文字型採用 `Gen Jyuu Gothic`（源柔黑體），英文字型與數字優先採用 `'JetBrains Mono', 'Maple Mono'`。更新 `index.html` 關鍵字型預載入 (`preload`)、全域 `App.vue`、`themes.ts` Naive UI 全域字型設定及各工具字體堆疊。
   - **嚴格整合 2md.aiurl.tw / david888.com 品牌設計語彙**：全站調色盤深度綁定 `activePalette`（淺色模式暖奶油 `#FFF9E8`、2md 濃墨黑 `#2B251A`、2md 深海軍藍 `#17324D`、暖金邊框 `#C9AD6A`；深色模式午夜藍 `#101B27`、番紅花黃 `#FFB010`、海軍藍卡片 `#172636`），徹底移除 Tailwind Slate/Zinc/Amber 雜色，達到全站視覺和諧統一與 WCAG AAA 頂級可讀性對比度。
