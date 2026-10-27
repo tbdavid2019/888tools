@@ -254,16 +254,16 @@ const breadcrumbItems = computed(() => {
   width: 100%;
   max-width: 1180px;
   margin: 4px auto 18px;
-  padding: 10px 16px;
+  padding: 12px 18px;
   border-radius: 18px;
   background-color: v-bind('layoutBackgroundColor');
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   box-shadow: v-bind('activePalette.shadow');
-  border: 1px solid v-bind('activePalette.overlayBorder');
+  border: 1.5px solid v-bind('activePalette.overlayBorder');
   color: v-bind('activePalette.textMuted');
-  font-size: 16px;
-  line-height: 1.4;
+  font-size: 1.05rem;
+  line-height: 1.45;
 }
 
 .mobile-topbar {
@@ -280,7 +280,7 @@ const breadcrumbItems = computed(() => {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   box-shadow: v-bind('activePalette.shadow');
-  border: 1px solid v-bind('activePalette.overlayBorder');
+  border: 1.5px solid v-bind('activePalette.overlayBorder');
 }
 
 .breadcrumb-link {
@@ -308,7 +308,8 @@ const breadcrumbItems = computed(() => {
 .tool-count {
   margin-top: 10px;
   text-align: center;
-  font-size: 13px;
+  font-size: 0.95rem;
+  font-weight: 600;
   color: v-bind('activePalette.textMuted');
   padding: 8px 8px 6px;
   border-top: 1px solid v-bind('styleStore.isDarkTheme ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)"');

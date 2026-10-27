@@ -179,16 +179,16 @@ watch(
 }
 
 .menu-category-label {
-  font-size: 16px;
-  font-weight: 700;
-  letter-spacing: 0.01em;
+  font-size: 1.15rem;
+  font-weight: 750;
+  letter-spacing: 0.02em;
 }
 
 .category-count-pill {
-  font-size: 13px;
+  font-size: 0.88rem;
   font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 10px;
+  padding: 2px 10px;
+  border-radius: 12px;
   background: v-bind('styleStore.isDarkTheme ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)"');
   color: v-bind('activePalette.textMuted');
   line-height: 1.4;
@@ -205,7 +205,7 @@ watch(
     }
 
     ::v-deep(.n-menu-item-content) {
-      min-height: 42px;
+      min-height: 44px;
       border-radius: 10px;
       padding-left: 8px !important;
       padding-right: 8px !important;
@@ -219,14 +219,14 @@ watch(
     }
 
     ::v-deep(.n-menu-item-content-header) {
-      font-size: 15.5px;
+      font-size: 1.05rem;
       line-height: 1.5;
-      font-weight: 550;
+      font-weight: 600;
     }
 
     ::v-deep(.n-menu-item-content--selected) {
       color: v-bind('selectedItemTextColor') !important;
-      font-weight: 700;
+      font-weight: 750;
 
       &::before {
         background-color: v-bind('selectedItemBackground') !important;
@@ -234,8 +234,8 @@ watch(
 
       .n-menu-item-content-header {
         color: v-bind('selectedItemTextColor') !important;
-        font-weight: 700;
-        font-size: 15.5px;
+        font-weight: 750;
+        font-size: 1.05rem;
       }
 
       .n-menu-item-content__icon {

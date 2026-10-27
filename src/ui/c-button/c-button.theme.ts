@@ -31,16 +31,16 @@ function createTheme({ style }: { style: 'light' | 'dark' }) {
   return {
     size: {
       small: {
-        width: '28px',
-        fontSize: '12px',
-      },
-      medium: {
         width: '34px',
         fontSize: '14px',
       },
+      medium: {
+        width: '42px',
+        fontSize: '16.5px',
+      },
       large: {
-        width: '40px',
-        fontSize: '16px',
+        width: '48px',
+        fontSize: '18px',
       },
     },
 

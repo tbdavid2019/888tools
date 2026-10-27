@@ -50,8 +50,9 @@ const styleStore = useStyleStore();
 .new-badge {
   background-color: #FFB010;
   color: #2B251A;
-  border: 1px solid #17324D;
+  border: 1.5px solid #2B251A;
   font-weight: 700;
+  font-size: 0.85rem;
 }
 
 .tool-card {

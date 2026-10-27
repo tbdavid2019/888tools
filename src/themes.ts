@@ -6,6 +6,14 @@ const appFontFamily = '\'JetBrains Mono\', \'Maple Mono\', \'Gen Jyuu Gothic\', 
 export const lightThemeOverrides: GlobalThemeOverrides = {
   common: {
     fontFamily: appFontFamily,
+    fontSize: '16.5px',
+    fontSizeMini: '13px',
+    fontSizeTiny: '14px',
+    fontSizeSmall: '15px',
+    fontSizeMedium: '16.5px',
+    fontSizeLarge: '18px',
+    fontSizeHuge: '20px',
+    lineHeight: '1.65',
     bodyColor: kanagawaLightPalette.background,
     cardColor: kanagawaLightPalette.surface,
     modalColor: kanagawaLightPalette.surface,
@@ -14,7 +22,7 @@ export const lightThemeOverrides: GlobalThemeOverrides = {
     codeColor: kanagawaLightPalette.surfaceMuted,
     dividerColor: kanagawaLightPalette.border,
     borderColor: kanagawaLightPalette.border,
-    borderRadius: '22px',
+    borderRadius: '20px',
     primaryColor: kanagawaLightPalette.button,
     primaryColorHover: kanagawaLightPalette.buttonHover,
     primaryColorPressed: kanagawaLightPalette.buttonPressed,
@@ -39,7 +47,8 @@ export const lightThemeOverrides: GlobalThemeOverrides = {
   },
 
   Menu: {
-    itemHeight: '38px',
+    itemHeight: '44px',
+    fontSize: '16.5px',
     itemColorActive: '#FFB010',
     itemColorActiveHover: '#F2A600',
     itemColorActiveCollapsed: '#FFB010',
@@ -64,9 +73,16 @@ export const lightThemeOverrides: GlobalThemeOverrides = {
   Card: {
     color: kanagawaLightPalette.surface,
     borderColor: kanagawaLightPalette.border,
+    borderRadius: '20px',
   },
 
   Button: {
+    fontSizeMedium: '16.5px',
+    fontSizeLarge: '18px',
+    heightMedium: '42px',
+    heightLarge: '48px',
+    borderRadiusMedium: '10px',
+    borderRadiusLarge: '12px',
     textColorPrimary: '#FFF9E8',
     colorPrimary: '#17324D',
     colorHoverPrimary: '#0F2336',
@@ -81,9 +97,9 @@ export const lightThemeOverrides: GlobalThemeOverrides = {
         color: kanagawaLightPalette.surface,
         colorActive: kanagawaLightPalette.surface,
         colorDisabled: kanagawaLightPalette.surfaceMuted,
-        border: `1px solid ${kanagawaLightPalette.border}`,
-        borderActive: `1px solid ${kanagawaLightPalette.button}`,
-        borderHover: `1px solid ${kanagawaLightPalette.button}`,
+        border: `1.5px solid ${kanagawaLightPalette.border}`,
+        borderActive: `1.5px solid ${kanagawaLightPalette.button}`,
+        borderHover: `1.5px solid ${kanagawaLightPalette.button}`,
         textColor: kanagawaLightPalette.text,
         placeholderColor: kanagawaLightPalette.textMuted,
         caretColor: kanagawaLightPalette.textMuted,
@@ -98,13 +114,17 @@ export const lightThemeOverrides: GlobalThemeOverrides = {
   },
 
   Input: {
+    fontSize: '16.5px',
+    heightMedium: '44px',
+    heightLarge: '50px',
+    borderRadius: '10px',
     color: kanagawaLightPalette.surface,
     colorFocus: kanagawaLightPalette.surface,
     textColor: kanagawaLightPalette.text,
     placeholderColor: kanagawaLightPalette.textMuted,
-    border: `1px solid ${kanagawaLightPalette.border}`,
-    borderHover: `1px solid ${kanagawaLightPalette.button}`,
-    borderFocus: `1px solid ${kanagawaLightPalette.button}`,
+    border: `1.5px solid ${kanagawaLightPalette.border}`,
+    borderHover: `1.5px solid ${kanagawaLightPalette.button}`,
+    borderFocus: `1.5px solid ${kanagawaLightPalette.button}`,
   },
 
   AutoComplete: {
@@ -117,6 +137,14 @@ export const lightThemeOverrides: GlobalThemeOverrides = {
 export const darkThemeOverrides: GlobalThemeOverrides = {
   common: {
     fontFamily: appFontFamily,
+    fontSize: '16.5px',
+    fontSizeMini: '13px',
+    fontSizeTiny: '14px',
+    fontSizeSmall: '15px',
+    fontSizeMedium: '16.5px',
+    fontSizeLarge: '18px',
+    fontSizeHuge: '20px',
+    lineHeight: '1.65',
     bodyColor: kanagawaDarkPalette.background,
     cardColor: kanagawaDarkPalette.surface,
     modalColor: kanagawaDarkPalette.surface,
@@ -125,7 +153,7 @@ export const darkThemeOverrides: GlobalThemeOverrides = {
     codeColor: kanagawaDarkPalette.surfaceMuted,
     dividerColor: kanagawaDarkPalette.border,
     borderColor: kanagawaDarkPalette.border,
-    borderRadius: '22px',
+    borderRadius: '20px',
     primaryColor: kanagawaDarkPalette.button,
     primaryColorHover: kanagawaDarkPalette.buttonHover,
     primaryColorPressed: kanagawaDarkPalette.buttonPressed,
@@ -160,10 +188,17 @@ export const darkThemeOverrides: GlobalThemeOverrides = {
   },
 
   Menu: {
-    itemHeight: '38px',
+    itemHeight: '44px',
+    fontSize: '16.5px',
   },
 
   Button: {
+    fontSizeMedium: '16.5px',
+    fontSizeLarge: '18px',
+    heightMedium: '42px',
+    heightLarge: '48px',
+    borderRadiusMedium: '10px',
+    borderRadiusLarge: '12px',
     textColorPrimary: '#2B251A',
     textColorHoverPrimary: '#2B251A',
     textColorPressedPrimary: '#2B251A',
@@ -176,9 +211,9 @@ export const darkThemeOverrides: GlobalThemeOverrides = {
         color: kanagawaDarkPalette.surface,
         colorActive: kanagawaDarkPalette.surface,
         colorDisabled: kanagawaDarkPalette.surfaceMuted,
-        border: `1px solid ${kanagawaDarkPalette.border}`,
-        borderActive: `1px solid ${kanagawaDarkPalette.button}`,
-        borderHover: `1px solid ${kanagawaDarkPalette.button}`,
+        border: `1.5px solid ${kanagawaDarkPalette.border}`,
+        borderActive: `1.5px solid ${kanagawaDarkPalette.button}`,
+        borderHover: `1.5px solid ${kanagawaDarkPalette.button}`,
         textColor: kanagawaDarkPalette.text,
         placeholderColor: kanagawaDarkPalette.textMuted,
         caretColor: kanagawaDarkPalette.textMuted,
@@ -193,13 +228,17 @@ export const darkThemeOverrides: GlobalThemeOverrides = {
   },
 
   Input: {
+    fontSize: '16.5px',
+    heightMedium: '44px',
+    heightLarge: '50px',
+    borderRadius: '10px',
     color: kanagawaDarkPalette.surface,
     colorFocus: kanagawaDarkPalette.surface,
     textColor: kanagawaDarkPalette.text,
     placeholderColor: kanagawaDarkPalette.textMuted,
-    border: `1px solid ${kanagawaDarkPalette.border}`,
-    borderHover: `1px solid ${kanagawaDarkPalette.button}`,
-    borderFocus: `1px solid ${kanagawaDarkPalette.button}`,
+    border: `1.5px solid ${kanagawaDarkPalette.border}`,
+    borderHover: `1.5px solid ${kanagawaDarkPalette.button}`,
+    borderFocus: `1.5px solid ${kanagawaDarkPalette.button}`,
   },
 
   Layout: {
@@ -211,6 +250,7 @@ export const darkThemeOverrides: GlobalThemeOverrides = {
   Card: {
     color: kanagawaDarkPalette.surface,
     borderColor: kanagawaDarkPalette.border,
+    borderRadius: '20px',
   },
 
   Table: {
