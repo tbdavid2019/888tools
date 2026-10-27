@@ -88,7 +88,7 @@ body {
   padding: 0;
   background-color: v-bind('bodyBackgroundColor');
   color: v-bind('activePalette.text');
-  font-family: 'JetBrains Mono', 'Gen Jyuu Gothic', 'Maple Mono', 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+  font-family: 'JetBrains Mono', 'Maple Mono', 'Gen Jyuu Gothic', 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
   font-size: 16.5px;
   line-height: 1.55;
 }
@@ -99,13 +99,13 @@ html {
   padding: 0;
   background-color: v-bind('bodyBackgroundColor');
   color: v-bind('activePalette.text');
-  font-family: 'JetBrains Mono', 'Gen Jyuu Gothic', 'Maple Mono', 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+  font-family: 'JetBrains Mono', 'Maple Mono', 'Gen Jyuu Gothic', 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
   font-size: 16.5px;
 }
 
 #app,
 .n-config-provider {
-  font-family: 'JetBrains Mono', 'Gen Jyuu Gothic', 'Maple Mono', 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+  font-family: 'JetBrains Mono', 'Maple Mono', 'Gen Jyuu Gothic', 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
   background-color: v-bind('bodyBackgroundColor');
   color: v-bind('activePalette.text');
 }

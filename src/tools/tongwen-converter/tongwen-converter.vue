@@ -541,7 +541,7 @@ async function handleCopyOutput() {
   max-height: 55vh;
   overflow-y: auto !important;
   line-height: 1.6;
-  font-family: 'Maple Mono', 'Noto Sans TC', sans-serif !important;
+  font-family: 'JetBrains Mono', 'Maple Mono', 'Gen Jyuu Gothic', 'Noto Sans TC', sans-serif !important;
   font-size: 14px;
   color: v-bind('activePalette.text') !important;
   padding: 10px 4px !important;

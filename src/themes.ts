@@ -1,7 +1,7 @@
 import type { GlobalThemeOverrides } from 'naive-ui';
 import { kanagawaDarkPalette, kanagawaLightPalette } from './theme/palette';
 
-const appFontFamily = '\'Maple Mono\', \'Noto Sans TC\', \'PingFang TC\', \'Microsoft JhengHei\', sans-serif';
+const appFontFamily = '\'JetBrains Mono\', \'Maple Mono\', \'Gen Jyuu Gothic\', \'Noto Sans TC\', \'PingFang TC\', \'Microsoft JhengHei\', sans-serif';
 
 export const lightThemeOverrides: GlobalThemeOverrides = {
   common: {

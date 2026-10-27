@@ -6,7 +6,8 @@ All notable changes to this project will be documented in this file. See [standa
 
 ### Features & Enhancements
 - **同文堂繁簡轉換器 (`tongwen-converter`) UX 現代化重構**:
-  - **嚴格整合 2md.aiurl.tw / david888.com 品牌設計語彙**：全站調色盤深度綁定 `activePalette`（淺色模式暖奶油 `#FFF9E8`、2md 濃墨黑 `#2B251A`、2md 深海軍藍 `#17324D`、暖金邊框 `#C9AD6A`；深色模式午夜藍 `#101B27`、番紅花黃 `#FFB010`、海軍藍卡片 `#172636`），徹底移除 Tailwind Slate/Zinc/Amber 雜色，字體與字階完全統一為 `Maple Mono` 與 `Noto Sans TC`，達到全站視覺和諧統一與 WCAG AAA 頂級可讀性對比度。
+  - **全站中英文字體統一重構**：嚴格依規範設定全站中文字型採用 `Gen Jyuu Gothic`（源柔黑體），英文字型與數字優先採用 `'JetBrains Mono', 'Maple Mono'`。更新 `index.html` 關鍵字型預載入 (`preload`)、全域 `App.vue`、`themes.ts` Naive UI 全域字型設定及各工具字體堆疊。
+  - **嚴格整合 2md.aiurl.tw / david888.com 品牌設計語彙**：全站調色盤深度綁定 `activePalette`（淺色模式暖奶油 `#FFF9E8`、2md 濃墨黑 `#2B251A`、2md 深海軍藍 `#17324D`、暖金邊框 `#C9AD6A`；深色模式午夜藍 `#101B27`、番紅花黃 `#FFB010`、海軍藍卡片 `#172636`），徹底移除 Tailwind Slate/Zinc/Amber 雜色，達到全站視覺和諧統一與 WCAG AAA 頂級可讀性對比度。
   - **貼上自動切換至結果 (Auto-switch on Paste)**：不論是快捷鍵貼上 (`Cmd+V / Ctrl+V`) 或點擊 `[ 貼上剪貼簿 ]`，皆自動轉換並立即切換至結果頁面，使用者貼上後複製按鈕即刻映入眼簾，達成「貼上 $\rightarrow$ 複製」極短物理鏈。
   - **平鋪式方向切換 (Tiled Direction Buttons)**：徹底揚棄層層堆疊的下拉選單，改用直覺平鋪之分段膠囊按鈕（`簡體 ➔ 繁體` / `繁體 ➔ 簡體` 及 `⇄` 對調鈕），一鍵即刻切換。
   - **單一統合控制頂列 (Unified Header)**：消除破碎割裂的多層嵌套標籤與控制列，將方向切換與視圖切換（`原始文` / `轉換結果 ✓`）收斂至同一水平行，大幅降低垂直視野干擾。
