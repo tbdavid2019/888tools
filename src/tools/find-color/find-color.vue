@@ -606,7 +606,7 @@ const mockupStyle = computed(() => {
 }
 
 .search-icon {
-  font-size: 1.15rem;
+  font-size: var(--type-subheading);
   color: #64748b;
 }
 
@@ -616,7 +616,7 @@ const mockupStyle = computed(() => {
   color: #2563eb;
   border-radius: 999px;
   font-weight: 700;
-  font-size: 0.85rem;
+  font-size: var(--type-meta);
   white-space: nowrap;
 }
 
@@ -644,7 +644,7 @@ const mockupStyle = computed(() => {
 
 .filter-label {
   font-weight: 800;
-  font-size: 0.88rem;
+  font-size: var(--type-label);
   min-width: 110px;
   padding-top: 4px;
   color: #0f172a;
@@ -709,7 +709,7 @@ const mockupStyle = computed(() => {
 
 .palette-name {
   font-weight: 800;
-  font-size: 1.08rem;
+  font-size: var(--type-subheading);
   color: #0f172a;
 }
 
@@ -722,7 +722,7 @@ const mockupStyle = computed(() => {
 }
 
 .palette-description {
-  font-size: 0.86rem;
+  font-size: var(--type-meta);
   color: #334155;
 }
 
@@ -733,7 +733,7 @@ const mockupStyle = computed(() => {
 .pantone-code-badge {
   display: inline-block;
   font-family: ui-monospace, SFMono-Regular, monospace;
-  font-size: 0.8rem;
+  font-size: var(--type-meta);
   font-weight: 800;
   color: #0369a1;
   letter-spacing: 0.05em;
@@ -819,7 +819,7 @@ const mockupStyle = computed(() => {
 }
 
 .swatch-label {
-  font-size: 0.82rem;
+  font-size: var(--type-meta);
   font-weight: 800;
   color: #0f172a;
 }
@@ -830,7 +830,7 @@ const mockupStyle = computed(() => {
 
 .swatch-hex {
   font-family: ui-monospace, SFMono-Regular, monospace;
-  font-size: 0.76rem;
+  font-size: var(--type-caption);
   font-weight: 700;
   color: #334155;
 }
@@ -862,7 +862,7 @@ const mockupStyle = computed(() => {
 }
 
 .copy-strip-title {
-  font-size: 0.96rem;
+  font-size: var(--type-control);
   font-weight: 900;
   color: #0f172a;
 }
@@ -872,7 +872,7 @@ const mockupStyle = computed(() => {
 }
 
 .copy-strip-hint {
-  font-size: 0.84rem;
+  font-size: var(--type-meta);
   font-weight: 600;
   color: #334155;
 }
@@ -931,7 +931,7 @@ const mockupStyle = computed(() => {
 }
 
 .copy-chip-label {
-  font-size: 0.84rem;
+  font-size: var(--type-meta);
   font-weight: 800;
   color: #0f172a;
 }
@@ -942,7 +942,7 @@ const mockupStyle = computed(() => {
 
 .copy-chip-value {
   font-family: ui-monospace, SFMono-Regular, monospace;
-  font-size: 0.84rem;
+  font-size: var(--type-meta);
   font-weight: 800;
   color: #0369a1;
 }
@@ -972,7 +972,7 @@ const mockupStyle = computed(() => {
 }
 
 .source-tag {
-  font-size: 0.86rem;
+  font-size: var(--type-meta);
   font-weight: 800;
   color: #0f172a;
 }
@@ -982,7 +982,7 @@ const mockupStyle = computed(() => {
 }
 
 .wcag-indicator-tag {
-  font-size: 0.74rem;
+  font-size: var(--type-caption);
   font-weight: 700;
   color: #059669;
 }
@@ -1098,7 +1098,7 @@ const mockupStyle = computed(() => {
 }
 
 .sticky-pin-tag {
-  font-size: 0.72rem;
+  font-size: var(--type-caption);
   font-weight: 700;
   letter-spacing: 0.02em;
 }
@@ -1110,7 +1110,7 @@ const mockupStyle = computed(() => {
 }
 
 .preview-main-title {
-  font-size: 1rem;
+  font-size: var(--type-body);
   font-weight: 800;
   color: #0f172a;
 }
@@ -1120,7 +1120,7 @@ const mockupStyle = computed(() => {
 }
 
 .preview-sub-title {
-  font-size: 0.8rem;
+  font-size: var(--type-meta);
   color: #475569;
 }
 
@@ -1164,7 +1164,7 @@ const mockupStyle = computed(() => {
 .browser-address {
   margin-left: 8px;
   font-family: ui-monospace, SFMono-Regular, monospace;
-  font-size: 0.72rem;
+  font-size: var(--type-caption);
   opacity: 0.7;
 }
 
@@ -1184,7 +1184,7 @@ const mockupStyle = computed(() => {
   align-items: center;
   gap: 8px;
   font-weight: 800;
-  font-size: 0.85rem;
+  font-size: var(--type-meta);
   letter-spacing: 0.06em;
 }
 
@@ -1198,7 +1198,7 @@ const mockupStyle = computed(() => {
 .mockup-links {
   display: flex;
   gap: 16px;
-  font-size: 0.8rem;
+  font-size: var(--type-meta);
   opacity: 0.85;
 }
 
@@ -1208,7 +1208,7 @@ const mockupStyle = computed(() => {
 
 .mockup-tag {
   display: inline-block;
-  font-size: 0.72rem;
+  font-size: var(--type-caption);
   font-weight: 800;
   letter-spacing: 0.08em;
   padding: 4px 10px;
@@ -1219,7 +1219,7 @@ const mockupStyle = computed(() => {
 }
 
 .mockup-h1 {
-  font-size: 1.45rem;
+  font-size: var(--type-section-title);
   font-weight: 800;
   line-height: 1.25;
   color: var(--heading-color);
@@ -1227,7 +1227,7 @@ const mockupStyle = computed(() => {
 }
 
 .mockup-p {
-  font-size: 0.88rem;
+  font-size: var(--type-label);
   line-height: 1.5;
   color: var(--text-color);
   opacity: 0.92;
@@ -1243,7 +1243,7 @@ const mockupStyle = computed(() => {
 .mockup-btn {
   padding: 8px 16px;
   border-radius: 8px;
-  font-size: 0.82rem;
+  font-size: var(--type-meta);
   font-weight: 700;
   cursor: pointer;
   border: none;
@@ -1279,14 +1279,14 @@ const mockupStyle = computed(() => {
 }
 
 .mockup-card-title {
-  font-size: 0.78rem;
+  font-size: var(--type-caption);
   font-weight: 700;
   color: var(--heading-color);
   margin-bottom: 4px;
 }
 
 .mockup-card-desc {
-  font-size: 0.72rem;
+  font-size: var(--type-caption);
   line-height: 1.4;
   color: var(--text-color);
   opacity: 0.85;
@@ -1342,13 +1342,13 @@ const mockupStyle = computed(() => {
 }
 
 .fab-label-main {
-  font-size: 0.82rem;
+  font-size: var(--type-meta);
   font-weight: 800;
   letter-spacing: 0.02em;
 }
 
 .fab-label-sub {
-  font-size: 0.7rem;
+  font-size: var(--type-caption);
   opacity: 0.82;
   max-width: 160px;
   overflow: hidden;

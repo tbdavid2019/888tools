@@ -356,7 +356,7 @@ async function handleCopyOutput() {
 }
 
 .control-label {
-  font-size: 1.05rem;
+  font-size: var(--type-body);
   font-weight: 700;
   color: v-bind('activePalette.textMuted');
   font-family: inherit;
@@ -385,7 +385,7 @@ async function handleCopyOutput() {
   background: transparent;
   color: v-bind('activePalette.textMuted');
   cursor: pointer;
-  font-size: 1.05rem;
+  font-size: var(--type-body);
   font-weight: 650;
   font-family: inherit;
   transition: all 0.2s ease;
@@ -406,11 +406,11 @@ async function handleCopyOutput() {
 
 .arrow-glyph {
   opacity: 0.75;
-  font-size: 14px;
+  font-size: var(--type-label);
 }
 
 .count-badge {
-  font-size: 14px;
+  font-size: var(--type-label);
   padding: 2px 8px;
   border-radius: 6px;
   background: rgba(0, 0, 0, 0.12);
@@ -419,7 +419,7 @@ async function handleCopyOutput() {
 
 .check-badge {
   color: #10b981;
-  font-size: 16px;
+  font-size: var(--type-body);
 }
 
 .icon-action-btn {
@@ -469,7 +469,7 @@ async function handleCopyOutput() {
   border: 1.5px solid v-bind('activePalette.border');
   background: v-bind('activePalette.surface');
   color: v-bind('activePalette.text');
-  font-size: 1.05rem;
+  font-size: var(--type-body);
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
@@ -501,7 +501,7 @@ async function handleCopyOutput() {
 
 .tool-btn.highlight-copy {
   padding: 9px 24px;
-  font-size: 1.15rem;
+  font-size: var(--type-subheading);
   font-weight: 750;
 }
 
@@ -511,7 +511,7 @@ async function handleCopyOutput() {
   align-items: center;
   padding: 6px 14px;
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: var(--type-body);
   font-weight: 650;
   color: v-bind('activePalette.textMuted');
   background: v-bind('activePalette.surfaceMuted');
@@ -542,20 +542,20 @@ async function handleCopyOutput() {
   overflow-y: auto !important;
   line-height: 1.75;
   font-family: 'JetBrains Mono', 'Maple Mono', 'Gen Jyuu Gothic', 'Noto Sans TC', sans-serif !important;
-  font-size: 1.05rem;
+  font-size: var(--type-body);
   color: v-bind('activePalette.text') !important;
   padding: 14px 10px !important;
 }
 
 .converter-textarea :deep(textarea::placeholder) {
   color: v-bind('activePalette.textMuted');
-  font-size: 1.05rem;
+  font-size: var(--type-body);
   opacity: 0.85;
 }
 
 .note-text {
   margin-top: 18px;
-  font-size: 1.02rem;
+  font-size: var(--type-body);
   font-weight: 600;
   line-height: 1.75;
   color: v-bind('activePalette.text');

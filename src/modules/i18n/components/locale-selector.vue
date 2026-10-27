@@ -56,7 +56,7 @@ const compactLabel = computed(() => String(locale.value).toUpperCase().replace('
   display: block;
   width: 100%;
   text-align: center;
-  font-size: 12px;
+  font-size: var(--type-caption);
   font-weight: 700;
   letter-spacing: 0.04em;
 }

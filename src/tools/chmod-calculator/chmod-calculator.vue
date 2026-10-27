@@ -69,7 +69,7 @@ const symbolic = computed(() => computeChmodSymbolicRepresentation({ permissions
 <style lang="less" scoped>
 .octal-result {
   text-align: center;
-  font-size: 50px;
+  font-size: var(--type-metric-strong);
   font-family: monospace;
   color: v-bind('themeVars.primaryColor');
   margin: 20px 0;

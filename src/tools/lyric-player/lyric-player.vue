@@ -628,7 +628,7 @@ onBeforeUnmount(() => {
 }
 
 .upload-title {
-  font-size: 16px;
+  font-size: var(--type-body);
   font-weight: 600;
 }
 
@@ -665,7 +665,7 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   margin-top: 12px;
   color: rgb(100 116 139);
-  font-size: 13px;
+  font-size: var(--type-meta);
 }
 
 .control-row {
@@ -686,7 +686,7 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-size: var(--type-meta);
   color: rgb(71 85 105);
 }
 
@@ -696,7 +696,7 @@ onBeforeUnmount(() => {
 
 .status-line {
   margin-bottom: 8px;
-  font-size: 13px;
+  font-size: var(--type-meta);
   color: rgb(71 85 105);
 }
 

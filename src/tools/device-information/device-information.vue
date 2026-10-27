@@ -85,13 +85,13 @@ const sections = [
   background-color: #aaaaaa11;
 
   .label {
-    font-size: 14px;
+    font-size: var(--type-label);
     opacity: 0.8;
     line-height: 1;
     margin-bottom: 5px;
   }
   .value {
-    font-size: 20px;
+    font-size: var(--type-card-title);
     font-weight: 400;
   }
 

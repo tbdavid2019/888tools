@@ -27,7 +27,7 @@ const { copy } = useCopy({ source: port, text: 'Port copied to the clipboard' })
 <style lang="less" scoped>
 .port {
   text-align: center;
-  font-size: 26px;
+  font-size: var(--type-metric-compact);
   font-weight: 400;
   margin: 10px 0 25px;
 }

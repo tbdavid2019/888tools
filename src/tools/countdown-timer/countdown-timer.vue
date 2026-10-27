@@ -117,7 +117,7 @@ onBeforeUnmount(stop);
 
 <style scoped lang="less">
 .title {
-  font-size: 22px;
+  font-size: var(--type-section-title);
   font-weight: 600;
   margin-bottom: 12px;
 }
@@ -137,18 +137,18 @@ onBeforeUnmount(stop);
   text-align: center;
 }
 .label {
-  font-size: 12px;
+  font-size: var(--type-caption);
   margin-bottom: 4px;
   color: #555;
 }
 .time-input {
   width: 90px;
-  font-size: 24px;
+  font-size: var(--type-section-title);
   text-align: center;
   padding: 8px;
 }
 .dots {
-  font-size: 24px;
+  font-size: var(--type-section-title);
   padding: 0 4px;
 }
 .display {
@@ -156,7 +156,7 @@ onBeforeUnmount(stop);
   display: flex;
   gap: 6px;
   justify-content: center;
-  font-size: 36px;
+  font-size: var(--type-metric);
   font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
 }
 .actions {

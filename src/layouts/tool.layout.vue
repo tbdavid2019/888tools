@@ -179,7 +179,7 @@ const contentFlexBasis = computed(() => '520px');
 
     .n-h1 {
       opacity: 0.95;
-      font-size: 2.2rem;
+      font-size: var(--type-page-title);
       font-weight: 750;
       margin: 0;
       line-height: 1.25;
@@ -212,7 +212,7 @@ const contentFlexBasis = computed(() => '520px');
   h2 {
     margin: 0;
     color: v-bind('activePalette.heading');
-    font-size: 1.75rem;
+    font-size: var(--type-section-title);
     font-weight: 750;
     letter-spacing: 0.02em;
   }
@@ -220,7 +220,7 @@ const contentFlexBasis = computed(() => '520px');
   p {
     margin: 6px 0 0;
     color: v-bind('activePalette.textMuted');
-    font-size: 1.05rem;
+    font-size: var(--type-body);
     line-height: 1.6;
   }
 }
@@ -231,7 +231,7 @@ const contentFlexBasis = computed(() => '520px');
   border-radius: 999px;
   padding: 6px 14px;
   color: v-bind('activePalette.textMuted');
-  font-size: 0.95rem;
+  font-size: var(--type-control);
   font-weight: 750;
   letter-spacing: 0.04em;
 }
@@ -265,7 +265,7 @@ const contentFlexBasis = computed(() => '520px');
     padding: 28px 20px;
 
     .n-h1 {
-      font-size: 32px;
+      font-size: var(--type-page-title);
       line-height: 1.1;
     }
 
@@ -284,7 +284,7 @@ const contentFlexBasis = computed(() => '520px');
     flex-direction: column;
 
     h2 {
-      font-size: 22px;
+      font-size: var(--type-section-title);
     }
   }
 

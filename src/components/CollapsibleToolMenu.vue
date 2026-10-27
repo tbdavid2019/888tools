@@ -167,7 +167,7 @@ watch(
 
 .category-chevron {
   display: inline-flex;
-  font-size: 16px;
+  font-size: var(--type-body);
   line-height: 1;
   transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   opacity: 0.6;
@@ -179,13 +179,13 @@ watch(
 }
 
 .menu-category-label {
-  font-size: 1.15rem;
+  font-size: var(--type-subheading);
   font-weight: 750;
   letter-spacing: 0.02em;
 }
 
 .category-count-pill {
-  font-size: 0.88rem;
+  font-size: var(--type-label);
   font-weight: 700;
   padding: 2px 10px;
   border-radius: 12px;
@@ -219,7 +219,7 @@ watch(
     }
 
     ::v-deep(.n-menu-item-content-header) {
-      font-size: 1.05rem;
+      font-size: var(--type-body);
       line-height: 1.5;
       font-weight: 600;
     }
@@ -235,7 +235,7 @@ watch(
       .n-menu-item-content-header {
         color: v-bind('selectedItemTextColor') !important;
         font-weight: 750;
-        font-size: 1.05rem;
+        font-size: var(--type-body);
       }
 
       .n-menu-item-content__icon {

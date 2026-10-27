@@ -417,7 +417,7 @@ const handleClear = () => {
                 </tr>
               </tbody>
             </n-table>
-            <p style="margin-top: 12px; font-size: 0.9rem; opacity: 0.8; line-height: 1.6;">
+            <p style="margin-top: 12px; font-size: var(--type-label); opacity: 0.8; line-height: 1.6;">
               ※ 同一篇文字在 Facebook 排版正常，直接複製貼到 Instagram 或 Threads 發文時，段落可能全部黏在一起。
             </p>
           </n-grid-item>
@@ -463,7 +463,7 @@ const handleClear = () => {
   display: block;
   font-weight: 600;
   margin-bottom: 8px;
-  font-size: 0.95rem;
+  font-size: var(--type-control);
   opacity: 0.9;
 }
 
@@ -511,7 +511,7 @@ const handleClear = () => {
   gap: 8px;
   padding: 10px 14px;
   border-radius: 6px;
-  font-size: 0.85rem;
+  font-size: var(--type-meta);
   line-height: 1.4;
 }
 
@@ -550,7 +550,7 @@ const handleClear = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.3rem;
+  font-size: var(--type-card-title);
 }
 
 .mockup-post-header .user-info {
@@ -560,16 +560,16 @@ const handleClear = () => {
 
 .mockup-post-header .display-name {
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: var(--type-control);
 }
 
 .mockup-post-header .user-handle {
-  font-size: 0.8rem;
+  font-size: var(--type-meta);
   opacity: 0.6;
 }
 
 .mockup-post-content {
-  font-size: 0.95rem;
+  font-size: var(--type-control);
   line-height: 1.6;
   white-space: pre-wrap;
   word-break: break-word;
@@ -589,7 +589,7 @@ const handleClear = () => {
 }
 
 .mockup-post-footer {
-  font-size: 0.85rem;
+  font-size: var(--type-meta);
   opacity: 0.8;
 }
 
@@ -613,7 +613,7 @@ const handleClear = () => {
 }
 
 .explain-subtitle {
-  font-size: 1.1rem;
+  font-size: var(--type-subheading);
   font-weight: 700;
   margin-top: 10px;
   margin-bottom: 12px;
@@ -644,13 +644,13 @@ const handleClear = () => {
 .explanation-content p {
   line-height: 1.7;
   margin-bottom: 12px;
-  font-size: 0.95rem;
+  font-size: var(--type-control);
   opacity: 0.9;
 }
 
 .explanation-content li {
   line-height: 1.7;
-  font-size: 0.95rem;
+  font-size: var(--type-control);
 }
 </style>
 

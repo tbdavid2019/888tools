@@ -130,8 +130,8 @@ onBeforeUnmount(() => {
 }
 
 .pwa-update-prompt__content { min-width: 0; }
-.pwa-update-prompt strong { font-size: 16px; }
-.pwa-update-prompt p { margin: 5px 0 16px; font-size: 13px; line-height: 1.5; }
+.pwa-update-prompt strong { font-size: var(--type-body); }
+.pwa-update-prompt p { margin: 5px 0 16px; font-size: var(--type-meta); line-height: 1.5; }
 .pwa-update-prompt__actions { display: flex; justify-content: flex-end; gap: 8px; }
 .pwa-update-enter-active, .pwa-update-leave-active { transition: opacity 180ms ease, transform 180ms ease; }
 .pwa-update-enter-from, .pwa-update-leave-to { opacity: 0; transform: translateY(12px); }

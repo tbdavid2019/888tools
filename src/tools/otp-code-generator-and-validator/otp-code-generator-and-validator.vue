@@ -140,7 +140,7 @@ const secretValidationRules = [
 .token {
   text-align: center;
   &.token-current {
-    font-size: 20px;
+    font-size: var(--type-card-title);
   }
 }
 </style>

@@ -854,7 +854,7 @@ onUnmounted(() => {
 
 .hero-swatch-hex {
   font-family: ui-monospace, SFMono-Regular, monospace;
-  font-size: 0.72rem;
+  font-size: var(--type-caption);
   font-weight: 800;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
@@ -872,7 +872,7 @@ onUnmounted(() => {
 }
 
 .hero-color-title {
-  font-size: 1.2rem;
+  font-size: var(--type-card-title);
   font-weight: 800;
   text-transform: capitalize;
 }
@@ -882,7 +882,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 8px;
   font-family: ui-monospace, SFMono-Regular, monospace;
-  font-size: 0.82rem;
+  font-size: var(--type-meta);
   color: #64748b;
 }
 
@@ -931,12 +931,12 @@ onUnmounted(() => {
 }
 
 .panel-title {
-  font-size: 1.05rem;
+  font-size: var(--type-body);
   font-weight: 800;
 }
 
 .panel-desc {
-  font-size: 0.82rem;
+  font-size: var(--type-meta);
   color: #64748b;
 }
 
@@ -962,7 +962,7 @@ onUnmounted(() => {
   background: rgba(59, 130, 246, 0.1);
   color: #2563eb;
   font-weight: 600;
-  font-size: 0.82rem;
+  font-size: var(--type-meta);
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -1001,11 +1001,11 @@ onUnmounted(() => {
 
 .dropzone-text-primary {
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: var(--type-control);
 }
 
 .dropzone-text-secondary {
-  font-size: 0.82rem;
+  font-size: var(--type-meta);
   color: #64748b;
 }
 
@@ -1016,7 +1016,7 @@ onUnmounted(() => {
   background: #2563eb;
   color: #ffffff;
   font-weight: 700;
-  font-size: 0.85rem;
+  font-size: var(--type-meta);
   cursor: pointer;
 }
 
@@ -1073,18 +1073,18 @@ onUnmounted(() => {
   padding: 2px 8px;
   border-radius: 4px;
   font-family: ui-monospace, SFMono-Regular, monospace;
-  font-size: 0.76rem;
+  font-size: var(--type-caption);
   font-weight: 800;
 }
 
 .loupe-rgb-text {
   font-family: ui-monospace, SFMono-Regular, monospace;
-  font-size: 0.68rem;
+  font-size: var(--type-caption);
   color: #cbd5e1;
 }
 
 .loupe-hint {
-  font-size: 0.65rem;
+  font-size: var(--type-caption);
   color: #94a3b8;
   font-weight: 600;
 }
@@ -1104,7 +1104,7 @@ onUnmounted(() => {
 }
 
 .history-label {
-  font-size: 0.82rem;
+  font-size: var(--type-meta);
   font-weight: 700;
 }
 
@@ -1140,7 +1140,7 @@ onUnmounted(() => {
 
 .swatch-mini-hex {
   font-family: ui-monospace, SFMono-Regular, monospace;
-  font-size: 0.76rem;
+  font-size: var(--type-caption);
   font-weight: 600;
 }
 
@@ -1160,7 +1160,7 @@ onUnmounted(() => {
 }
 
 .section-card-title {
-  font-size: 1.05rem;
+  font-size: var(--type-body);
   font-weight: 800;
 }
 
@@ -1171,7 +1171,7 @@ onUnmounted(() => {
 }
 
 .pantone-card-subtitle {
-  font-size: 0.8rem;
+  font-size: var(--type-meta);
   color: #64748b;
   font-weight: normal;
 }
@@ -1213,7 +1213,7 @@ onUnmounted(() => {
 }
 
 .split-swatch-label {
-  font-size: 0.76rem;
+  font-size: var(--type-caption);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -1222,7 +1222,7 @@ onUnmounted(() => {
 
 .split-swatch-code {
   font-family: ui-monospace, SFMono-Regular, monospace;
-  font-size: 0.9rem;
+  font-size: var(--type-label);
   font-weight: 800;
 }
 
@@ -1249,7 +1249,7 @@ onUnmounted(() => {
 
 .pantone-code-main {
   font-family: ui-monospace, SFMono-Regular, monospace;
-  font-size: 1.15rem;
+  font-size: var(--type-subheading);
   font-weight: 800;
   letter-spacing: 0.04em;
   color: #0284c7;
@@ -1260,7 +1260,7 @@ onUnmounted(() => {
 }
 
 .pantone-name-main {
-  font-size: 1.05rem;
+  font-size: var(--type-body);
   font-weight: 700;
 }
 
@@ -1275,18 +1275,18 @@ onUnmounted(() => {
 }
 
 .delta-e-number {
-  font-size: 1.1rem;
+  font-size: var(--type-subheading);
   font-weight: 900;
   font-family: ui-monospace, SFMono-Regular, monospace;
 }
 
 .delta-e-label {
-  font-size: 0.72rem;
+  font-size: var(--type-caption);
   font-weight: 700;
 }
 
 .delta-e-explanation-text {
-  font-size: 0.82rem;
+  font-size: var(--type-meta);
   color: #475569;
   line-height: 1.4;
 }
@@ -1303,7 +1303,7 @@ onUnmounted(() => {
 
 .val-tag {
   font-family: ui-monospace, SFMono-Regular, monospace;
-  font-size: 0.75rem;
+  font-size: var(--type-caption);
   padding: 3px 8px;
   border-radius: 6px;
   background: rgba(0, 0, 0, 0.05);
@@ -1360,7 +1360,7 @@ onUnmounted(() => {
 }
 
 .sub-section-title {
-  font-size: 0.88rem;
+  font-size: var(--type-label);
   font-weight: 700;
   margin-bottom: 10px;
   color: #334155;
@@ -1421,7 +1421,7 @@ onUnmounted(() => {
 
 .match-thumb-code {
   font-family: ui-monospace, SFMono-Regular, monospace;
-  font-size: 0.76rem;
+  font-size: var(--type-caption);
   font-weight: 700;
   white-space: nowrap;
   overflow: hidden;
@@ -1429,7 +1429,7 @@ onUnmounted(() => {
 }
 
 .match-thumb-name {
-  font-size: 0.72rem;
+  font-size: var(--type-caption);
   color: #64748b;
   white-space: nowrap;
   overflow: hidden;
@@ -1445,7 +1445,7 @@ onUnmounted(() => {
   gap: 6px;
   align-items: center;
   font-family: ui-monospace, SFMono-Regular, monospace;
-  font-size: 0.68rem;
+  font-size: var(--type-caption);
   font-weight: 700;
 }
 
@@ -1508,12 +1508,12 @@ onUnmounted(() => {
 
 .lookup-code {
   font-family: ui-monospace, SFMono-Regular, monospace;
-  font-size: 0.8rem;
+  font-size: var(--type-meta);
   font-weight: 700;
 }
 
 .lookup-name {
-  font-size: 0.8rem;
+  font-size: var(--type-meta);
   color: #64748b;
   flex: 1;
 }
@@ -1524,7 +1524,7 @@ onUnmounted(() => {
 
 .lookup-hex {
   font-family: ui-monospace, SFMono-Regular, monospace;
-  font-size: 0.75rem;
+  font-size: var(--type-caption);
   color: #64748b;
 }
 
@@ -1554,7 +1554,7 @@ onUnmounted(() => {
 .css-name-notice-box {
   padding: 12px 14px;
   border-radius: 12px;
-  font-size: 0.82rem;
+  font-size: var(--type-meta);
   line-height: 1.5;
   transition: all 0.2s ease;
 }
@@ -1601,7 +1601,7 @@ onUnmounted(() => {
 
 .notice-delta-e {
   font-family: ui-monospace, SFMono-Regular, monospace;
-  font-size: 0.75rem;
+  font-size: var(--type-caption);
   font-weight: 800;
   padding: 2px 6px;
   border-radius: 4px;
@@ -1649,24 +1649,24 @@ onUnmounted(() => {
 }
 
 .meta-label {
-  font-size: 0.68rem;
+  font-size: var(--type-caption);
   opacity: 0.8;
 }
 
 .meta-code {
   font-family: ui-monospace, SFMono-Regular, monospace;
   font-weight: 800;
-  font-size: 0.78rem;
+  font-size: var(--type-caption);
 }
 
 .swatch-unequal-sign {
   font-weight: 900;
-  font-size: 1rem;
+  font-size: var(--type-body);
   opacity: 0.7;
 }
 
 .notice-explanation {
-  font-size: 0.76rem;
+  font-size: var(--type-caption);
   line-height: 1.5;
   margin: 6px 0 10px 0;
   opacity: 0.95;

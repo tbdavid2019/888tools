@@ -32,15 +32,15 @@ function createTheme({ style }: { style: 'light' | 'dark' }) {
     size: {
       small: {
         width: '34px',
-        fontSize: '14px',
+        fontSize: 'var(--type-label)',
       },
       medium: {
         width: '42px',
-        fontSize: '16.5px',
+        fontSize: 'var(--type-body)',
       },
       large: {
         width: '48px',
-        fontSize: '18px',
+        fontSize: 'var(--type-subheading)',
       },
     },
 

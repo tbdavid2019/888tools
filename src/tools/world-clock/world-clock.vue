@@ -200,7 +200,7 @@ onBeforeUnmount(() => {
   margin-bottom: 12px;
 }
 .title {
-  font-size: 20px;
+  font-size: var(--type-card-title);
   font-weight: 600;
   color: v-bind('themeVars.textColor1');
 }
@@ -223,7 +223,7 @@ onBeforeUnmount(() => {
   color: v-bind('themeVars.textColor2');
 }
 .local-time {
-  font-size: 26px;
+  font-size: var(--type-metric-compact);
   font-weight: 700;
   color: v-bind('themeVars.textColor1');
 }
@@ -253,13 +253,13 @@ onBeforeUnmount(() => {
   text-align: right;
 }
 .clock {
-  font-size: 18px;
+  font-size: var(--type-subheading);
   font-weight: 700;
   color: v-bind('themeVars.textColor1');
 }
 .day {
   color: v-bind('themeVars.textColor2');
-  font-size: 12px;
+  font-size: var(--type-caption);
 }
 .city .name {
   font-weight: 600;
@@ -267,7 +267,7 @@ onBeforeUnmount(() => {
 }
 .city .country {
   color: v-bind('themeVars.textColor2');
-  font-size: 12px;
+  font-size: var(--type-caption);
 }
 
 @media (max-width: 700px) {
@@ -278,7 +278,7 @@ onBeforeUnmount(() => {
   }
 
   .title {
-    font-size: 18px;
+    font-size: var(--type-subheading);
   }
 
   .grid {

@@ -56,7 +56,7 @@ const activePalette = computed(() => (styleStore.isDarkTheme ? kanagawaDarkPalet
   box-shadow: v-bind('activePalette.shadow');
 
   .section-title {
-    font-size: 14px;
+    font-size: var(--type-label);
     font-weight: 600;
     color: v-bind('activePalette.heading');
     margin-bottom: 12px;
@@ -86,12 +86,12 @@ const activePalette = computed(() => (styleStore.isDarkTheme ? kanagawaDarkPalet
   }
 
   .label {
-    font-size: 15px;
+    font-size: var(--type-control);
     color: v-bind('activePalette.text');
   }
 
   .value {
-    font-size: 14px;
+    font-size: var(--type-label);
     color: v-bind('activePalette.textMuted');
   }
 }
@@ -117,7 +117,7 @@ const activePalette = computed(() => (styleStore.isDarkTheme ? kanagawaDarkPalet
   border: 1px solid v-bind('activePalette.border');
   box-shadow: v-bind('activePalette.shadow');
   color: v-bind('activePalette.textMuted');
-  font-size: 12px;
+  font-size: var(--type-caption);
   font-weight: 600;
 }
 </style>

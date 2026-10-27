@@ -5,15 +5,15 @@ import { kanagawaDarkPalette, kanagawaLightPalette } from '@/theme/palette';
 const sizes = {
   small: {
     height: '28px',
-    fontSize: '12px',
+    fontSize: 'var(--type-caption)',
   },
   medium: {
     height: '34px',
-    fontSize: '14px',
+    fontSize: 'var(--type-label)',
   },
   large: {
     height: '40px',
-    fontSize: '16px',
+    fontSize: 'var(--type-body)',
   },
 };
 

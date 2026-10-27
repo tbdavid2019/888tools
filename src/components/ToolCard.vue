@@ -52,7 +52,7 @@ const styleStore = useStyleStore();
   color: #2B251A;
   border: 1.5px solid #2B251A;
   font-weight: 700;
-  font-size: 0.85rem;
+  font-size: var(--type-meta);
 }
 
 .tool-card {
@@ -62,13 +62,13 @@ const styleStore = useStyleStore();
 .tool-title {
   color: v-bind('theme.textColor1');
   font-weight: 700;
-  font-size: 1.85rem;
+  font-size: var(--type-section-title);
   line-height: 1.25;
 }
 
 .tool-description {
   color: v-bind('theme.textColor2');
-  font-size: 1.02rem;
+  font-size: var(--type-body);
   line-height: 1.7;
 }
 
@@ -78,11 +78,11 @@ const styleStore = useStyleStore();
   }
 
   .tool-title {
-    font-size: 1.5rem;
+    font-size: var(--type-section-title);
   }
 
   .tool-description {
-    font-size: 0.98rem;
+    font-size: var(--type-control);
     line-height: 1.6;
   }
 }

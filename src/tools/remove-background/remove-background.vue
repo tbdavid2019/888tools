@@ -274,7 +274,7 @@ onUnmounted(() => {
 }
 
 .sub-text {
-  font-size: 12px;
+  font-size: var(--type-caption);
   opacity: 0.8;
 }
 
@@ -343,7 +343,7 @@ onUnmounted(() => {
 }
 
 .file-name {
-  font-size: 12px;
+  font-size: var(--type-caption);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

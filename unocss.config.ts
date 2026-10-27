@@ -13,6 +13,15 @@ export default defineConfig({
   presets: [presetUno(), presetAttributify({ ignoreAttributes: ['size'] }), presetTypography(), presetScrollbar()],
   transformers: [transformerDirectives(), transformerVariantGroup()],
   theme: {
+    fontSize: {
+      xs: 'var(--type-caption)',
+      sm: 'var(--type-label)',
+      base: 'var(--type-body)',
+      lg: 'var(--type-subheading)',
+      xl: 'var(--type-card-title)',
+      '2xl': 'var(--type-section-title)',
+      '3xl': 'var(--type-page-title)',
+    },
     colors: {
       primary: '#17324D',
       saffron: '#FFB010',

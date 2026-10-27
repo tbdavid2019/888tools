@@ -202,7 +202,7 @@ function downloadSvg() {
 .panel-title {
   margin: 0;
   color: v-bind('themeVars.textColor1');
-  font-size: 1rem;
+  font-size: var(--type-body);
   font-weight: 700;
 }
 
@@ -218,7 +218,7 @@ function downloadSvg() {
 
 .editor-input :deep(textarea) {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace;
-  font-size: 12px;
+  font-size: var(--type-caption);
 }
 
 .preview-surface {

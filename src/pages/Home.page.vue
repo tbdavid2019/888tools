@@ -213,7 +213,7 @@ function onUpdateFavoriteTools() {
   gap: 8px;
   padding: 8px 20px;
   border-radius: 9999px;
-  font-size: 1.35rem;
+  font-size: var(--type-card-title);
   font-weight: 750;
   letter-spacing: 0.02em;
   background-color: v-bind('headerBackgroundColor');
@@ -231,7 +231,7 @@ function onUpdateFavoriteTools() {
   align-items: center;
   padding: 6px 16px;
   border-radius: 9999px;
-  font-size: 0.95rem;
+  font-size: var(--type-control);
   font-weight: 600;
   cursor: pointer;
   background-color: v-bind('headerBackgroundColor');

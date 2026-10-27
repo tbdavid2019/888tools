@@ -240,7 +240,7 @@ defineExpose({
 
   & > .label {
     margin-bottom: 8px;
-    font-size: 1.05rem;
+    font-size: var(--type-body);
     font-weight: 700;
     flex: 0 0 v-bind('labelWidth');
     text-align: v-bind('labelAlign');
@@ -275,13 +275,13 @@ defineExpose({
         border: none;
         outline: none;
         font-family: inherit;
-        font-size: 1.05rem;
+        font-size: var(--type-body);
         line-height: 1.7;
         color: v-bind('appTheme.text.baseColor') !important;
 
         &::placeholder {
           color: v-bind('appTheme.text.mutedColor');
-          font-size: 1.05rem;
+          font-size: var(--type-body);
         }
       }
     }
@@ -298,12 +298,12 @@ defineExpose({
       -moz-box-shadow: none;
       box-shadow: none;
       border: none;
-      font-size: 1.02rem;
+      font-size: var(--type-body);
       color: v-bind('appTheme.text.baseColor') !important;
 
       &::placeholder {
         color: v-bind('appTheme.text.mutedColor');
-        font-size: 1.02rem;
+        font-size: var(--type-body);
       }
     }
 

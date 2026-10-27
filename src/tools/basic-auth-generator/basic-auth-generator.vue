@@ -40,7 +40,7 @@ const { copy } = useCopy({ source: header, text: 'Header copied to the clipboard
 <style lang="less" scoped>
 ::v-deep(.n-statistic-value__content) {
   font-family: monospace;
-  font-size: 17px !important;
+  font-size: var(--type-body);
   white-space: nowrap;
 }
 </style>

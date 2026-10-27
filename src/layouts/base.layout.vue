@@ -262,7 +262,7 @@ const breadcrumbItems = computed(() => {
   box-shadow: v-bind('activePalette.shadow');
   border: 1.5px solid v-bind('activePalette.overlayBorder');
   color: v-bind('activePalette.textMuted');
-  font-size: 1.05rem;
+  font-size: var(--type-body);
   line-height: 1.45;
 }
 
@@ -308,7 +308,7 @@ const breadcrumbItems = computed(() => {
 .tool-count {
   margin-top: 10px;
   text-align: center;
-  font-size: 0.95rem;
+  font-size: var(--type-control);
   font-weight: 600;
   color: v-bind('activePalette.textMuted');
   padding: 8px 8px 6px;
@@ -334,7 +334,7 @@ const breadcrumbItems = computed(() => {
     margin-bottom: 14px;
     padding: 10px 12px;
     gap: 8px;
-    font-size: 15px;
+    font-size: var(--type-control);
     overflow-x: auto;
   }
 }

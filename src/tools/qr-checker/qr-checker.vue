@@ -256,7 +256,7 @@ const { copy } = useClipboard();
 }
 .hint {
   color: #666;
-  font-size: 12px;
+  font-size: var(--type-caption);
   margin-top: -4px;
   margin-bottom: 12px;
 }

@@ -99,7 +99,7 @@ function recalculate() {
 }
 
 .result-value {
-  font-size: 28px;
+  font-size: var(--type-metric-compact);
   font-weight: 700;
   color: var(--primary-color);
   display: flex;
@@ -108,7 +108,7 @@ function recalculate() {
 }
 
 .unit {
-  font-size: 14px;
+  font-size: var(--type-label);
   color: var(--text-color-2);
   font-weight: 500;
 }

@@ -71,6 +71,6 @@ const { copy: copyArabic } = useCopy({ source: () => String(outputNumeral), text
 
 <style lang="less" scoped>
 .result {
-  font-size: 22px;
+  font-size: var(--type-section-title);
 }
 </style>

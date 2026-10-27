@@ -185,7 +185,7 @@ async function activateOption(option?: PaletteOption) {
 }
 
 .c-input-text {
-  font-size: 18px;
+  font-size: var(--type-subheading);
 
   ::v-deep(.input-wrapper) {
       padding: 4px;

@@ -574,14 +574,14 @@ const showCellModal = (cell: any, headerName: string, rowIndex: number) => {
   }
 
   .dropzone-title {
-    font-size: 20px;
+    font-size: var(--type-card-title);
     font-weight: 700;
     color: v-bind('activePalette.heading');
     margin-bottom: 8px;
   }
 
   .dropzone-subtitle {
-    font-size: 14px;
+    font-size: var(--type-label);
     color: v-bind('activePalette.textMuted');
     margin-bottom: 20px;
   }
@@ -593,7 +593,7 @@ const showCellModal = (cell: any, headerName: string, rowIndex: number) => {
     flex-wrap: wrap;
 
     .badge {
-      font-size: 12px;
+      font-size: var(--type-caption);
       font-weight: 600;
       padding: 4px 12px;
       border-radius: 20px;
@@ -625,7 +625,7 @@ const showCellModal = (cell: any, headerName: string, rowIndex: number) => {
   justify-content: center;
   gap: 12px;
   color: #fff;
-  font-size: 18px;
+  font-size: var(--type-subheading);
   font-weight: 700;
   border: 2px dashed #fff;
 }
@@ -654,7 +654,7 @@ const showCellModal = (cell: any, headerName: string, rowIndex: number) => {
       }
 
       .file-name {
-        font-size: 18px;
+        font-size: var(--type-subheading);
         font-weight: 700;
         color: v-bind('activePalette.heading');
         margin: 0;
@@ -672,7 +672,7 @@ const showCellModal = (cell: any, headerName: string, rowIndex: number) => {
       flex-wrap: wrap;
 
       .stat-tag {
-        font-size: 12px;
+        font-size: var(--type-caption);
         font-weight: 600;
         padding: 2px 8px;
         border-radius: 8px;
@@ -713,7 +713,7 @@ const showCellModal = (cell: any, headerName: string, rowIndex: number) => {
     gap: 10px;
 
     .transcode-title {
-      font-size: 13px;
+      font-size: var(--type-meta);
       font-weight: 700;
       color: v-bind('activePalette.heading');
       white-space: nowrap;
@@ -751,7 +751,7 @@ const showCellModal = (cell: any, headerName: string, rowIndex: number) => {
     min-width: 260px;
 
     .search-count {
-      font-size: 12px;
+      font-size: var(--type-caption);
       color: v-bind('activePalette.textMuted');
       white-space: nowrap;
     }
@@ -782,7 +782,7 @@ const showCellModal = (cell: any, headerName: string, rowIndex: number) => {
 .data-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: var(--type-meta);
   line-height: 1.45;
   text-align: left;
 
@@ -860,7 +860,7 @@ const showCellModal = (cell: any, headerName: string, rowIndex: number) => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 12px;
+  font-size: var(--type-caption);
   color: v-bind('activePalette.textMuted');
   padding: 0 4px;
 
@@ -874,7 +874,7 @@ const showCellModal = (cell: any, headerName: string, rowIndex: number) => {
     width: 100%;
     padding: 10px;
     font-family: inherit;
-    font-size: 13px;
+    font-size: var(--type-meta);
     border-radius: 8px;
     border: 1px solid v-bind('activePalette.border');
     background: v-bind('styleStore.isDarkTheme ? "rgba(0, 0, 0, 0.25)" : "rgba(255, 255, 255, 0.8)"');

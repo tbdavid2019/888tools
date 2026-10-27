@@ -1276,7 +1276,7 @@ const gradeTagType = computed(() => {
   border-radius: 8px;
   background-color: #2b251a;
   color: #fff9e8;
-  font-size: 13px;
+  font-size: var(--type-meta);
   font-weight: 500;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
@@ -1328,7 +1328,7 @@ const gradeTagType = computed(() => {
 }
 
 .preview-aa-glyph {
-  font-size: 72px;
+  font-size: var(--type-display);
   line-height: 1;
   font-weight: 800;
   letter-spacing: -2px;
@@ -1348,7 +1348,7 @@ const gradeTagType = computed(() => {
 }
 
 .ratio-number {
-  font-size: 42px;
+  font-size: var(--type-metric-strong);
   line-height: 1.1;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
@@ -1370,7 +1370,7 @@ const gradeTagType = computed(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
+  font-size: var(--type-meta);
 }
 
 .attr-bullet {
@@ -1392,7 +1392,7 @@ const gradeTagType = computed(() => {
 
 .attr-sub {
   opacity: 0.82;
-  font-size: 12px;
+  font-size: var(--type-caption);
 }
 
 /* 5 WCAG Level Badges */
@@ -1460,12 +1460,12 @@ const gradeTagType = computed(() => {
 }
 
 .badge-name {
-  font-size: 13px;
+  font-size: var(--type-meta);
   font-weight: 700;
 }
 
 .badge-status {
-  font-size: 11px;
+  font-size: var(--type-caption);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -1480,7 +1480,7 @@ const gradeTagType = computed(() => {
 }
 
 .badge-desc {
-  font-size: 11px;
+  font-size: var(--type-caption);
   opacity: 0.78;
 }
 
@@ -1512,7 +1512,7 @@ const gradeTagType = computed(() => {
   border-radius: 9999px;
   background-color: var(--n-color, rgba(128, 128, 128, 0.08));
   border: 1px solid var(--n-border-color, rgba(128, 128, 128, 0.2));
-  font-size: 13px;
+  font-size: var(--type-meta);
   cursor: pointer;
   transition: all 0.2s ease;
   user-select: none;
@@ -1547,11 +1547,11 @@ const gradeTagType = computed(() => {
 .swatch-label {
   font-family: monospace;
   font-weight: 600;
-  font-size: 12px;
+  font-size: var(--type-caption);
 }
 
 .swatch-ratio {
-  font-size: 11px;
+  font-size: var(--type-caption);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   opacity: 0.75;
@@ -1620,7 +1620,7 @@ const gradeTagType = computed(() => {
 
 .panel-title {
   margin: 0;
-  font-size: 16px;
+  font-size: var(--type-body);
   font-weight: 700;
 }
 
@@ -1678,7 +1678,7 @@ const gradeTagType = computed(() => {
 .slider-meta {
   display: flex;
   justify-content: space-between;
-  font-size: 13px;
+  font-size: var(--type-meta);
   font-weight: 600;
 }
 
@@ -1740,13 +1740,13 @@ const gradeTagType = computed(() => {
 
 .section-title {
   margin: 0;
-  font-size: 18px;
+  font-size: var(--type-subheading);
   font-weight: 700;
 }
 
 .section-desc {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--type-meta);
   opacity: 0.75;
 }
 
@@ -1789,13 +1789,13 @@ const gradeTagType = computed(() => {
 
 .alert-title {
   margin: 0;
-  font-size: 15px;
+  font-size: var(--type-control);
   font-weight: 700;
 }
 
 .alert-p {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--type-meta);
   opacity: 0.88;
 }
 
@@ -1828,7 +1828,7 @@ const gradeTagType = computed(() => {
 }
 
 .suggestion-target {
-  font-size: 13px;
+  font-size: var(--type-meta);
   font-weight: 700;
 }
 
@@ -1850,7 +1850,7 @@ const gradeTagType = computed(() => {
 }
 
 .sample-text {
-  font-size: 16px;
+  font-size: var(--type-body);
   font-weight: 800;
 }
 
@@ -1863,11 +1863,11 @@ const gradeTagType = computed(() => {
 .sample-hex {
   font-family: monospace;
   font-weight: 700;
-  font-size: 14px;
+  font-size: var(--type-label);
 }
 
 .sample-sub {
-  font-size: 11px;
+  font-size: var(--type-caption);
   opacity: 0.7;
 }
 
@@ -1903,7 +1903,7 @@ const gradeTagType = computed(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 12px;
+  font-size: var(--type-caption);
   opacity: 0.82;
 }
 
@@ -1913,7 +1913,7 @@ const gradeTagType = computed(() => {
 
 .block-pass-flag {
   font-weight: 700;
-  font-size: 11px;
+  font-size: var(--type-caption);
   padding: 3px 10px;
   border-radius: 9999px;
 }
@@ -1934,7 +1934,7 @@ const gradeTagType = computed(() => {
   background: transparent;
   border: none;
   outline: none;
-  font-size: 24px;
+  font-size: var(--type-section-title);
   font-weight: 800;
   line-height: 1.3;
   padding: 4px 0;
@@ -1946,7 +1946,7 @@ const gradeTagType = computed(() => {
   border: 1px dashed rgba(128, 128, 128, 0.25);
   border-radius: 8px;
   outline: none;
-  font-size: 16px;
+  font-size: var(--type-body);
   line-height: 1.6;
   padding: 10px 12px;
   width: 100%;
@@ -1969,7 +1969,7 @@ const gradeTagType = computed(() => {
   border-radius: 8px;
   border: none;
   font-weight: 700;
-  font-size: 14px;
+  font-size: var(--type-label);
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
   transition: transform 0.15s ease, opacity 0.15s ease;
@@ -1989,7 +1989,7 @@ const gradeTagType = computed(() => {
   background: transparent;
   border: 2px solid;
   font-weight: 700;
-  font-size: 14px;
+  font-size: var(--type-label);
   cursor: pointer;
   transition: background-color 0.15s ease, transform 0.15s ease;
 }
@@ -2005,7 +2005,7 @@ const gradeTagType = computed(() => {
   padding: 6px 14px;
   border-radius: 9999px;
   border: 1.5px solid;
-  font-size: 13px;
+  font-size: var(--type-meta);
   font-weight: 700;
 }
 
@@ -2020,7 +2020,7 @@ const gradeTagType = computed(() => {
 }
 
 .preview-input-text {
-  font-size: 13px;
+  font-size: var(--type-meta);
   opacity: 0.75;
 }
 </style>

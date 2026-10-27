@@ -55,7 +55,7 @@ function pause() {
 <style lang="less" scoped>
 .duration {
   text-align: center;
-  font-size: 44px;
+  font-size: var(--type-metric-strong);
   font-weight: 700;
   font-family: monospace;
   margin: 20px 0;

@@ -26,7 +26,7 @@ const theme = useThemeVars();
     line-height: 1;
     top: 3px;
     left: -6px;
-    font-size: 10px;
+    font-size: var(--type-caption);
 
     height: 6px;
     width: 6px;

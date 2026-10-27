@@ -174,7 +174,7 @@ const cronValidationRules = [
 
 <style lang="less" scoped>
 ::v-deep(input) {
-  font-size: 30px;
+  font-size: var(--type-page-title);
   font-family: monospace;
   padding: 5px;
   text-align: center;
@@ -182,7 +182,7 @@ const cronValidationRules = [
 
 .cron-string {
   text-align: center;
-  font-size: 22px;
+  font-size: var(--type-section-title);
   opacity: 0.8;
   margin: 5px 0 15px;
 }

@@ -80,7 +80,7 @@ tryOnBeforeUnmount(() => {
       color: inherit;
       padding: 0;
       background: none;
-      font-size: 0.8rem;
+      font-size: var(--type-meta);
     }
   }
 

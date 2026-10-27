@@ -6,14 +6,14 @@ const appFontFamily = '\'JetBrains Mono\', \'Maple Mono\', \'Gen Jyuu Gothic\', 
 export const lightThemeOverrides: GlobalThemeOverrides = {
   common: {
     fontFamily: appFontFamily,
-    fontSize: '16.5px',
-    fontSizeMini: '13px',
-    fontSizeTiny: '14px',
-    fontSizeSmall: '15px',
-    fontSizeMedium: '16.5px',
-    fontSizeLarge: '18px',
-    fontSizeHuge: '20px',
-    lineHeight: '1.65',
+    fontSize: 'var(--type-body)',
+    fontSizeMini: 'var(--type-meta)',
+    fontSizeTiny: 'var(--type-caption)',
+    fontSizeSmall: 'var(--type-label)',
+    fontSizeMedium: 'var(--type-body)',
+    fontSizeLarge: 'var(--type-subheading)',
+    fontSizeHuge: 'var(--type-card-title)',
+    lineHeight: 'var(--leading-body)',
     bodyColor: kanagawaLightPalette.background,
     cardColor: kanagawaLightPalette.surface,
     modalColor: kanagawaLightPalette.surface,
@@ -48,7 +48,7 @@ export const lightThemeOverrides: GlobalThemeOverrides = {
 
   Menu: {
     itemHeight: '44px',
-    fontSize: '16.5px',
+    fontSize: 'var(--type-body)',
     itemColorActive: '#FFB010',
     itemColorActiveHover: '#F2A600',
     itemColorActiveCollapsed: '#FFB010',
@@ -77,8 +77,8 @@ export const lightThemeOverrides: GlobalThemeOverrides = {
   },
 
   Button: {
-    fontSizeMedium: '16.5px',
-    fontSizeLarge: '18px',
+    fontSizeMedium: 'var(--type-body)',
+    fontSizeLarge: 'var(--type-subheading)',
     heightMedium: '42px',
     heightLarge: '48px',
     borderRadiusMedium: '10px',
@@ -114,7 +114,7 @@ export const lightThemeOverrides: GlobalThemeOverrides = {
   },
 
   Input: {
-    fontSize: '16.5px',
+    fontSize: 'var(--type-body)',
     heightMedium: '44px',
     heightLarge: '50px',
     borderRadius: '10px',
@@ -137,14 +137,14 @@ export const lightThemeOverrides: GlobalThemeOverrides = {
 export const darkThemeOverrides: GlobalThemeOverrides = {
   common: {
     fontFamily: appFontFamily,
-    fontSize: '16.5px',
-    fontSizeMini: '13px',
-    fontSizeTiny: '14px',
-    fontSizeSmall: '15px',
-    fontSizeMedium: '16.5px',
-    fontSizeLarge: '18px',
-    fontSizeHuge: '20px',
-    lineHeight: '1.65',
+    fontSize: 'var(--type-body)',
+    fontSizeMini: 'var(--type-meta)',
+    fontSizeTiny: 'var(--type-caption)',
+    fontSizeSmall: 'var(--type-label)',
+    fontSizeMedium: 'var(--type-body)',
+    fontSizeLarge: 'var(--type-subheading)',
+    fontSizeHuge: 'var(--type-card-title)',
+    lineHeight: 'var(--leading-body)',
     bodyColor: kanagawaDarkPalette.background,
     cardColor: kanagawaDarkPalette.surface,
     modalColor: kanagawaDarkPalette.surface,
@@ -189,12 +189,12 @@ export const darkThemeOverrides: GlobalThemeOverrides = {
 
   Menu: {
     itemHeight: '44px',
-    fontSize: '16.5px',
+    fontSize: 'var(--type-body)',
   },
 
   Button: {
-    fontSizeMedium: '16.5px',
-    fontSizeLarge: '18px',
+    fontSizeMedium: 'var(--type-body)',
+    fontSizeLarge: 'var(--type-subheading)',
     heightMedium: '42px',
     heightLarge: '48px',
     borderRadiusMedium: '10px',
@@ -228,7 +228,7 @@ export const darkThemeOverrides: GlobalThemeOverrides = {
   },
 
   Input: {
-    fontSize: '16.5px',
+    fontSize: 'var(--type-body)',
     heightMedium: '44px',
     heightLarge: '50px',
     borderRadius: '10px',

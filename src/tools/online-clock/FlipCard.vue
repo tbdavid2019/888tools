@@ -74,7 +74,7 @@ onUnmounted(() => {
   border-radius: 8px;
   border: 1px solid var(--clock-flip-border, #0F2336);
   font-size: 48px;
-  font-size: clamp(36px, 7vw, 64px);
+  font-size: clamp(2.25rem, 7vw, 4rem);
   font-weight: 700;
   color: var(--clock-flip-text, #FFF9E8);
   perspective: 300px;

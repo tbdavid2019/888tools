@@ -1090,7 +1090,7 @@ defineExpose({
 }
 
 .title {
-  font-size: 24px;
+  font-size: var(--type-section-title);
   font-weight: 700;
   color: var(--clock-text);
 }
@@ -1107,7 +1107,7 @@ defineExpose({
   align-items: center;
   gap: 6px;
   color: var(--clock-text);
-  font-size: 13px;
+  font-size: var(--type-meta);
   font-weight: 500;
 }
 
@@ -1122,7 +1122,7 @@ defineExpose({
   border: 2px solid #17324D;
   border-radius: 8px;
   font-weight: 700;
-  font-size: 13px;
+  font-size: var(--type-meta);
   padding: 5px 12px;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -1154,7 +1154,7 @@ defineExpose({
 .location-lead {
   text-align: center;
   margin-top: 14px;
-  font-size: 18px;
+  font-size: var(--type-subheading);
   font-weight: 700;
   color: var(--clock-text);
   letter-spacing: 0.5px;
@@ -1165,13 +1165,13 @@ defineExpose({
   margin-top: 6px;
   color: var(--clock-muted);
   font-weight: 600;
-  font-size: 15px;
+  font-size: var(--type-control);
 }
 
 .solar-info {
   text-align: center;
   margin-top: 6px;
-  font-size: 14px;
+  font-size: var(--type-label);
   font-weight: 500;
   color: var(--clock-muted);
   font-variant-numeric: tabular-nums;
@@ -1186,7 +1186,7 @@ defineExpose({
   border: none;
   cursor: pointer;
   padding: 0 4px;
-  font-size: 13px;
+  font-size: var(--type-meta);
   line-height: 1;
   display: inline-flex;
   align-items: center;
@@ -1212,8 +1212,8 @@ defineExpose({
 }
 
 .digital-time {
-  font-size: 72px;
-  font-size: clamp(48px, 8vw, 96px);
+  font-size: var(--type-display);
+  font-size: clamp(3rem, 8vw, 6rem);
   font-weight: 700;
   letter-spacing: 2px;
   color: var(--clock-text);
@@ -1253,24 +1253,24 @@ defineExpose({
 .clock-page.fullscreen .location-lead {
   margin-top: 0;
   margin-bottom: 2px;
-  font-size: 20px;
-  font-size: clamp(16px, 2.2vw, 24px);
+  font-size: var(--type-card-title);
+  font-size: clamp(1rem, 2.2vw, 1.5rem);
   color: var(--clock-text);
 }
 
 .clock-page.fullscreen .date {
   margin-top: 2px;
   margin-bottom: 2px;
-  font-size: 18px;
-  font-size: clamp(15px, 2vw, 22px);
+  font-size: var(--type-subheading);
+  font-size: clamp(0.9375rem, 2vw, 1.375rem);
   color: var(--clock-text);
 }
 
 .clock-page.fullscreen .solar-info {
   margin-top: 2px;
   margin-bottom: 10px;
-  font-size: 14px;
-  font-size: clamp(12px, 1.5vw, 16px);
+  font-size: var(--type-label);
+  font-size: clamp(0.75rem, 1.5vw, 1rem);
   color: var(--clock-muted);
 }
 
@@ -1308,7 +1308,7 @@ defineExpose({
 
 .clock-page.fullscreen .digital-time {
   font-size: 150px;
-  font-size: clamp(72px, 15vw, 220px);
+  font-size: clamp(4.5rem, 15vw, 13.75rem);
 }
 
 .clock-page.fullscreen .flip :deep(.flip-card) {
@@ -1317,7 +1317,7 @@ defineExpose({
   height: 200px;
   height: clamp(120px, 20vw, 300px);
   font-size: 110px;
-  font-size: clamp(60px, 10vw, 180px);
+  font-size: clamp(3.75rem, 10vw, 11.25rem);
   perspective: 800px;
 }
 
@@ -1386,7 +1386,7 @@ defineExpose({
   color: var(--clock-tick-major);
   font-weight: 700;
   font-size: 46px;
-  font-size: clamp(36px, 5vw, 50px);
+  font-size: clamp(2.25rem, 5vw, 3.125rem);
   display: block;
 }
 
@@ -1442,8 +1442,8 @@ defineExpose({
 }
 
 .flip-period {
-  font-size: 24px;
-  font-size: clamp(16px, 3vw, 32px);
+  font-size: var(--type-section-title);
+  font-size: clamp(1rem, 3vw, 2rem);
   font-weight: 700;
   color: var(--clock-text);
   margin-right: 8px;
@@ -1467,8 +1467,8 @@ defineExpose({
 }
 
 .chinese-row.main {
-  font-size: 44px;
-  font-size: clamp(24px, 5vw, 64px);
+  font-size: var(--type-metric-strong);
+  font-size: clamp(1.5rem, 5vw, 4rem);
   font-weight: 700;
   display: flex;
   flex-wrap: wrap;
@@ -1526,7 +1526,7 @@ defineExpose({
 
 .clock-page.fullscreen .chinese-row.main {
   font-size: 80px;
-  font-size: clamp(40px, 10vw, 120px);
+  font-size: clamp(2.5rem, 10vw, 7.5rem);
 }
 
 /* Tabs: section-nav design inspired by 2md.aiurl.tw */
@@ -1556,7 +1556,7 @@ defineExpose({
   background: transparent;
   color: var(--clock-navy-text);
   font-family: inherit;
-  font-size: 14px;
+  font-size: var(--type-label);
   font-weight: 600;
   transition: all 0.2s ease;
   outline: none;
@@ -1633,14 +1633,14 @@ defineExpose({
 }
 
 .city-name {
-  font-size: 13px;
+  font-size: var(--type-meta);
   font-weight: 600;
   color: var(--clock-text);
   transition: color 0.15s ease;
 }
 
 .city-time {
-  font-size: 14px;
+  font-size: var(--type-label);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   font-family: 'Maple Mono', 'JetBrains Mono', monospace !important;
@@ -1662,7 +1662,7 @@ defineExpose({
 
 .offset-info {
   text-align: center;
-  font-size: 12px;
+  font-size: var(--type-caption);
   color: var(--clock-muted);
   margin-top: 4px;
 }
@@ -1673,7 +1673,7 @@ defineExpose({
 
 .icon-refresh {
   display: inline-block;
-  font-size: 14px;
+  font-size: var(--type-label);
   line-height: 1;
 }
 

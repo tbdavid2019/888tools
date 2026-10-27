@@ -276,7 +276,7 @@ const { copy } = useClipboard();
 }
 .hint {
   color: #666;
-  font-size: 12px;
+  font-size: var(--type-caption);
   margin-top: -4px;
   margin-bottom: 12px;
 }
@@ -288,7 +288,7 @@ const { copy } = useClipboard();
 .result-text {
   word-break: break-all;
   font-family: monospace;
-  font-size: 1.1em;
+  font-size: var(--type-body);
   font-weight: bold;
 }
 .result-meta {
@@ -296,7 +296,7 @@ const { copy } = useClipboard();
   justify-content: space-between;
   align-items: center;
   color: #888;
-  font-size: 0.85em;
+  font-size: var(--type-meta);
   margin-top: 4px;
   gap: 8px;
 }

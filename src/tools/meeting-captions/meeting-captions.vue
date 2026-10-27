@@ -1402,7 +1402,7 @@ onBeforeUnmount(() => {
 }
 
 .eyebrow {
-  font-size: 12px;
+  font-size: var(--type-caption);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: rgb(249 115 22);
@@ -1411,7 +1411,7 @@ onBeforeUnmount(() => {
 .panel-header h2,
 .hero-title {
   margin: 4px 0 0;
-  font-size: 26px;
+  font-size: var(--type-metric-compact);
   font-weight: 800;
   letter-spacing: 0;
   color: rgb(28 25 23);
@@ -1426,7 +1426,7 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 8px;
   margin-bottom: 12px;
-  font-size: 13px;
+  font-size: var(--type-meta);
   color: rgb(120 113 108);
 }
 
@@ -1437,7 +1437,7 @@ onBeforeUnmount(() => {
 .field-hint {
   margin: 10px 0 0;
   color: rgb(120 113 108);
-  font-size: 12px;
+  font-size: var(--type-caption);
   line-height: 1.5;
 }
 
@@ -1553,7 +1553,7 @@ onBeforeUnmount(() => {
 .status-label,
 .line-time {
   color: rgb(120 113 108);
-  font-size: 13px;
+  font-size: var(--type-meta);
 }
 
 .stage-panel {
@@ -1607,7 +1607,7 @@ onBeforeUnmount(() => {
 .section-label {
   margin-bottom: 18px;
   color: rgb(249 115 22);
-  font-size: 13px;
+  font-size: var(--type-meta);
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1622,7 +1622,7 @@ onBeforeUnmount(() => {
 .caption-line {
   display: flex;
   gap: 14px;
-  font-size: 19px;
+  font-size: var(--type-subheading);
   line-height: 1.55;
   min-width: 0;
 }
@@ -1637,13 +1637,13 @@ onBeforeUnmount(() => {
 
 .line-time.current {
   color: rgb(249 115 22);
-  font-size: 24px;
+  font-size: var(--type-section-title);
   font-weight: 800;
 }
 
 .focus-text {
   margin-top: 12px;
-  font-size: 42px;
+  font-size: var(--type-metric-strong);
   line-height: 1.28;
   font-weight: 800;
   color: rgb(28 25 23);
@@ -1669,7 +1669,7 @@ onBeforeUnmount(() => {
 
 .preload-progress-value {
   color: rgb(249 115 22);
-  font-size: 36px;
+  font-size: var(--type-metric);
   font-weight: 900;
   line-height: 1;
 }
@@ -1692,7 +1692,7 @@ onBeforeUnmount(() => {
 
 .preload-progress-status {
   color: rgb(120 113 108);
-  font-size: 14px;
+  font-size: var(--type-label);
   line-height: 1.7;
 }
 
@@ -1709,7 +1709,7 @@ onBeforeUnmount(() => {
 .meter-time {
   margin-top: 22px;
   text-align: center;
-  font-size: 28px;
+  font-size: var(--type-metric-compact);
   font-weight: 800;
   letter-spacing: 0.04em;
   color: rgb(28 25 23);
@@ -1801,11 +1801,11 @@ onBeforeUnmount(() => {
   }
 
   .focus-text {
-    font-size: 28px;
+    font-size: var(--type-metric-compact);
   }
 
   .caption-line {
-    font-size: 18px;
+    font-size: var(--type-subheading);
   }
 }
 </style>

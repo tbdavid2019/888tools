@@ -255,7 +255,7 @@ const copyValue = (value: string) => copy(value);
     'Helvetica Neue', Arial, sans-serif;
 }
 .title {
-  font-size: 20px;
+  font-size: var(--type-card-title);
   font-weight: 600;
   margin-bottom: 8px;
   color: v-bind('themeVars.textColor1');
@@ -282,7 +282,7 @@ const copyValue = (value: string) => copy(value);
 }
 .value {
   flex: 1;
-  font-size: 18px;
+  font-size: var(--type-subheading);
   word-break: break-all;
   color: v-bind('themeVars.textColor1');
 }
