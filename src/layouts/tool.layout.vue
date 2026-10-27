@@ -95,12 +95,6 @@ const contentFlexBasis = computed(() => '520px');
             <FavoriteButton :tool="{ name: route.meta.name, path: route.path } as Tool" />
           </div>
         </div>
-
-        <div class="separator" />
-
-        <div class="description">
-          {{ toolDescription }}
-        </div>
       </div>
     </div>
 
@@ -170,9 +164,9 @@ const contentFlexBasis = computed(() => '520px');
   box-sizing: border-box;
 
   .tool-header {
-    padding: 40px 30px;
+    padding: 16px 24px;
     width: 100%;
-    border-radius: 24px;
+    border-radius: 20px;
     transition: background-color 0.3s;
 
     &.glass-effect {
@@ -180,32 +174,16 @@ const contentFlexBasis = computed(() => '520px');
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-      margin-bottom: 20px;
+      margin-bottom: 14px;
     }
 
     .n-h1 {
       opacity: 0.95;
-      font-size: 2.3rem;
+      font-size: 2.2rem;
       font-weight: 750;
       margin: 0;
       line-height: 1.25;
       color: v-bind('activePalette.heading');
-    }
-
-    .separator {
-      width: 200px;
-      height: 3px;
-      background: v-bind('activePalette.saffron');
-      opacity: 0.85;
-      margin: 12px 0 14px;
-    }
-
-    .description {
-      margin: 0;
-      font-size: 1.08rem;
-      line-height: 1.75;
-      font-weight: 500;
-      color: v-bind('activePalette.text');
     }
   }
 }

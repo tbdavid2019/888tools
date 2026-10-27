@@ -5,6 +5,9 @@ All notable changes to this project will be documented in this file. See [standa
 ## Version 2026.10.27
 
 ### Features & Enhancements
+- **徹底清除冗餘贅字與重複標題 (Eliminate Redundant Boilerplate & Duplicate Titles)**:
+  - **移除重複卡片標題**：移除 `<c-card>` 內部重複顯示的「同文堂繁簡轉換器」卡片標題，標題全頁唯一由頂部 H1 統率，杜絕雙重疊床架屋。
+  - **清除冗餘套版贅詞**：移除頁面頂部套版廢話說明（如「使用同文堂映射在簡體與繁體中文之間轉換文本。」）與黃色分割線，大幅縮減頂部空隙（由 40px 緊湊收縮至 16px），讓真正的輸入與操作工具頂格呈現，貼近 2md 直覺極速的操作體驗。
 - **全站全面改版為 2md.aiurl.tw / 2md.david888.com 品牌設計語彙 (Full-Site 2md Design System Adoption)**:
   - **以下方卡片大字規格為全站基準**：徹底消除組件間割裂與字體忽大忽小，將工具卡片的大氣大字（標題 `1.85rem`、內文 `1.02rem`）推廣為全站排版標準。
   - **全站基底元件重構**：

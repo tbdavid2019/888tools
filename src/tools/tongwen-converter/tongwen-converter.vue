@@ -166,7 +166,7 @@ async function handleCopyOutput() {
 </script>
 
 <template>
-  <c-card :title="translate('tools.tongwen-converter.title')">
+  <c-card>
     <!-- 單一統合控制頂列 (2md Unified Header) -->
     <div class="converter-header">
       <!-- 平鋪式方向切換 (Tiled Direction Switcher) -->
