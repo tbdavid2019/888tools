@@ -606,13 +606,13 @@ onUnmounted(() => {
               </div>
 
               <div class="notice-actions-row">
-                <n-button size="tiny" secondary type="warning" @click="applyNewHex(cssNameInfo.standardHex)">
+                <n-button size="small" secondary type="warning" @click="applyNewHex(cssNameInfo.standardHex)">
                   套用 {{ cssNameInfo.name }} 標準色碼 ({{ cssNameInfo.standardHex }})
                 </n-button>
-                <n-button size="tiny" secondary @click="copyText(cssNameInfo.name, 'CSS 色名')">
+                <n-button size="small" secondary @click="copyText(cssNameInfo.name, 'CSS 色名')">
                   複製純色名: {{ cssNameInfo.name }}
                 </n-button>
-                <n-button size="tiny" secondary @click="copyText(cssNameInfo.standardHex, '標準色碼')">
+                <n-button size="small" secondary @click="copyText(cssNameInfo.standardHex, '標準色碼')">
                   複製標準色碼: {{ cssNameInfo.standardHex }}
                 </n-button>
               </div>
@@ -1554,7 +1554,7 @@ onUnmounted(() => {
 .css-name-notice-box {
   padding: 12px 14px;
   border-radius: 12px;
-  font-size: var(--type-meta);
+  font-size: var(--type-body);
   line-height: 1.5;
   transition: all 0.2s ease;
 }
@@ -1601,7 +1601,7 @@ onUnmounted(() => {
 
 .notice-delta-e {
   font-family: ui-monospace, SFMono-Regular, monospace;
-  font-size: var(--type-caption);
+  font-size: var(--type-meta);
   font-weight: 800;
   padding: 2px 6px;
   border-radius: 4px;
@@ -1666,8 +1666,8 @@ onUnmounted(() => {
 }
 
 .notice-explanation {
-  font-size: var(--type-caption);
-  line-height: 1.5;
+  font-size: var(--type-body);
+  line-height: var(--leading-body);
   margin: 6px 0 10px 0;
   opacity: 0.95;
 }
