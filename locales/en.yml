@@ -630,12 +630,34 @@ tools:
     directionLabel: Direction
     inputLabel: Source text
     outputLabel: Converted text
-    placeholder: Paste or type Chinese text to convert
+    placeholder: Paste or type Chinese text to convert...
+    placeholderOutput: Converted text will appear here...
+    tabs:
+      sourceSimplified: Source (Simplified)
+      sourceTraditional: Source (Traditional)
+      targetTraditional: Converted (Traditional)
+      targetSimplified: Converted (Simplified)
     buttons:
       swap: Swap direction
       copy: Copy result
+      copied: Copied ✓
       clear: Clear
-    note: Mapping derived from the TongWen userscript (no external requests).
+      paste: Paste
+      convertAndSwitch: View Result
+      convertAndCopy: Convert & Copy
+      backToInput: Back to Edit
+    hud:
+      lines: lines
+      chars: chars
+    toast:
+      copiedTraditional: Traditional Chinese result copied!
+      copiedSimplified: Simplified Chinese result copied!
+      copiedResult: Converted result copied!
+      pastedSuccess: Content pasted from clipboard!
+      clipboardEmpty: Clipboard is empty or inaccessible
+      clipboardUnsupported: Browser does not support reading clipboard
+      clipboardError: Failed to read clipboard, please paste manually
+    note: Mapping derived from the TongWen userscript. Zero external requests, privacy guaranteed.
 
   txt-to-epub:
     title: TXT to EPUB novel generator

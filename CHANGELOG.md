@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## Version 2026.10.27
+
+### Features & Enhancements
+- **同文堂繁簡轉換器 (`tongwen-converter`) UX 現代化重構**:
+  - **雙分頁流動架構 (Two-Tab Flow)**：引進 Naive UI `n-tabs` (Segment 模式)，將原本上下堆疊失控的「原文」與「結果」拆分為獨立 Tab（`原始文` / `轉換結果`），徹底終結長文字數萬像素滾動之痛點。
+  - **移除失控之 `autosize`**：全面改為受控高度（`max-h-[55vh]` 內部獨立滾動），防止貼上數千行文章時撐爆瀏覽器與版面。
+  - **複製按鈕近在咫尺**：在 Tab 1 提供 `[ ⚡ 轉換並立即複製 ]` 捷徑（秒轉秒複製無需切頁）與 `[ 🚀 轉換前往結果 ➔ ]`，在 Tab 2 頂部提供常駐 Primary `[ 📋 複製結果 ]` 與 `[ ⬅ 返回修改原文 ]`，消除游標距離。
+  - **即時文本 HUD 統計**：於工具列即時顯示行數與字符數（`X 行 · Y 字`），貼上時 Tab 標籤動態反映統計與轉換完成指示（`✓`）。
+  - **剪貼簿一鍵貼入 (`Clipboard API`)**：新增 `[ 📋 貼上剪貼簿 ]` 按鈕，點擊直讀剪貼簿文字並自動轉換。
+  - **使用者偏好持久化**：使用 `@vueuse/core` 之 `useStorage` 記憶繁簡轉換方向（`s2t` / `t2s`），下次進入無需重新設定。
+  - **完備單元測試**：更新測試套件並覆蓋 Tab 切換、剪貼簿貼入、秒複製與 HUD 統計。
+
 ## Version 2026.10.25
 
 ### Runtime & Security Hardening

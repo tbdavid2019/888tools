@@ -570,12 +570,34 @@ tools:
     directionLabel: 轉換方向
     inputLabel: 原文
     outputLabel: 轉換結果
-    placeholder: 貼上或輸入要轉換的中文文本
+    placeholder: 貼上或輸入要轉換的中文文本...
+    placeholderOutput: 轉換結果將顯示於此...
+    tabs:
+      sourceSimplified: 原始文 (簡體)
+      sourceTraditional: 原始文 (繁體)
+      targetTraditional: 轉換結果 (繁體)
+      targetSimplified: 轉換結果 (簡體)
     buttons:
       swap: 切換方向
       copy: 複製結果
+      copied: 已複製 ✓
       clear: 清空
-    note: 映射來源於同文堂油猴腳本，無需外部請求。
+      paste: 貼上剪貼簿
+      convertAndSwitch: 轉換前往結果
+      convertAndCopy: 轉換並立即複製
+      backToInput: 返回修改原文
+    hud:
+      lines: 行
+      chars: 字
+    toast:
+      copiedTraditional: 已複製繁體結果！
+      copiedSimplified: 已複製簡體結果！
+      copiedResult: 已複製轉換結果！
+      pastedSuccess: 已貼上剪貼簿內容！
+      clipboardEmpty: 剪貼簿為空或無法讀取
+      clipboardUnsupported: 瀏覽器不支援讀取剪貼簿
+      clipboardError: 無法讀取剪貼簿，請手動貼上
+    note: 映射來源於同文堂油猴腳本，純前端極速運算，無需外部請求。
 
   txt-to-epub:
     title: TXT 轉 EPUB 小說產生器
