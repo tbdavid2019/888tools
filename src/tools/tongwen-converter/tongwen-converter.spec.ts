@@ -2,6 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { defineComponent, nextTick } from 'vue';
+import { createPinia, setActivePinia } from 'pinia';
 import { convertOpenCC } from '@/services/opencc.service';
 import TongwenConverter from './tongwen-converter.vue';
 
@@ -131,6 +132,7 @@ describe('TongWen Converter using OpenCC', () => {
 
 describe('tongwen-converter.vue Component', () => {
   beforeEach(() => {
+    setActivePinia(createPinia());
     safeStorage.clear();
     vi.clearAllMocks();
   });

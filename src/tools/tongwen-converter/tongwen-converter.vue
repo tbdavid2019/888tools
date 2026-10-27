@@ -16,6 +16,12 @@ import {
 import { convertOpenCC, type OpenCCDirection } from '@/services/opencc.service';
 import { useCopy } from '@/composable/copy';
 import { translate } from '@/plugins/i18n.plugin';
+import { useStyleStore } from '@/stores/style.store';
+import { kanagawaDarkPalette, kanagawaLightPalette } from '@/theme/palette';
+
+const styleStore = useStyleStore();
+const activePalette = computed(() => (styleStore.isDarkTheme ? kanagawaDarkPalette : kanagawaLightPalette));
+const primaryButtonText = computed(() => (styleStore.isDarkTheme ? '#2B251A' : '#FFF9E8'));
 
 const STORAGE_KEY = 'tongwen-converter-direction';
 const direction = useStorage<OpenCCDirection>(STORAGE_KEY, 's2t');
@@ -161,168 +167,142 @@ async function handleCopyOutput() {
 
 <template>
   <c-card :title="translate('tools.tongwen-converter.title')">
-    <!-- 單一統合控制頂列 (Unified Header Bar) -->
-    <div class="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-200/60 dark:border-zinc-700/60">
-      <!-- 平鋪式方向選擇 (Tiled Direction Segmented Buttons) -->
-      <div class="flex items-center gap-1.5">
-        <span class="text-xs font-medium text-slate-500 dark:text-zinc-400 mr-1">
-          {{ translate('tools.tongwen-converter.directionLabel') }}:
-        </span>
-        <div class="inline-flex p-1 rounded-xl bg-slate-100 dark:bg-zinc-800/90 border border-slate-200 dark:border-zinc-700">
+    <!-- 單一統合控制頂列 (2md Unified Header) -->
+    <div class="converter-header">
+      <!-- 平鋪式方向切換 (Tiled Direction Switcher) -->
+      <div class="direction-control">
+        <span class="control-label">{{ translate('tools.tongwen-converter.directionLabel') }}</span>
+        <div class="segmented-pill-group">
           <button
             type="button"
-            class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 cursor-pointer border-0"
-            :class="direction === 's2t'
-              ? 'bg-amber-500 text-white font-semibold shadow-sm'
-              : 'bg-transparent text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'"
+            class="segmented-pill-btn"
+            :class="{ active: direction === 's2t' }"
             @click="setDirection('s2t')"
           >
             <span>簡體</span>
-            <span class="opacity-70">➔</span>
+            <span class="arrow-glyph">➔</span>
             <span>繁體</span>
           </button>
           <button
             type="button"
-            class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 cursor-pointer border-0"
-            :class="direction === 't2s'
-              ? 'bg-amber-500 text-white font-semibold shadow-sm'
-              : 'bg-transparent text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'"
+            class="segmented-pill-btn"
+            :class="{ active: direction === 't2s' }"
             @click="setDirection('t2s')"
           >
             <span>繁體</span>
-            <span class="opacity-70">➔</span>
+            <span class="arrow-glyph">➔</span>
             <span>簡體</span>
           </button>
         </div>
         <button
           type="button"
-          class="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-100 bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 transition cursor-pointer flex items-center justify-center"
+          class="icon-action-btn"
           :title="translate('tools.tongwen-converter.buttons.swap')"
           @click="swapDirection"
         >
-          <n-icon class="text-sm">
+          <n-icon size="16">
             <ArrowsLeftRight />
           </n-icon>
         </button>
       </div>
 
-      <!-- 視圖分頁切換 (View Switch Tabs) -->
-      <div class="inline-flex p-1 rounded-xl bg-slate-100 dark:bg-zinc-800/90 border border-slate-200 dark:border-zinc-700">
-        <button
-          type="button"
-          class="px-3.5 py-1.5 rounded-lg text-xs transition-all flex items-center gap-1.5 cursor-pointer border-0"
-          :class="activeTab === 'input'
-            ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-white font-semibold shadow-sm'
-            : 'bg-transparent text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'"
-          @click="activeTab = 'input'"
-        >
-          <span>{{ direction === 's2t' ? '原始文 (簡)' : '原始文 (繁)' }}</span>
-          <span v-if="text" class="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-200/80 dark:bg-zinc-600 text-slate-700 dark:text-zinc-200 font-mono">
-            {{ inputStats.lines }}行
-          </span>
-        </button>
-
-        <button
-          type="button"
-          class="px-3.5 py-1.5 rounded-lg text-xs transition-all flex items-center gap-1.5 cursor-pointer border-0"
-          :class="activeTab === 'output'
-            ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-white font-semibold shadow-sm'
-            : 'bg-transparent text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'"
-          @click="activeTab = 'output'"
-        >
-          <span>{{ direction === 's2t' ? '轉換結果 (繁)' : '轉換結果 (簡)' }}</span>
-          <span v-if="result" class="text-emerald-500 font-bold text-xs">✓</span>
-        </button>
+      <!-- 視圖切換 (View Switch Tabs) -->
+      <div class="view-tabs-control">
+        <div class="segmented-pill-group">
+          <button
+            type="button"
+            class="segmented-pill-btn"
+            :class="{ active: activeTab === 'input' }"
+            @click="activeTab = 'input'"
+          >
+            <span>{{ direction === 's2t' ? '原始文 (簡)' : '原始文 (繁)' }}</span>
+            <span v-if="text" class="count-badge font-mono">{{ inputStats.lines }}行</span>
+          </button>
+          <button
+            type="button"
+            class="segmented-pill-btn"
+            :class="{ active: activeTab === 'output' }"
+            @click="activeTab = 'output'"
+          >
+            <span>{{ direction === 's2t' ? '轉換結果 (繁)' : '轉換結果 (簡)' }}</span>
+            <span v-if="result" class="check-badge font-bold">✓</span>
+          </button>
+        </div>
       </div>
     </div>
 
     <!-- 狀態與快捷動作工具列 (Action Toolbar) -->
-    <div class="flex flex-wrap items-center justify-between gap-2.5 mb-2.5">
+    <div class="action-toolbar">
       <!-- 原文狀態工具列 -->
-      <template v-if="activeTab === 'input'">
-        <div class="flex flex-wrap items-center gap-2">
-          <c-button secondary size="small" @click="pasteFromClipboard">
-            <n-icon class="mr-1 text-sm">
-              <Clipboard />
-            </n-icon>
+      <div class="toolbar-left">
+        <template v-if="activeTab === 'input'">
+          <button type="button" class="tool-btn" @click="pasteFromClipboard">
+            <n-icon size="15"><Clipboard /></n-icon>
             <span>{{ translate('tools.tongwen-converter.buttons.paste') }}</span>
-          </c-button>
-
-          <c-button secondary size="small" :disabled="!text" @click="clearAll">
-            <n-icon class="mr-1 text-sm">
-              <Trash />
-            </n-icon>
+          </button>
+          <button type="button" class="tool-btn" :disabled="!text" @click="clearAll">
+            <n-icon size="15"><Trash /></n-icon>
             <span>{{ translate('tools.tongwen-converter.buttons.clear') }}</span>
-          </c-button>
-
-          <!-- 即時 HUD -->
-          <div
-            v-if="text"
-            class="text-xs px-2.5 py-1 rounded-md bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-zinc-300 font-mono flex items-center border border-slate-200/60 dark:border-zinc-700/60"
-          >
+          </button>
+          <div v-if="text" class="hud-pill font-mono">
             {{ inputStatsText }}
           </div>
-        </div>
+        </template>
 
-        <div class="flex flex-wrap items-center gap-2 ml-auto">
-          <c-button secondary size="small" :disabled="!text" @click="convertAndCopy">
-            <n-icon class="mr-1 text-amber-500">
-              <Bolt />
-            </n-icon>
-            <span>{{ translate('tools.tongwen-converter.buttons.convertAndCopy') }}</span>
-          </c-button>
-
-          <c-button type="primary" size="small" :disabled="!text" @click="convertAndSwitch">
-            <span>{{ translate('tools.tongwen-converter.buttons.convertAndSwitch') }}</span>
-            <n-icon class="ml-1 text-xs">
-              <ArrowRight />
-            </n-icon>
-          </c-button>
-        </div>
-      </template>
-
-      <!-- 結果狀態工具列 -->
-      <template v-else>
-        <div class="flex flex-wrap items-center gap-2">
-          <c-button secondary size="small" @click="activeTab = 'input'">
-            <n-icon class="mr-1 text-sm">
-              <ArrowLeft />
-            </n-icon>
+        <template v-else>
+          <button type="button" class="tool-btn" @click="activeTab = 'input'">
+            <n-icon size="15"><ArrowLeft /></n-icon>
             <span>{{ translate('tools.tongwen-converter.buttons.backToInput') }}</span>
-          </c-button>
-
-          <c-button secondary size="small" @click="clearAll">
-            <n-icon class="mr-1 text-sm">
-              <Trash />
-            </n-icon>
+          </button>
+          <button type="button" class="tool-btn" @click="clearAll">
+            <n-icon size="15"><Trash /></n-icon>
             <span>{{ translate('tools.tongwen-converter.buttons.clear') }}</span>
-          </c-button>
-
-          <!-- 即時 HUD -->
-          <div
-            v-if="result"
-            class="text-xs px-2.5 py-1 rounded-md bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-zinc-300 font-mono flex items-center border border-slate-200/60 dark:border-zinc-700/60"
-          >
+          </button>
+          <div v-if="result" class="hud-pill font-mono">
             {{ outputStatsText }}
           </div>
-        </div>
+        </template>
+      </div>
 
-        <div class="flex flex-wrap items-center gap-2 ml-auto">
-          <c-button
-            type="primary"
-            size="small"
+      <!-- 右側核心動作 -->
+      <div class="toolbar-right">
+        <template v-if="activeTab === 'input'">
+          <button
+            type="button"
+            class="tool-btn"
+            :disabled="!text"
+            @click="convertAndCopy"
+          >
+            <n-icon size="15" :style="{ color: activePalette.saffron }"><Bolt /></n-icon>
+            <span>{{ translate('tools.tongwen-converter.buttons.convertAndCopy') }}</span>
+          </button>
+
+          <button
+            type="button"
+            class="tool-btn primary"
+            :disabled="!text"
+            @click="convertAndSwitch"
+          >
+            <span>{{ translate('tools.tongwen-converter.buttons.convertAndSwitch') }}</span>
+            <n-icon size="14"><ArrowRight /></n-icon>
+          </button>
+        </template>
+
+        <template v-else>
+          <button
+            type="button"
+            class="tool-btn primary highlight-copy"
             :disabled="!result"
-            class="font-medium !px-4"
             @click="handleCopyOutput"
           >
-            <n-icon class="mr-1 text-base">
+            <n-icon size="16">
               <Check v-if="isJustCopied" />
               <Copy v-else />
             </n-icon>
             <span>{{ isJustCopied ? translate('tools.tongwen-converter.buttons.copied') : translate('tools.tongwen-converter.buttons.copy') }}</span>
-          </c-button>
-        </div>
-      </template>
+          </button>
+        </template>
+      </div>
     </div>
 
     <!-- 內容展示區 -->
@@ -350,25 +330,232 @@ async function handleCopyOutput() {
       />
     </div>
 
-    <p mt-3 text-xs text-secondary opacity-80>
+    <p class="note-text">
       {{ translate('tools.tongwen-converter.note') }}
     </p>
   </c-card>
 </template>
 
 <style scoped>
+.converter-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 14px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid v-bind('activePalette.border');
+}
+
+.direction-control,
+.view-tabs-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.control-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: v-bind('activePalette.textMuted');
+  font-family: inherit;
+}
+
+/* 2md Segmented Pill Group */
+.segmented-pill-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  background: v-bind('activePalette.surfaceMuted');
+  border: 1px solid v-bind('activePalette.border');
+  border-radius: 12px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.segmented-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: v-bind('activePalette.textMuted');
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  outline: none;
+  user-select: none;
+}
+
+.segmented-pill-btn:hover {
+  color: v-bind('activePalette.heading');
+}
+
+.segmented-pill-btn.active {
+  background: v-bind('activePalette.button');
+  color: v-bind('primaryButtonText');
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.arrow-glyph {
+  opacity: 0.65;
+  font-size: 11px;
+}
+
+.count-badge {
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.12);
+  color: inherit;
+}
+
+.check-badge {
+  color: #10b981;
+  font-size: 13px;
+}
+
+.icon-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid v-bind('activePalette.border');
+  background: v-bind('activePalette.surface');
+  color: v-bind('activePalette.textMuted');
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.icon-action-btn:hover {
+  background: v-bind('activePalette.surfaceMuted');
+  color: v-bind('activePalette.heading');
+  border-color: v-bind('activePalette.button');
+}
+
+/* Action Toolbar */
+.action-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.toolbar-left,
+.toolbar-right {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.tool-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid v-bind('activePalette.border');
+  background: v-bind('activePalette.surface');
+  color: v-bind('activePalette.text');
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.tool-btn:hover:not(:disabled) {
+  background: v-bind('activePalette.surfaceMuted');
+  border-color: v-bind('activePalette.button');
+}
+
+.tool-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.tool-btn.primary {
+  background: v-bind('activePalette.button');
+  color: v-bind('primaryButtonText');
+  border-color: v-bind('activePalette.button');
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.tool-btn.primary:hover:not(:disabled) {
+  background: v-bind('activePalette.buttonHover');
+  border-color: v-bind('activePalette.buttonHover');
+}
+
+.tool-btn.highlight-copy {
+  padding: 7px 18px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* HUD pill */
+.hud-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: v-bind('activePalette.textMuted');
+  background: v-bind('activePalette.surfaceMuted');
+  border: 1px solid v-bind('activePalette.border');
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+}
+
+/* Textarea override to perfectly match 2md */
 .converter-textarea :deep(.input-wrapper) {
-  min-height: 320px;
+  min-height: 340px;
   max-height: 55vh;
-  align-items: stretch;
+  border-radius: 12px !important;
+  border: 1px solid v-bind('activePalette.border') !important;
+  background: v-bind('activePalette.surface') !important;
+  transition: border-color 0.2s ease;
+}
+
+.converter-textarea :deep(.input-wrapper:focus-within) {
+  border-color: v-bind('activePalette.button') !important;
+  outline: 2px solid v-bind('activePalette.button') !important;
+  outline-offset: -1px;
 }
 
 .converter-textarea :deep(textarea) {
-  min-height: 320px;
+  min-height: 340px;
   max-height: 55vh;
   overflow-y: auto !important;
   line-height: 1.6;
-  font-family: inherit;
+  font-family: 'Maple Mono', 'Noto Sans TC', sans-serif !important;
   font-size: 14px;
+  color: v-bind('activePalette.text') !important;
+  padding: 10px 4px !important;
+}
+
+.converter-textarea :deep(textarea::placeholder) {
+  color: v-bind('activePalette.textMuted');
+  opacity: 0.7;
+}
+
+.note-text {
+  margin-top: 14px;
+  font-size: 12px;
+  color: v-bind('activePalette.textMuted');
+  opacity: 0.85;
 }
 </style>
