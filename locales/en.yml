@@ -654,6 +654,8 @@ tools:
       copiedSimplified: Simplified Chinese result copied!
       copiedResult: Converted result copied!
       pastedSuccess: Content pasted from clipboard!
+      pastedAndSwitchedTraditional: Pasted and converted to Traditional Chinese! Click to copy
+      pastedAndSwitchedSimplified: Pasted and converted to Simplified Chinese! Click to copy
       clipboardEmpty: Clipboard is empty or inaccessible
       clipboardUnsupported: Browser does not support reading clipboard
       clipboardError: Failed to read clipboard, please paste manually

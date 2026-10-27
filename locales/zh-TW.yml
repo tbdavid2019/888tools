@@ -594,6 +594,8 @@ tools:
       copiedSimplified: 已複製簡體結果！
       copiedResult: 已複製轉換結果！
       pastedSuccess: 已貼上剪貼簿內容！
+      pastedAndSwitchedTraditional: 已貼上並自動轉換為繁體中文！點擊可直接複製
+      pastedAndSwitchedSimplified: 已貼上並自動轉換為簡體中文！點擊可直接複製
       clipboardEmpty: 剪貼簿為空或無法讀取
       clipboardUnsupported: 瀏覽器不支援讀取剪貼簿
       clipboardError: 無法讀取剪貼簿，請手動貼上

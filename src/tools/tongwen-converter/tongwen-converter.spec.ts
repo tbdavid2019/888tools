@@ -58,17 +58,6 @@ vi.mock('naive-ui', async () => {
   return {
     ...actual,
     useMessage: () => mockMessage,
-    NTabs: defineComponent({
-      name: 'NTabs',
-      props: ['value', 'type', 'animated'],
-      emits: ['update:value'],
-      template: '<div class="n-tabs-stub" :data-active="value"><slot /></div>',
-    }),
-    NTabPane: defineComponent({
-      name: 'NTabPane',
-      props: ['name', 'tab'],
-      template: '<div class="n-tab-pane-stub" :data-name="name" :data-tab="tab"><slot /></div>',
-    }),
     NIcon: defineComponent({
       name: 'NIcon',
       template: '<span class="n-icon-stub"><slot /></span>',
@@ -82,13 +71,6 @@ const CCardStub = defineComponent({
   template: '<div class="c-card-stub"><slot /></div>',
 });
 
-const CSelectStub = defineComponent({
-  name: 'CSelect',
-  props: ['value', 'options', 'label'],
-  emits: ['update:value'],
-  template: '<div class="c-select-stub"><slot /></div>',
-});
-
 const CButtonStub = defineComponent({
   name: 'CButton',
   props: ['disabled', 'type', 'size', 'secondary', 'tertiary'],
@@ -99,8 +81,8 @@ const CButtonStub = defineComponent({
 const CInputTextStub = defineComponent({
   name: 'CInputText',
   props: ['value', 'placeholder', 'multiline', 'rawText', 'readonly', 'rows'],
-  emits: ['update:value'],
-  template: '<textarea class="c-input-text-stub" :value="value" :readonly="readonly" @input="$emit(\'update:value\', $event.target.value)" />',
+  emits: ['update:value', 'paste'],
+  template: '<textarea class="c-input-text-stub" :value="value" :readonly="readonly" @input="$emit(\'update:value\', $event.target.value)" @paste="$emit(\'paste\', $event)" />',
 });
 
 describe('TongWen Converter using OpenCC', () => {
@@ -158,7 +140,6 @@ describe('tongwen-converter.vue Component', () => {
       global: {
         stubs: {
           'c-card': CCardStub,
-          'c-select': CSelectStub,
           'c-button': CButtonStub,
           'c-input-text': CInputTextStub,
         },
@@ -166,22 +147,19 @@ describe('tongwen-converter.vue Component', () => {
     });
   }
 
-  it('mounts with default s2t direction and input tab', () => {
+  it('mounts with default s2t direction and flat segmented buttons', () => {
     const wrapper = createWrapper();
     expect(wrapper.exists()).toBe(true);
 
-    const tabs = wrapper.find('.n-tabs-stub');
-    expect(tabs.attributes('data-active')).toBe('input');
-
-    const select = wrapper.findComponent(CSelectStub);
-    expect(select.props('value')).toBe('s2t');
+    // Direction segmented buttons
+    expect(wrapper.text()).toContain('簡體➔繁體');
+    expect(wrapper.text()).toContain('繁體➔簡體');
   });
 
   it('reads initial direction from localStorage if present', () => {
     safeStorage.setItem('tongwen-converter-direction', 't2s');
     const wrapper = createWrapper();
-    const select = wrapper.findComponent(CSelectStub);
-    expect(select.props('value')).toBe('t2s');
+    expect(wrapper.text()).toContain('原始文 (繁)');
   });
 
   it('converts input text and updates HUD stats', async () => {
@@ -189,37 +167,21 @@ describe('tongwen-converter.vue Component', () => {
     const inputBoxes = wrapper.findAllComponents(CInputTextStub);
     expect(inputBoxes.length).toBe(2);
 
-    // Tab 1 input textarea
     inputBoxes[0].vm.$emit('update:value', '简体中文测试\n第二行');
     await nextTick();
 
-    // Result should automatically update via OpenCC watcher
     expect(inputBoxes[1].props('value')).toBe('簡體中文測試\n第二行');
-
-    // Tab 1 pane should have char count in title
-    const panes = wrapper.findAll('.n-tab-pane-stub');
-    expect(panes[0].attributes('data-tab')).toContain('10');
-    // Tab 2 pane should have ready checkmark
-    expect(panes[1].attributes('data-tab')).toContain('✓');
-
-    // Check HUD text in input tab
     expect(wrapper.text()).toContain('2 行 · 10 字');
   });
 
   it('swaps direction between s2t and t2s and updates storage', async () => {
     const wrapper = createWrapper();
-    const select = wrapper.findComponent(CSelectStub);
-    expect(select.props('value')).toBe('s2t');
+    const swapBtn = wrapper.find('button[title="切換方向"]');
+    expect(swapBtn.exists()).toBe(true);
 
-    // Click swap direction button
-    const buttons = wrapper.findAllComponents(CButtonStub);
-    const swapBtn = buttons.find(b => b.text().includes('切換方向') || b.text().includes('swap'));
-    expect(swapBtn).toBeDefined();
-
-    await swapBtn!.trigger('click');
+    await swapBtn.trigger('click');
     await nextTick();
 
-    expect(select.props('value')).toBe('t2s');
     expect(safeStorage.getItem('tongwen-converter-direction')).toBe('t2s');
   });
 
@@ -242,55 +204,7 @@ describe('tongwen-converter.vue Component', () => {
     expect(inputBoxes[1].props('value')).toBe('');
   });
 
-  it('switches to output tab when convertAndSwitch is clicked and can return', async () => {
-    const wrapper = createWrapper();
-    const inputBoxes = wrapper.findAllComponents(CInputTextStub);
-    const tabs = wrapper.find('.n-tabs-stub');
-
-    inputBoxes[0].vm.$emit('update:value', '测试');
-    await nextTick();
-
-    const buttons = wrapper.findAllComponents(CButtonStub);
-    const switchBtn = buttons.find(b => b.text().includes('轉換前往結果') || b.text().includes('convertAndSwitch'));
-    expect(switchBtn).toBeDefined();
-
-    await switchBtn!.trigger('click');
-    await nextTick();
-
-    expect(tabs.attributes('data-active')).toBe('output');
-
-    // Back to input tab button
-    const backBtn = buttons.find(b => b.text().includes('返回修改原文') || b.text().includes('backToInput'));
-    expect(backBtn).toBeDefined();
-
-    await backBtn!.trigger('click');
-    await nextTick();
-
-    expect(tabs.attributes('data-active')).toBe('input');
-  });
-
-  it('triggers convertAndCopy without leaving input tab', async () => {
-    const wrapper = createWrapper();
-    const inputBoxes = wrapper.findAllComponents(CInputTextStub);
-    const tabs = wrapper.find('.n-tabs-stub');
-
-    inputBoxes[0].vm.$emit('update:value', '简体输入');
-    await nextTick();
-
-    const buttons = wrapper.findAllComponents(CButtonStub);
-    const convertCopyBtn = buttons.find(b => b.text().includes('轉換並立即複製') || b.text().includes('convertAndCopy'));
-    expect(convertCopyBtn).toBeDefined();
-
-    await convertCopyBtn!.trigger('click');
-    await nextTick();
-
-    // Tab stays at input tab
-    expect(tabs.attributes('data-active')).toBe('input');
-    // Result is converted
-    expect(inputBoxes[1].props('value')).toBe('簡體輸入');
-  });
-
-  it('pastes text from clipboard when paste button is clicked', async () => {
+  it('pastes from clipboard and automatically switches to output tab', async () => {
     const wrapper = createWrapper();
     const inputBoxes = wrapper.findAllComponents(CInputTextStub);
 
@@ -303,6 +217,25 @@ describe('tongwen-converter.vue Component', () => {
     await nextTick();
 
     expect(inputBoxes[0].props('value')).toBe('剪貼簿文字');
+    expect(inputBoxes[1].props('value')).toBe('剪貼簿文字');
+    expect(mockMessage.success).toHaveBeenCalled();
+  });
+
+  it('handles paste event and automatically switches to output tab', async () => {
+    const wrapper = createWrapper();
+    const inputBoxes = wrapper.findAllComponents(CInputTextStub);
+
+    const pasteEvent = {
+      clipboardData: {
+        getData: (format: string) => (format === 'text' ? '测试自动切页' : ''),
+      },
+    };
+
+    inputBoxes[0].vm.$emit('paste', pasteEvent);
+    await nextTick();
+
+    expect(inputBoxes[0].props('value')).toBe('测试自动切页');
+    expect(inputBoxes[1].props('value')).toBe('測試自動切頁');
     expect(mockMessage.success).toHaveBeenCalled();
   });
 });

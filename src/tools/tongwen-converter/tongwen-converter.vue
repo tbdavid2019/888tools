@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { useStorage } from '@vueuse/core';
-import { NTabs, NTabPane, NIcon, useMessage } from 'naive-ui';
+import { NIcon, useMessage } from 'naive-ui';
 import {
   ArrowsLeftRight,
   Copy,
@@ -11,7 +11,6 @@ import {
   ArrowLeft,
   Bolt,
   Clipboard,
-  Rocket,
 } from '@vicons/tabler';
 
 import { convertOpenCC, type OpenCCDirection } from '@/services/opencc.service';
@@ -28,11 +27,6 @@ if (direction.value !== 's2t' && direction.value !== 't2s') {
 const activeTab = ref<'input' | 'output'>('input');
 const text = ref('');
 const result = ref('');
-
-const directionOptions = computed(() => [
-  { label: translate('tools.tongwen-converter.directions.s2t'), value: 's2t' as const },
-  { label: translate('tools.tongwen-converter.directions.t2s'), value: 't2s' as const },
-]);
 
 watch(
   [text, direction],
@@ -63,28 +57,6 @@ const outputStats = computed(() => {
   return { lines, chars };
 });
 
-const inputTabTitle = computed(() => {
-  const base = direction.value === 's2t'
-    ? translate('tools.tongwen-converter.tabs.sourceSimplified')
-    : translate('tools.tongwen-converter.tabs.sourceTraditional');
-
-  if (text.value) {
-    return `${base} (${text.value.length.toLocaleString()})`;
-  }
-  return base;
-});
-
-const outputTabTitle = computed(() => {
-  const base = direction.value === 's2t'
-    ? translate('tools.tongwen-converter.tabs.targetTraditional')
-    : translate('tools.tongwen-converter.tabs.targetSimplified');
-
-  if (result.value) {
-    return `${base} ✓`;
-  }
-  return base;
-});
-
 const inputStatsText = computed(() => {
   return `${inputStats.value.lines.toLocaleString()} ${translate('tools.tongwen-converter.hud.lines')} · ${inputStats.value.chars.toLocaleString()} ${translate('tools.tongwen-converter.hud.chars')}`;
 });
@@ -95,12 +67,40 @@ const outputStatsText = computed(() => {
 
 const swapDirection = () => {
   direction.value = direction.value === 's2t' ? 't2s' : 's2t';
+  if (text.value) {
+    result.value = convertOpenCC(text.value, direction.value);
+  }
+};
+
+const setDirection = (newDir: OpenCCDirection) => {
+  if (direction.value === newDir) {
+    return;
+  }
+  direction.value = newDir;
+  if (text.value) {
+    result.value = convertOpenCC(text.value, direction.value);
+  }
 };
 
 const clearAll = () => {
   text.value = '';
   result.value = '';
+  activeTab.value = 'input';
 };
+
+// 貼上事件：自動轉換並立即切換至結果分頁
+function handlePaste(event: ClipboardEvent) {
+  const pasted = event.clipboardData?.getData('text');
+  if (pasted) {
+    text.value = pasted;
+    result.value = convertOpenCC(pasted, direction.value);
+    activeTab.value = 'output';
+    const toastMsg = direction.value === 's2t'
+      ? translate('tools.tongwen-converter.toast.pastedAndSwitchedTraditional')
+      : translate('tools.tongwen-converter.toast.pastedAndSwitchedSimplified');
+    message?.success?.(toastMsg);
+  }
+}
 
 async function pasteFromClipboard() {
   try {
@@ -108,7 +108,12 @@ async function pasteFromClipboard() {
       const clipText = await navigator.clipboard.readText();
       if (clipText) {
         text.value = clipText;
-        message?.success?.(translate('tools.tongwen-converter.toast.pastedSuccess'));
+        result.value = convertOpenCC(clipText, direction.value);
+        activeTab.value = 'output';
+        const toastMsg = direction.value === 's2t'
+          ? translate('tools.tongwen-converter.toast.pastedAndSwitchedTraditional')
+          : translate('tools.tongwen-converter.toast.pastedAndSwitchedSimplified');
+        message?.success?.(toastMsg);
       }
       else {
         message?.warning?.(translate('tools.tongwen-converter.toast.clipboardEmpty'));
@@ -147,148 +152,203 @@ async function handleCopyOutput() {
   if (!result.value) {
     return;
   }
-  const toastMsg = translate('tools.tongwen-converter.toast.copiedResult');
+  const toastMsg = direction.value === 's2t'
+    ? translate('tools.tongwen-converter.toast.copiedTraditional')
+    : translate('tools.tongwen-converter.toast.copiedSimplified');
   await copyResult(undefined, { notificationMessage: toastMsg });
 }
 </script>
 
 <template>
   <c-card :title="translate('tools.tongwen-converter.title')">
-    <!-- 頂部：轉換方向與切換按鈕 -->
-    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-      <div class="flex items-center gap-2">
-        <c-select
-          v-model:value="direction"
-          :options="directionOptions"
-          :label="translate('tools.tongwen-converter.directionLabel')"
-          class="w-52"
-        />
-        <c-button secondary @click="swapDirection">
-          <n-icon class="mr-1 text-base">
+    <!-- 單一統合控制頂列 (Unified Header Bar) -->
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-200/60 dark:border-zinc-700/60">
+      <!-- 平鋪式方向選擇 (Tiled Direction Segmented Buttons) -->
+      <div class="flex items-center gap-1.5">
+        <span class="text-xs font-medium text-slate-500 dark:text-zinc-400 mr-1">
+          {{ translate('tools.tongwen-converter.directionLabel') }}:
+        </span>
+        <div class="inline-flex p-1 rounded-xl bg-slate-100 dark:bg-zinc-800/90 border border-slate-200 dark:border-zinc-700">
+          <button
+            type="button"
+            class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 cursor-pointer border-0"
+            :class="direction === 's2t'
+              ? 'bg-amber-500 text-white font-semibold shadow-sm'
+              : 'bg-transparent text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'"
+            @click="setDirection('s2t')"
+          >
+            <span>簡體</span>
+            <span class="opacity-70">➔</span>
+            <span>繁體</span>
+          </button>
+          <button
+            type="button"
+            class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 cursor-pointer border-0"
+            :class="direction === 't2s'
+              ? 'bg-amber-500 text-white font-semibold shadow-sm'
+              : 'bg-transparent text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'"
+            @click="setDirection('t2s')"
+          >
+            <span>繁體</span>
+            <span class="opacity-70">➔</span>
+            <span>簡體</span>
+          </button>
+        </div>
+        <button
+          type="button"
+          class="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-100 bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 transition cursor-pointer flex items-center justify-center"
+          :title="translate('tools.tongwen-converter.buttons.swap')"
+          @click="swapDirection"
+        >
+          <n-icon class="text-sm">
             <ArrowsLeftRight />
           </n-icon>
-          <span>{{ translate('tools.tongwen-converter.buttons.swap') }}</span>
-        </c-button>
+        </button>
+      </div>
+
+      <!-- 視圖分頁切換 (View Switch Tabs) -->
+      <div class="inline-flex p-1 rounded-xl bg-slate-100 dark:bg-zinc-800/90 border border-slate-200 dark:border-zinc-700">
+        <button
+          type="button"
+          class="px-3.5 py-1.5 rounded-lg text-xs transition-all flex items-center gap-1.5 cursor-pointer border-0"
+          :class="activeTab === 'input'
+            ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-white font-semibold shadow-sm'
+            : 'bg-transparent text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'"
+          @click="activeTab = 'input'"
+        >
+          <span>{{ direction === 's2t' ? '原始文 (簡)' : '原始文 (繁)' }}</span>
+          <span v-if="text" class="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-200/80 dark:bg-zinc-600 text-slate-700 dark:text-zinc-200 font-mono">
+            {{ inputStats.lines }}行
+          </span>
+        </button>
+
+        <button
+          type="button"
+          class="px-3.5 py-1.5 rounded-lg text-xs transition-all flex items-center gap-1.5 cursor-pointer border-0"
+          :class="activeTab === 'output'
+            ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-white font-semibold shadow-sm'
+            : 'bg-transparent text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'"
+          @click="activeTab = 'output'"
+        >
+          <span>{{ direction === 's2t' ? '轉換結果 (繁)' : '轉換結果 (簡)' }}</span>
+          <span v-if="result" class="text-emerald-500 font-bold text-xs">✓</span>
+        </button>
       </div>
     </div>
 
-    <!-- 雙分頁架構 (Two-Tab Flow) -->
-    <n-tabs v-model:value="activeTab" type="segment" animated class="mb-3">
-      <!-- 分頁 1: 原文 (Input) -->
-      <n-tab-pane name="input" :tab="inputTabTitle">
-        <div class="flex flex-col gap-2 pt-2">
-          <!-- 工具列 -->
-          <div class="flex flex-wrap items-center justify-between gap-2.5">
-            <!-- 左側動作與即時 HUD -->
-            <div class="flex flex-wrap items-center gap-2">
-              <c-button secondary size="small" @click="pasteFromClipboard">
-                <n-icon class="mr-1 text-sm">
-                  <Clipboard />
-                </n-icon>
-                <span>{{ translate('tools.tongwen-converter.buttons.paste') }}</span>
-              </c-button>
+    <!-- 狀態與快捷動作工具列 (Action Toolbar) -->
+    <div class="flex flex-wrap items-center justify-between gap-2.5 mb-2.5">
+      <!-- 原文狀態工具列 -->
+      <template v-if="activeTab === 'input'">
+        <div class="flex flex-wrap items-center gap-2">
+          <c-button secondary size="small" @click="pasteFromClipboard">
+            <n-icon class="mr-1 text-sm">
+              <Clipboard />
+            </n-icon>
+            <span>{{ translate('tools.tongwen-converter.buttons.paste') }}</span>
+          </c-button>
 
-              <c-button secondary size="small" :disabled="!text" @click="clearAll">
-                <n-icon class="mr-1 text-sm">
-                  <Trash />
-                </n-icon>
-                <span>{{ translate('tools.tongwen-converter.buttons.clear') }}</span>
-              </c-button>
+          <c-button secondary size="small" :disabled="!text" @click="clearAll">
+            <n-icon class="mr-1 text-sm">
+              <Trash />
+            </n-icon>
+            <span>{{ translate('tools.tongwen-converter.buttons.clear') }}</span>
+          </c-button>
 
-              <!-- 即時 HUD -->
-              <div
-                class="text-xs px-2.5 py-1 rounded-md bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-zinc-300 font-mono flex items-center border border-slate-200/60 dark:border-zinc-700/60"
-              >
-                {{ inputStatsText }}
-              </div>
-            </div>
-
-            <!-- 右側動作 -->
-            <div class="flex flex-wrap items-center gap-2 ml-auto">
-              <c-button secondary size="small" :disabled="!text" @click="convertAndCopy">
-                <n-icon class="mr-1 text-amber-500">
-                  <Bolt />
-                </n-icon>
-                <span>{{ translate('tools.tongwen-converter.buttons.convertAndCopy') }}</span>
-              </c-button>
-
-              <c-button type="primary" size="small" :disabled="!text" @click="convertAndSwitch">
-                <n-icon class="mr-1">
-                  <Rocket />
-                </n-icon>
-                <span>{{ translate('tools.tongwen-converter.buttons.convertAndSwitch') }}</span>
-                <n-icon class="ml-1 text-xs">
-                  <ArrowRight />
-                </n-icon>
-              </c-button>
-            </div>
+          <!-- 即時 HUD -->
+          <div
+            v-if="text"
+            class="text-xs px-2.5 py-1 rounded-md bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-zinc-300 font-mono flex items-center border border-slate-200/60 dark:border-zinc-700/60"
+          >
+            {{ inputStatsText }}
           </div>
-
-          <!-- 輸入框 (受控高度，內部滾動) -->
-          <c-input-text
-            v-model:value="text"
-            :placeholder="translate('tools.tongwen-converter.placeholder')"
-            multiline
-            raw-text
-            :rows="14"
-            class="converter-textarea"
-          />
         </div>
-      </n-tab-pane>
 
-      <!-- 分頁 2: 轉換結果 (Output) -->
-      <n-tab-pane name="output" :tab="outputTabTitle">
-        <div class="flex flex-col gap-2 pt-2">
-          <!-- 工具列 -->
-          <div class="flex flex-wrap items-center justify-between gap-2.5">
-            <!-- 左側返回與即時 HUD -->
-            <div class="flex flex-wrap items-center gap-2">
-              <c-button secondary size="small" @click="activeTab = 'input'">
-                <n-icon class="mr-1 text-sm">
-                  <ArrowLeft />
-                </n-icon>
-                <span>{{ translate('tools.tongwen-converter.buttons.backToInput') }}</span>
-              </c-button>
+        <div class="flex flex-wrap items-center gap-2 ml-auto">
+          <c-button secondary size="small" :disabled="!text" @click="convertAndCopy">
+            <n-icon class="mr-1 text-amber-500">
+              <Bolt />
+            </n-icon>
+            <span>{{ translate('tools.tongwen-converter.buttons.convertAndCopy') }}</span>
+          </c-button>
 
-              <!-- 即時 HUD -->
-              <div
-                class="text-xs px-2.5 py-1 rounded-md bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-zinc-300 font-mono flex items-center border border-slate-200/60 dark:border-zinc-700/60"
-              >
-                {{ outputStatsText }}
-              </div>
-            </div>
+          <c-button type="primary" size="small" :disabled="!text" @click="convertAndSwitch">
+            <span>{{ translate('tools.tongwen-converter.buttons.convertAndSwitch') }}</span>
+            <n-icon class="ml-1 text-xs">
+              <ArrowRight />
+            </n-icon>
+          </c-button>
+        </div>
+      </template>
 
-            <!-- 右側核心動作：複製結果 -->
-            <div class="flex flex-wrap items-center gap-2 ml-auto">
-              <c-button
-                type="primary"
-                size="small"
-                :disabled="!result"
-                class="font-medium"
-                @click="handleCopyOutput"
-              >
-                <n-icon class="mr-1 text-base">
-                  <Check v-if="isJustCopied" />
-                  <Copy v-else />
-                </n-icon>
-                <span>{{ isJustCopied ? translate('tools.tongwen-converter.buttons.copied') : translate('tools.tongwen-converter.buttons.copy') }}</span>
-              </c-button>
-            </div>
+      <!-- 結果狀態工具列 -->
+      <template v-else>
+        <div class="flex flex-wrap items-center gap-2">
+          <c-button secondary size="small" @click="activeTab = 'input'">
+            <n-icon class="mr-1 text-sm">
+              <ArrowLeft />
+            </n-icon>
+            <span>{{ translate('tools.tongwen-converter.buttons.backToInput') }}</span>
+          </c-button>
+
+          <c-button secondary size="small" @click="clearAll">
+            <n-icon class="mr-1 text-sm">
+              <Trash />
+            </n-icon>
+            <span>{{ translate('tools.tongwen-converter.buttons.clear') }}</span>
+          </c-button>
+
+          <!-- 即時 HUD -->
+          <div
+            v-if="result"
+            class="text-xs px-2.5 py-1 rounded-md bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-zinc-300 font-mono flex items-center border border-slate-200/60 dark:border-zinc-700/60"
+          >
+            {{ outputStatsText }}
           </div>
-
-          <!-- 結果展示框 (唯讀、受控高度，內部滾動) -->
-          <c-input-text
-            v-model:value="result"
-            multiline
-            raw-text
-            readonly
-            :rows="14"
-            class="converter-textarea"
-            :placeholder="translate('tools.tongwen-converter.placeholderOutput')"
-          />
         </div>
-      </n-tab-pane>
-    </n-tabs>
+
+        <div class="flex flex-wrap items-center gap-2 ml-auto">
+          <c-button
+            type="primary"
+            size="small"
+            :disabled="!result"
+            class="font-medium !px-4"
+            @click="handleCopyOutput"
+          >
+            <n-icon class="mr-1 text-base">
+              <Check v-if="isJustCopied" />
+              <Copy v-else />
+            </n-icon>
+            <span>{{ isJustCopied ? translate('tools.tongwen-converter.buttons.copied') : translate('tools.tongwen-converter.buttons.copy') }}</span>
+          </c-button>
+        </div>
+      </template>
+    </div>
+
+    <!-- 內容展示區 -->
+    <div v-show="activeTab === 'input'">
+      <c-input-text
+        v-model:value="text"
+        :placeholder="translate('tools.tongwen-converter.placeholder')"
+        multiline
+        raw-text
+        :rows="14"
+        class="converter-textarea"
+        @paste="handlePaste"
+      />
+    </div>
+
+    <div v-show="activeTab === 'output'">
+      <c-input-text
+        v-model:value="result"
+        multiline
+        raw-text
+        readonly
+        :rows="14"
+        class="converter-textarea"
+        :placeholder="translate('tools.tongwen-converter.placeholderOutput')"
+      />
+    </div>
 
     <p mt-3 text-xs text-secondary opacity-80>
       {{ translate('tools.tongwen-converter.note') }}
