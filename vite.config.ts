@@ -12,7 +12,7 @@ import { NaiveUiResolver } from 'unplugin-vue-components/resolvers';
 import Components from 'unplugin-vue-components/vite';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
-import markdown from 'vite-plugin-vue-markdown';
+import markdown from 'unplugin-vue-markdown/vite';
 import svgLoader from 'vite-svg-loader';
 import { configDefaults } from 'vitest/config';
 import { resolveSiteConfig } from './site.config.js';
@@ -68,6 +68,7 @@ export default defineConfig({
       strategies: 'generateSW',
       workbox: {
         maximumFileSizeToCacheInBytes: 15 * 1024 * 1024,
+        globIgnores: ['**/ort-wasm-simd-threaded.jsep-*.wasm', '**/ort-wasm-simd-threaded.asyncify-*.wasm'],
         cleanupOutdatedCaches: true,
         skipWaiting: false,
         clientsClaim: false,

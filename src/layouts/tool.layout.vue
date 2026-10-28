@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { useRoute } from 'vue-router';
-import { useHead } from '@vueuse/head';
-import type { HeadObject } from '@vueuse/head';
+import { useHead } from '@unhead/vue';
+import type { UseHeadInput } from '@unhead/vue';
 
 import BaseLayout from './base.layout.vue';
 import FavoriteButton from '@/components/FavoriteButton.vue';
@@ -41,7 +41,7 @@ const siteTitleSuffix = computed(() => {
   return '888 TOOL';
 });
 
-const head = computed<HeadObject>(() => ({
+const head = computed<UseHeadInput>(() => ({
   title: `${route.meta.name} - ${siteTitleSuffix.value}`,
   link: [
     {

@@ -1,6 +1,6 @@
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
-import { createHead } from '@vueuse/head';
+import { createHead } from '@unhead/vue/client';
 
 import shadow from 'vue-shadow-dom';
 import { plausible } from './plugins/plausible.plugin';

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useHead } from '@vueuse/head';
+import { useHead } from '@unhead/vue';
 
 useHead({ title: '404 頁面不存在 - 888 TOOL' });
 
