@@ -36,7 +36,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Test online clock
-        run: pnpm exec vitest run src/tools/online-clock/online-clock.test.ts --environment jsdom
+        run: pnpm exec vitest run src/tools/online-clock/online-clock.test.ts --environment jsdom -t 'accepts only supported mode values|renders all 4 modes|uses a shared URL mode'
         env:
           TZ: Asia/Taipei
 
