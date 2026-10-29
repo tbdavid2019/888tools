@@ -286,6 +286,7 @@ describe('Online Clock Component Rendering & Fullscreen Fallback', () => {
 
     // Switch to analog
     await buttons[1].trigger('click');
+    await flushPromises();
     expect(wrapper.find('.analog').exists()).toBe(true);
     expect(wrapper.find('.dial').exists()).toBe(true);
     expect(buttons[1].attributes('aria-pressed')).toBe('true');
@@ -293,11 +294,13 @@ describe('Online Clock Component Rendering & Fullscreen Fallback', () => {
 
     // Switch to flip
     await buttons[2].trigger('click');
+    await flushPromises();
     expect(wrapper.find('.flip').exists()).toBe(true);
     expect(buttons[2].attributes('aria-pressed')).toBe('true');
 
     // Switch to chinese
     await buttons[3].trigger('click');
+    await flushPromises();
     expect(wrapper.find('.chinese').exists()).toBe(true);
     expect(wrapper.find('.chinese-row.main').exists()).toBe(true);
     expect(buttons[3].attributes('aria-pressed')).toBe('true');

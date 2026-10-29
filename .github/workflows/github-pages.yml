@@ -37,6 +37,8 @@ jobs:
 
       - name: Test online clock
         run: pnpm exec vitest run src/tools/online-clock/online-clock.test.ts --environment jsdom
+        env:
+          TZ: Asia/Taipei
 
       - name: Build site
         run: pnpm build
