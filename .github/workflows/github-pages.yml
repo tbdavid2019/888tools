@@ -43,6 +43,9 @@ jobs:
       - name: Test PWA updates
         run: pnpm exec vitest run src/components/PwaUpdatePrompt.test.ts src/utils/build-git-sha.test.ts --environment jsdom
 
+      - name: Test dependency security fix
+        run: pnpm exec vitest run tests/deepmerge-security.test.ts
+
       - name: Build site
         run: pnpm build
         env:
