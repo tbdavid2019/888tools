@@ -1,11 +1,13 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { type VueWrapper, mount } from '@vue/test-utils';
+import { type VueWrapper, flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
+import { createMemoryHistory, createRouter } from 'vue-router';
 import { createI18n } from 'vue-i18n';
 import { tool } from './index';
 import OnlineClock, {
   getDefaultTimezone,
+  getOnlineClockModeFromUrl,
   getISOWeekNumber,
   getSolarTimes,
   getZonedTimeParts,
@@ -124,6 +126,16 @@ const i18n = createI18n({
   },
 });
 
+async function createClockRouter(initialPath = '/online-clock') {
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [{ path: '/online-clock', component: { template: '<div />' } }],
+  });
+  await router.push(initialPath);
+  await router.isReady();
+  return router;
+}
+
 describe('Online Clock Tool Metadata & Search', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
@@ -155,6 +167,12 @@ describe('Online Clock Tool Metadata & Search', () => {
 });
 
 describe('Online Clock Time Parsing & TV Browser Compatibility', () => {
+  it('accepts only supported mode values from shared URLs', () => {
+    expect(getOnlineClockModeFromUrl('https://example.com/online-clock?mode=analog')).toBe('analog');
+    expect(getOnlineClockModeFromUrl('https://example.com/online-clock?mode=unknown')).toBeNull();
+    expect(getOnlineClockModeFromUrl('https://example.com/online-clock?mode=digital&tz=UTC')).toBe('digital');
+  });
+
   it('validates timezone strings properly', () => {
     expect(isValidTimezone('Asia/Taipei')).toBe(true);
     expect(isValidTimezone('UTC')).toBe(true);
@@ -207,6 +225,7 @@ describe('Online Clock Component Rendering & Fullscreen Fallback', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     window.localStorage.clear();
+    window.history.replaceState(null, '', '/online-clock');
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({
@@ -244,9 +263,10 @@ describe('Online Clock Component Rendering & Fullscreen Fallback', () => {
   });
 
   it('renders all 4 modes (digital, analog, flip, chinese)', async () => {
+    const router = await createClockRouter();
     const wrapper = mount(OnlineClock, {
       global: {
-        plugins: [i18n],
+        plugins: [i18n, router],
         stubs: {
           'n-select': true,
           'n-switch': true,
@@ -281,6 +301,47 @@ describe('Online Clock Component Rendering & Fullscreen Fallback', () => {
     expect(wrapper.find('.chinese').exists()).toBe(true);
     expect(wrapper.find('.chinese-row.main').exists()).toBe(true);
     expect(buttons[3].attributes('aria-pressed')).toBe('true');
+    await flushPromises();
+    expect(router.currentRoute.value.query.mode).toBe('chinese');
+  });
+
+  it('uses a shared URL mode before localStorage and restores modes on browser history navigation', async () => {
+    localStorage.setItem('onlineClock/mode', 'digital');
+    const deepLinkRouter = await createClockRouter('/online-clock?mode=analog&tz=UTC#clock');
+    const wrapper = mount(OnlineClock, {
+      global: {
+        plugins: [i18n, deepLinkRouter],
+        stubs: { 'n-select': true, 'n-switch': true },
+      },
+    });
+    wrappers.push(wrapper);
+
+    expect(wrapper.find('.analog').exists()).toBe(true);
+    expect(localStorage.getItem('onlineClock/mode')).toBe('analog');
+    expect(deepLinkRouter.currentRoute.value.hash).toBe('#clock');
+
+    await wrapper.findAll('.tab-btn')[2].trigger('click');
+    await flushPromises();
+    expect(deepLinkRouter.currentRoute.value.query.tz).toBe('UTC');
+    expect(deepLinkRouter.currentRoute.value.query.mode).toBe('flip');
+    expect(deepLinkRouter.currentRoute.value.hash).toBe('#clock');
+    wrapper.unmount();
+
+    localStorage.setItem('onlineClock/mode', 'chinese');
+    const historyRouter = await createClockRouter();
+    const historyWrapper = mount(OnlineClock, {
+      global: { plugins: [i18n, historyRouter], stubs: { 'n-select': true, 'n-switch': true } },
+    });
+    wrappers.push(historyWrapper);
+    expect(historyWrapper.find('.chinese').exists()).toBe(true);
+    await historyWrapper.findAll('.tab-btn')[1].trigger('click');
+    await flushPromises();
+    expect(historyRouter.currentRoute.value.query.mode).toBe('analog');
+    historyRouter.back();
+    await flushPromises();
+    await historyWrapper.vm.$nextTick();
+    expect(historyRouter.currentRoute.value.query.mode).toBeUndefined();
+    expect(historyWrapper.find('.chinese').exists()).toBe(true);
   });
 
   it('getISOWeekNumber calculates correct ISO week and handles year boundaries correctly', () => {

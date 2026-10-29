@@ -31,6 +31,19 @@ export interface TimezoneGeoInfo {
   nameEn: string;
 }
 
+export type OnlineClockMode = 'digital' | 'analog' | 'flip' | 'chinese';
+
+const ONLINE_CLOCK_MODES: OnlineClockMode[] = ['digital', 'analog', 'flip', 'chinese'];
+
+export function getOnlineClockModeFromUrl(url: string): OnlineClockMode | null {
+  try {
+    const mode = new URL(url).searchParams.get('mode');
+    return ONLINE_CLOCK_MODES.includes(mode as OnlineClockMode) ? mode as OnlineClockMode : null;
+  } catch {
+    return null;
+  }
+}
+
 export const TIMEZONE_GEO_MAP: Record<string, TimezoneGeoInfo> = {
   'Asia/Taipei': { lat: 25.0330, lng: 121.5654, nameZh: '台灣臺北市', nameEn: 'Taipei, Taiwan' },
   'America/Los_Angeles': { lat: 34.0522, lng: -118.2437, nameZh: '美國洛杉磯', nameEn: 'Los Angeles, USA' },
@@ -232,7 +245,8 @@ export function getSolarTimes(
 </script>
 
 <script setup lang="ts">
-import { computed, ref, watch, onMounted, onUnmounted } from 'vue';
+import { computed, inject, ref, watch, onMounted, onUnmounted } from 'vue';
+import { routeLocationKey, routerKey } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useFullscreen, useLocalStorage, useNow, onKeyStroke } from '@vueuse/core';
 import FlipCard from './FlipCard.vue';
@@ -240,8 +254,45 @@ import { useStyleStore } from '@/stores/style.store';
 
 const { t, locale } = useI18n();
 const styleStore = useStyleStore();
+const router = inject(routerKey, null);
+const route = inject(routeLocationKey, null);
 
-const mode = useLocalStorage<'digital' | 'analog' | 'flip' | 'chinese'>('onlineClock/mode', 'digital');
+const mode = useLocalStorage<OnlineClockMode>('onlineClock/mode', 'digital');
+const initialRouteMode = typeof route?.query.mode === 'string'
+  && ONLINE_CLOCK_MODES.includes(route.query.mode as OnlineClockMode)
+  ? route.query.mode as OnlineClockMode
+  : null;
+const initialUrlMode = initialRouteMode || (!route && typeof window !== 'undefined'
+  ? getOnlineClockModeFromUrl(window.location.href)
+  : null);
+if (initialUrlMode) mode.value = initialUrlMode;
+const initialModeWithoutUrlParameter = mode.value;
+
+function selectMode(newMode: OnlineClockMode) {
+  if (!router || !route) {
+    mode.value = newMode;
+    return;
+  }
+  const currentMode = typeof route.query.mode === 'string' ? route.query.mode : null;
+  if (currentMode === newMode) {
+    mode.value = newMode;
+    return;
+  }
+  void router.push({
+    path: route.path,
+    query: { ...route.query, mode: newMode },
+    hash: route.hash,
+  });
+}
+if (route) {
+  watch(() => route.query.mode, (routeMode) => {
+    if (typeof routeMode === 'string' && ONLINE_CLOCK_MODES.includes(routeMode as OnlineClockMode)) {
+      mode.value = routeMode as OnlineClockMode;
+    } else if (routeMode === undefined) {
+      mode.value = initialModeWithoutUrlParameter;
+    }
+  });
+}
 const showSeconds = useLocalStorage<boolean>('onlineClock/showSeconds', true);
 const showDate = useLocalStorage<boolean>('onlineClock/showDate', true);
 const use12HourFormat = useLocalStorage<boolean>('onlineClock/use12HourFormat', false);
@@ -881,7 +932,7 @@ defineExpose({
         class="tab-btn"
         :class="{ active: mode === 'digital' }"
         :aria-pressed="mode === 'digital'"
-        @click="mode = 'digital'"
+        @click="selectMode('digital')"
       >
         {{ t('tools.online-clock.modes.digital') }}
       </button>
@@ -890,7 +941,7 @@ defineExpose({
         class="tab-btn"
         :class="{ active: mode === 'analog' }"
         :aria-pressed="mode === 'analog'"
-        @click="mode = 'analog'"
+        @click="selectMode('analog')"
       >
         {{ t('tools.online-clock.modes.analog') }}
       </button>
@@ -899,7 +950,7 @@ defineExpose({
         class="tab-btn"
         :class="{ active: mode === 'flip' }"
         :aria-pressed="mode === 'flip'"
-        @click="mode = 'flip'"
+        @click="selectMode('flip')"
       >
         {{ t('tools.online-clock.modes.flip') }}
       </button>
@@ -908,7 +959,7 @@ defineExpose({
         class="tab-btn"
         :class="{ active: mode === 'chinese' }"
         :aria-pressed="mode === 'chinese'"
-        @click="mode = 'chinese'"
+        @click="selectMode('chinese')"
       >
         {{ t('tools.online-clock.modes.chinese') }}
       </button>
