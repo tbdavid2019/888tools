@@ -24,9 +24,6 @@
       "zod": "4.6.6",
       "@unhead/vue": "2.1.13",
       "unhead": "2.1.13"
-    },
-    "patchedDependencies": {
-      "@rollup/plugin-node-resolve@16.0.3": "patches/@rollup__plugin-node-resolve@16.0.3.patch"
     }
   },
   "keywords": [
