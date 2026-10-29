@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { IconRefresh } from '@tabler/icons-vue';
 import { registerSW } from 'virtual:pwa-register';
 import { useStyleStore } from '@/stores/style.store';
 import { kanagawaDarkPalette, kanagawaLightPalette } from '@/theme/palette';
 import { config } from '@/config';
+
+const props = withDefaults(defineProps<{ isHomePage?: boolean }>(), { isHomePage: true });
 
 const styleStore = useStyleStore();
 const palette = computed(() => styleStore.isDarkTheme ? kanagawaDarkPalette : kanagawaLightPalette);
@@ -12,13 +14,15 @@ const isVisible = ref(false);
 const isUpdating = ref(false);
 const isChecking = ref(false);
 const hasEditedPageData = ref(false);
+const hasVisitedToolPage = ref(!props.isHomePage);
 const checkStatus = ref('');
+const updateError = ref(false);
 let checkTimer: ReturnType<typeof setInterval> | undefined;
 let registration: ServiceWorkerRegistration | undefined;
 let updateSW: ((reloadPage?: boolean) => Promise<void>) | undefined;
 
-async function checkForUpdates(manual = false) {
-  if (manual && registration?.waiting) {
+async function checkForUpdates(manual = false, reopenWaiting = false) {
+  if ((manual || reopenWaiting) && registration?.waiting) {
     isVisible.value = true;
   }
   if (!navigator.onLine) {
@@ -27,7 +31,11 @@ async function checkForUpdates(manual = false) {
     }
     return;
   }
-  if (!registration || registration.installing || isChecking.value) {
+  if (registration?.installing) {
+    checkStatus.value = 'pwaUpdate.installing';
+    return;
+  }
+  if (!registration || isChecking.value) {
     if (manual && !registration) {
       checkStatus.value = 'pwaUpdate.failed';
     }
@@ -60,14 +68,8 @@ function hasActiveEditor() {
     && (activeElement.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(activeElement.tagName));
 }
 
-function isHomePage() {
-  const basePath = new URL(config.app.baseUrl, window.location.origin).pathname.replace(/\/+$/, '') || '/';
-  const currentPath = window.location.pathname.replace(/\/+$/, '') || '/';
-  return currentPath === basePath;
-}
-
 function handleUpdateReady() {
-  if (!isHomePage() || hasEditedPageData.value || hasActiveEditor()) {
+  if (!props.isHomePage || hasVisitedToolPage.value || hasEditedPageData.value || hasActiveEditor()) {
     isVisible.value = true;
     return;
   }
@@ -83,13 +85,13 @@ function markPageDataEdited(event: Event) {
 
 function checkWhenVisible() {
   if (document.visibilityState === 'visible') {
-    checkForUpdates();
+    void checkForUpdates(false, true);
   }
 }
 
 function checkWhenOnline() {
   if (navigator.onLine) {
-    void checkForUpdates();
+    void checkForUpdates(false, true);
   }
 }
 
@@ -98,13 +100,24 @@ async function applyUpdate() {
     return;
   }
   isUpdating.value = true;
+  updateError.value = false;
   try {
     await updateSW(true);
   }
   catch {
+    updateError.value = true;
+    isVisible.value = true;
+  }
+  finally {
     isUpdating.value = false;
   }
 }
+
+watch(() => props.isHomePage, (isHomePage) => {
+  if (!isHomePage) {
+    hasVisitedToolPage.value = true;
+  }
+});
 
 onMounted(() => {
   // Keep edits protected for the rest of this page session once a user changes a field.
@@ -158,6 +171,7 @@ onBeforeUnmount(() => {
       <div class="pwa-update-prompt__content">
         <strong>{{ $t('pwaUpdate.title') }}</strong>
         <p>{{ $t('pwaUpdate.description') }}</p>
+        <p v-if="updateError" class="pwa-update-prompt__error" role="alert">{{ $t('pwaUpdate.applyFailed') }}</p>
         <div class="pwa-update-prompt__actions">
           <n-button size="small" :disabled="isUpdating" @click="isVisible = false">
             {{ $t('pwaUpdate.later') }}
@@ -240,6 +254,7 @@ onBeforeUnmount(() => {
 .pwa-update-prompt__content { min-width: 0; }
 .pwa-update-prompt strong { font-size: var(--type-body); }
 .pwa-update-prompt p { margin: 5px 0 16px; font-size: var(--type-meta); line-height: 1.5; }
+.pwa-update-prompt__error { color: #c0262d; }
 .pwa-update-prompt__actions { display: flex; justify-content: flex-end; gap: 8px; }
 .pwa-update-enter-active, .pwa-update-leave-active { transition: opacity 180ms ease, transform 180ms ease; }
 .pwa-update-enter-from, .pwa-update-leave-to { opacity: 0; transform: translateY(12px); }

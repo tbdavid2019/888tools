@@ -9,6 +9,8 @@ pwaUpdate:
   checked: 'Update check complete'
   offline: 'You are offline. Check again when connected.'
   failed: 'Update check failed. Please try again later.'
+  installing: 'The update is downloading. Check again when it finishes.'
+  applyFailed: 'The update could not be applied. Please try again.'
 home:
   categories:
     newestTools: Newest tools

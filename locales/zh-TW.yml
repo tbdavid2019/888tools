@@ -9,6 +9,8 @@ pwaUpdate:
   checked: '已完成更新檢查'
   offline: '目前離線，連線後可再次檢查。'
   failed: '更新檢查失敗，請稍後再試。'
+  installing: '新版正在下載，完成後可再次檢查。'
+  applyFailed: '更新套用失敗，請重新嘗試。'
 home:
   categories:
     newestTools: '最新工具'

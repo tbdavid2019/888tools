@@ -15,9 +15,10 @@ describe('PwaUpdatePrompt', () => {
     vi.clearAllMocks();
   });
 
-  function mountPrompt() {
+  function mountPrompt(isHomePage = true) {
     registerSW.mockReturnValue(updateSW);
     const wrapper = mount(PwaUpdatePrompt, {
+      props: { isHomePage },
       global: {
         plugins: [createPinia()],
         mocks: { $t: (key: string) => key },
@@ -63,9 +64,20 @@ describe('PwaUpdatePrompt', () => {
     wrapper.unmount();
   });
 
+  it('keeps updates manual after visiting a tool and returning home', async () => {
+    const { wrapper, options } = mountPrompt();
+    await wrapper.setProps({ isHomePage: false });
+    await wrapper.setProps({ isHomePage: true });
+    options.onNeedRefresh();
+    await wrapper.vm.$nextTick();
+    expect(wrapper.find('.pwa-update-prompt').exists()).toBe(true);
+    expect(updateSW).not.toHaveBeenCalled();
+    wrapper.unmount();
+  });
+
   it('keeps updates manual while on a tool page, even without form edits', async () => {
     window.history.pushState({}, '', '/tools/example');
-    const { wrapper, options } = mountPrompt();
+    const { wrapper, options } = mountPrompt(false);
     options.onNeedRefresh();
     await wrapper.vm.$nextTick();
     expect(wrapper.find('.pwa-update-prompt').exists()).toBe(true);
@@ -76,7 +88,7 @@ describe('PwaUpdatePrompt', () => {
 
   it('reopens an already waiting update from the manual check control', async () => {
     window.history.pushState({}, '', '/tools/example');
-    const { wrapper, options } = mountPrompt();
+    const { wrapper, options } = mountPrompt(false);
     const update = vi.fn(async () => {});
     options.onRegisteredSW('/sw.js', { update, waiting: {} } as ServiceWorkerRegistration);
     await flushPromises();
@@ -93,6 +105,45 @@ describe('PwaUpdatePrompt', () => {
     expect(update).toHaveBeenCalledTimes(2);
     wrapper.unmount();
     window.history.pushState({}, '', '/');
+  });
+
+  it('reopens a waiting update after a later online check', async () => {
+    const { wrapper, options } = mountPrompt();
+    const update = vi.fn(async () => {});
+    options.onRegisteredSW('/sw.js', { update, waiting: {} } as ServiceWorkerRegistration);
+    await flushPromises();
+    expect(wrapper.find('.pwa-update-prompt').exists()).toBe(false);
+
+    window.dispatchEvent(new Event('online'));
+    await wrapper.vm.$nextTick();
+    expect(wrapper.find('.pwa-update-prompt').exists()).toBe(true);
+    wrapper.unmount();
+  });
+
+  it('reports when a worker is still installing', async () => {
+    const { wrapper, options } = mountPrompt();
+    const update = vi.fn(async () => {});
+    options.onRegisteredSW('/sw.js', { update, installing: {} } as ServiceWorkerRegistration);
+    await flushPromises();
+
+    await wrapper.find('.pwa-version-control button').trigger('click');
+    await wrapper.vm.$nextTick();
+    expect(wrapper.find('.pwa-check-status').text()).toBe('pwaUpdate.installing');
+    wrapper.unmount();
+  });
+
+  it('shows a retryable prompt when applying an update fails', async () => {
+    const { wrapper, options } = mountPrompt();
+    updateSW.mockRejectedValueOnce(new Error('activation failed'));
+    options.onNeedRefresh();
+    await flushPromises();
+
+    expect(wrapper.find('.pwa-update-prompt').exists()).toBe(true);
+    expect(wrapper.find('.pwa-update-prompt__error').text()).toBe('pwaUpdate.applyFailed');
+    await wrapper.find('.pwa-update-prompt').findAll('button')[1].trigger('click');
+    await flushPromises();
+    expect(updateSW).toHaveBeenCalledTimes(2);
+    wrapper.unmount();
   });
 
   it('shows visible states for successful, offline, and failed manual checks', async () => {

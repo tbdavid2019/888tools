@@ -11,6 +11,7 @@ import { kanagawaDarkPalette, kanagawaLightPalette } from './theme/palette';
 
 const route = useRoute();
 const layout = computed(() => route?.meta?.layout ?? layouts.base);
+const isHomePage = computed(() => route.name === 'home');
 const styleStore = useStyleStore();
 
 const theme = computed(() => (styleStore.isDarkTheme ? darkTheme : null));
@@ -50,7 +51,7 @@ syncRef(
             <RouterView />
           </component>
           <PwaInstallPrompt />
-          <PwaUpdatePrompt />
+          <PwaUpdatePrompt :is-home-page="isHomePage" />
         </NNotificationProvider>
       </NMessageProvider>
     </div>
