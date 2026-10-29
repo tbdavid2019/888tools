@@ -4,30 +4,92 @@ import { IconRefresh } from '@tabler/icons-vue';
 import { registerSW } from 'virtual:pwa-register';
 import { useStyleStore } from '@/stores/style.store';
 import { kanagawaDarkPalette, kanagawaLightPalette } from '@/theme/palette';
+import { config } from '@/config';
 
 const styleStore = useStyleStore();
 const palette = computed(() => styleStore.isDarkTheme ? kanagawaDarkPalette : kanagawaLightPalette);
 const isVisible = ref(false);
 const isUpdating = ref(false);
+const isChecking = ref(false);
+const hasEditedPageData = ref(false);
+const checkStatus = ref('');
 let checkTimer: ReturnType<typeof setInterval> | undefined;
 let registration: ServiceWorkerRegistration | undefined;
 let updateSW: ((reloadPage?: boolean) => Promise<void>) | undefined;
 
-async function checkForUpdates() {
-  if (!registration || registration.installing || !navigator.onLine) {
+async function checkForUpdates(manual = false) {
+  if (manual && registration?.waiting) {
+    isVisible.value = true;
+  }
+  if (!navigator.onLine) {
+    if (manual) {
+      checkStatus.value = 'pwaUpdate.offline';
+    }
     return;
+  }
+  if (!registration || registration.installing || isChecking.value) {
+    if (manual && !registration) {
+      checkStatus.value = 'pwaUpdate.failed';
+    }
+    return;
+  }
+  isChecking.value = true;
+  if (manual) {
+    checkStatus.value = 'pwaUpdate.checking';
   }
   try {
     await registration.update();
+    if (manual) {
+      checkStatus.value = 'pwaUpdate.checked';
+    }
   }
   catch {
     // A lost connection should not interrupt the current tool.
+    if (manual) {
+      checkStatus.value = navigator.onLine ? 'pwaUpdate.failed' : 'pwaUpdate.offline';
+    }
+  }
+  finally {
+    isChecking.value = false;
+  }
+}
+
+function hasActiveEditor() {
+  const activeElement = document.activeElement;
+  return activeElement instanceof HTMLElement
+    && (activeElement.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(activeElement.tagName));
+}
+
+function isHomePage() {
+  const basePath = new URL(config.app.baseUrl, window.location.origin).pathname.replace(/\/+$/, '') || '/';
+  const currentPath = window.location.pathname.replace(/\/+$/, '') || '/';
+  return currentPath === basePath;
+}
+
+function handleUpdateReady() {
+  if (!isHomePage() || hasEditedPageData.value || hasActiveEditor()) {
+    isVisible.value = true;
+    return;
+  }
+  void applyUpdate();
+}
+
+function markPageDataEdited(event: Event) {
+  const target = event.target;
+  if (target instanceof HTMLElement && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName))) {
+    hasEditedPageData.value = true;
   }
 }
 
 function checkWhenVisible() {
   if (document.visibilityState === 'visible') {
     checkForUpdates();
+  }
+}
+
+function checkWhenOnline() {
+  if (navigator.onLine) {
+    void checkForUpdates();
   }
 }
 
@@ -45,20 +107,24 @@ async function applyUpdate() {
 }
 
 onMounted(() => {
+  // Keep edits protected for the rest of this page session once a user changes a field.
+  document.addEventListener('input', markPageDataEdited, true);
+  document.addEventListener('change', markPageDataEdited, true);
   updateSW = registerSW({
     immediate: true,
-    onNeedRefresh() {
-      isVisible.value = true;
-    },
+    onNeedRefresh: handleUpdateReady,
     onRegisteredSW(_swUrl, registered) {
       registration = registered;
       if (registration) {
-        if (registration.waiting && navigator.serviceWorker.controller) {
-          isVisible.value = true;
+        if (registration.waiting && navigator.serviceWorker?.controller) {
+          handleUpdateReady();
         }
         checkTimer = setInterval(checkForUpdates, 60 * 60 * 1000);
         document.addEventListener('visibilitychange', checkWhenVisible);
-        window.addEventListener('online', checkForUpdates);
+        window.addEventListener('online', checkWhenOnline);
+        window.addEventListener('offline', checkWhenOnline);
+        // Check once as soon as registration is available, including on a fresh app opening.
+        void checkForUpdates();
       }
     },
   });
@@ -69,11 +135,21 @@ onBeforeUnmount(() => {
     clearInterval(checkTimer);
   }
   document.removeEventListener('visibilitychange', checkWhenVisible);
-  window.removeEventListener('online', checkForUpdates);
+  window.removeEventListener('online', checkWhenOnline);
+  window.removeEventListener('offline', checkWhenOnline);
+  document.removeEventListener('input', markPageDataEdited, true);
+  document.removeEventListener('change', markPageDataEdited, true);
 });
 </script>
 
 <template>
+  <div class="pwa-version-control" role="group" :aria-label="$t('pwaUpdate.version')">
+    <span>{{ $t('pwaUpdate.version') }} {{ config.app.gitSha }}</span>
+    <n-button size="tiny" quaternary :loading="isChecking" :disabled="isChecking" @click="checkForUpdates(true)">
+      {{ $t('pwaUpdate.check') }}
+    </n-button>
+    <span v-if="checkStatus" class="pwa-check-status" role="status" aria-live="polite">{{ $t(checkStatus) }}</span>
+  </div>
   <Transition name="pwa-update">
     <aside v-if="isVisible" class="pwa-update-prompt" role="status" aria-live="polite">
       <div class="pwa-update-prompt__icon" aria-hidden="true">
@@ -110,6 +186,38 @@ onBeforeUnmount(() => {
   border: 1px solid v-bind('palette.border');
   border-radius: 16px;
   box-shadow: 0 12px 36px rgb(0 0 0 / 18%);
+}
+
+.pwa-version-control {
+  position: fixed;
+  right: max(20px, env(safe-area-inset-right));
+  bottom: max(20px, env(safe-area-inset-bottom));
+  z-index: 2999;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px 5px 12px;
+  color: v-bind('palette.text');
+  background: v-bind('palette.surface');
+  border: 1px solid v-bind('palette.border');
+  border-radius: 999px;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 10%);
+  font-size: var(--type-caption);
+}
+
+.pwa-check-status {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  width: max-content;
+  max-width: min(320px, calc(100vw - 32px));
+  padding: 7px 10px;
+  color: v-bind('palette.text');
+  background: v-bind('palette.surface');
+  border: 1px solid v-bind('palette.border');
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 10%);
+  font-size: var(--type-caption);
 }
 
 .pwa-update-prompt__icon {

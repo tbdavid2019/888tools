@@ -3,6 +3,12 @@ pwaUpdate:
   description: 'A new version is ready. Save your work, then reload to use it.'
   later: 'Later'
   now: 'Update now'
+  version: 'Version'
+  check: 'Check for updates'
+  checking: 'Checking for updates…'
+  checked: 'Update check complete'
+  offline: 'You are offline. Check again when connected.'
+  failed: 'Update check failed. Please try again later.'
 home:
   categories:
     newestTools: Newest tools

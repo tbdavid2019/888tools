@@ -1,5 +1,6 @@
 import { resolve } from 'node:path';
 import { URL, fileURLToPath } from 'node:url';
+import { execFileSync } from 'node:child_process';
 
 import VueI18n from '@intlify/unplugin-vue-i18n/vite';
 import vue from '@vitejs/plugin-vue';
@@ -16,9 +17,29 @@ import markdown from 'unplugin-vue-markdown/vite';
 import svgLoader from 'vite-svg-loader';
 import { configDefaults } from 'vitest/config';
 import { resolveSiteConfig } from './site.config.js';
+import { resolveBuildGitSha } from './src/utils/build-git-sha';
 
 const baseUrl = `${(process.env.BASE_URL ?? '/').replace(/\/?$/, '/')}`;
 const { origin: siteOrigin } = resolveSiteConfig(process.env);
+const ciGitSha = [
+  process.env.GITHUB_SHA,
+  process.env.CI_COMMIT_SHA,
+  process.env.VERCEL_GIT_COMMIT_SHA,
+  process.env.CIRCLE_SHA1,
+  process.env.BITBUCKET_COMMIT,
+  process.env.BUILDKITE_COMMIT,
+  process.env.TRAVIS_COMMIT,
+].find(Boolean);
+let localGitSha: string | undefined;
+if (!ciGitSha) {
+  try {
+    localGitSha = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+  }
+  catch {
+    localGitSha = undefined;
+  }
+}
+const buildGitSha = resolveBuildGitSha(ciGitSha, localGitSha);
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -123,7 +144,7 @@ export default defineConfig({
     },
   },
   define: {
-    'import.meta.env.PACKAGE_VERSION': JSON.stringify(process.env.npm_package_version),
+    'import.meta.env.GIT_SHA': JSON.stringify(buildGitSha),
   },
   test: {
     exclude: [...configDefaults.exclude, '**/*.e2e.spec.ts'],

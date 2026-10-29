@@ -3,11 +3,11 @@ import { siteConfig } from '../site.config.js';
 
 export const config = figue({
   app: {
-    version: {
-      doc: 'Application current version',
+    gitSha: {
+      doc: 'Application build Git SHA',
       format: 'string',
-      default: '0.0.0',
-      env: 'PACKAGE_VERSION',
+      default: 'local',
+      env: 'GIT_SHA',
     },
     baseUrl: {
       doc: 'Application base url',
@@ -91,8 +91,8 @@ export const config = figue({
 })
   .loadEnv({
     ...import.meta.env,
-    // Because the string 'import.meta.env.PACKAGE_VERSION' is statically replaced during build time (see 'define' in vite.config.ts)
-    PACKAGE_VERSION: import.meta.env.PACKAGE_VERSION,
+    // GIT_SHA is statically replaced during build time (see 'define' in vite.config.ts).
+    GIT_SHA: import.meta.env.GIT_SHA,
   })
   .validate()
   .getConfig();

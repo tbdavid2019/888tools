@@ -40,6 +40,9 @@ jobs:
         env:
           TZ: Asia/Taipei
 
+      - name: Test PWA updates
+        run: pnpm exec vitest run src/components/PwaUpdatePrompt.test.ts src/utils/build-git-sha.test.ts --environment jsdom
+
       - name: Build site
         run: pnpm build
         env:

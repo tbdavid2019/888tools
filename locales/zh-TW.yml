@@ -3,6 +3,12 @@ pwaUpdate:
   description: '更新已準備就緒。完成手邊工作後，重新載入即可使用最新版。'
   later: '稍後再說'
   now: '立即更新'
+  version: '版本'
+  check: '檢查更新'
+  checking: '正在檢查更新…'
+  checked: '已完成更新檢查'
+  offline: '目前離線，連線後可再次檢查。'
+  failed: '更新檢查失敗，請稍後再試。'
 home:
   categories:
     newestTools: '最新工具'
