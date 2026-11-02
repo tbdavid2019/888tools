@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## Version 2026.11.02
+
+### Features
+- **online-clock**: 新增六款時鐘樣式：放射圓點（Minimalist Radial Dot Clock）、農曆桌曆（Skeuomorphic Lunar Desk Calendar）、立體積木（Blocky Digital Clock）、百年時輪（100-Year Clock Wheel）、像素方塊（Blocks Clock with Pixel Art）與 Braun 彩針（Braun × Paul Smith）。加上原有數位、類比、翻頁與中文字，共十種樣式可切換。
+- **online-clock**: 六款樣式共用時區、網路校時、秒數與全螢幕設定；農曆桌曆使用所選時區計算農曆，百年時輪依實際月份天數排列日期。支援樣式網址分享與偏好記憶。
+- **docs**: 中英文 README 新增時鐘功能展示、六款實際截圖、快速體驗連結及操作指南，並保留設計參考作者與來源。
+
+### Improvements
+- **pwa**: 移除全站右下角常駐的「版本／檢查更新」標籤，保留自動檢查及新版就緒時的更新提示。
+- **online-clock**: 使用明確 SVG 樣式避免 UnoCSS 屬性規則改變字級、尺寸及透明度；立體積木動畫支援減少動態效果偏好。
+
+### Verification
+- 擴充時鐘樣式切換與網址測試，更新 PWA 標籤移除的測試；部署工作流程改為執行完整線上時鐘測試，覆蓋 12／24 小時制與六款新樣式。
+
 ## Version 2026.10.27
 
 ### Features & Enhancements

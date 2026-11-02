@@ -3,13 +3,6 @@ pwaUpdate:
   description: 'A new version is ready. Save your work, then reload to use it.'
   later: 'Later'
   now: 'Update now'
-  version: 'Version'
-  check: 'Check for updates'
-  checking: 'Checking for updates…'
-  checked: 'Update check complete'
-  offline: 'You are offline. Check again when connected.'
-  failed: 'Update check failed. Please try again later.'
-  installing: 'The update is downloading. Check again when it finishes.'
   applyFailed: 'The update could not be applied. Please try again.'
 home:
   categories:
@@ -202,8 +195,7 @@ tools:
 
   online-clock:
     title: Online clock
-    description: View current time with digital, analog, or flip styles plus
-      timezone/seconds/date toggles
+    description: Ten live clock styles including radial dots, lunar calendar, 3D blocks, a 100-year wheel, pixel art and Braun-inspired hands, with timezones and network sync
     timezone: Timezone
     showSeconds: Show seconds
     showDate: Show date
@@ -214,6 +206,12 @@ tools:
       analog: Analog
       flip: Flip
       chinese: Chinese
+      radial: Radial dots
+      lunar: Lunar calendar
+      blocky: Blocky 3D
+      wheel: 100-year wheel
+      pixel: Pixel blocks
+      braun: Braun × Paul Smith
     useNetworkTime: Network time sync
     syncing: 'Syncing...'
     syncError: Sync failed

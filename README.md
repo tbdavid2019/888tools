@@ -26,6 +26,27 @@
 
 ---
 
+## New: six ways to see time
+
+The [online clock](https://tool.david888.com/online-clock) now includes six new faces: radial dots, a lunar desk calendar, 3D blocks, a 100-year wheel, pixel blocks and Braun-inspired colorful hands. Together with digital, analog, flip and Chinese styles, there are ten ways to set up your desktop or fullscreen display.
+
+[![Actual screenshots of the six new clock styles](./docs/screenshots/online-clock/overview.png)](https://tool.david888.com/online-clock?mode=radial)
+
+| Style | Try it |
+| --- | --- |
+| Minimalist Radial Dot Clock | [Open](https://tool.david888.com/online-clock?mode=radial) |
+| Skeuomorphic Lunar Desk Calendar | [Open](https://tool.david888.com/online-clock?mode=lunar) |
+| Blocky Digital Clock | [Open](https://tool.david888.com/online-clock?mode=blocky) |
+| 100-Year Clock Wheel | [Open](https://tool.david888.com/online-clock?mode=wheel) |
+| Blocks Clock with Pixel Art | [Open](https://tool.david888.com/online-clock?mode=pixel) |
+| CSS Clock (Braun × Paul Smith) | [Open](https://tool.david888.com/online-clock?mode=braun) |
+
+Switch timezones, 12/24-hour display, seconds, network time sync and fullscreen. The lunar calendar and wheel calculate dates in the selected timezone. Your chosen style is remembered and can be shared by URL.
+
+[Usage and design credits](./src/tools/online-clock/online-clock-guide.md) · [Mobile screenshot](./docs/screenshots/online-clock/mobile.png) · [Release announcement and share image](./docs/releases/2026-11-02-online-clock.md)
+
+---
+
 ## Overview
 
 Modern software engineering and IT operations frequently require quick utilities: Base64 encoders, UUID generators, JWT inspectors, regex debuggers, color contrast analyzers, and sensitive data masking. Unfortunately, the vast majority of web tools upload user payloads to remote servers, exposing private tokens, database schemas, and personal data to interception or leaks.

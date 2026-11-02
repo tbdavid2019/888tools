@@ -26,6 +26,27 @@
 
 ---
 
+## 新功能：讓時間，換一種樣子。
+
+[線上時鐘](https://tool.david888.com/online-clock) 新增六款樣式，從放射圓點、農曆紙張桌曆到立體積木與百年時輪。加上原有數位、類比、翻頁與中文字，共十種選擇，適合桌面常駐、工作計時看板與全螢幕展示。
+
+[![六款新增時鐘的實際畫面：放射圓點、農曆桌曆、立體積木、百年時輪、像素方塊與 Braun 彩針](./docs/screenshots/online-clock/overview.png)](https://tool.david888.com/online-clock?mode=radial)
+
+| 樣式 | 立即體驗 |
+| --- | --- |
+| 放射圓點 · Minimalist Radial Dot Clock | [開啟](https://tool.david888.com/online-clock?mode=radial) |
+| 農曆桌曆 · Skeuomorphic Lunar Desk Calendar | [開啟](https://tool.david888.com/online-clock?mode=lunar) |
+| 立體積木 · Blocky Digital Clock | [開啟](https://tool.david888.com/online-clock?mode=blocky) |
+| 百年時輪 · 100-Year Clock Wheel | [開啟](https://tool.david888.com/online-clock?mode=wheel) |
+| 像素方塊 · Blocks Clock with Pixel Art | [開啟](https://tool.david888.com/online-clock?mode=pixel) |
+| Braun 彩針 · CSS Clock (Braun × Paul Smith) | [開啟](https://tool.david888.com/online-clock?mode=braun) |
+
+支援全球時區、12／24 小時、秒數顯示、網路校時與全螢幕；農曆桌曆和百年時輪跟隨所選時區計算日期。樣式選擇會自動記憶，也能直接分享網址。
+
+[操作指南與設計來源](./src/tools/online-clock/online-clock-guide.md) · [手機實際畫面](./docs/screenshots/online-clock/mobile.png) · [本次更新介紹與分享圖](./docs/releases/2026-11-02-online-clock.md)
+
+---
+
 ## 為什麼選擇 888tools？
 
 日常開發經常需要處理 Base64 編解碼、UUID 生成、JWT 檢驗、Regex 比對、色彩對比檢查或個資遮罩。大多數線上工具需要將您的文字與機密檔案上傳至第三方伺服器，潛藏嚴重資安與隱私風險。

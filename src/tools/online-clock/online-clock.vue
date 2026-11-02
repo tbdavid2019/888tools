@@ -31,9 +31,9 @@ export interface TimezoneGeoInfo {
   nameEn: string;
 }
 
-export type OnlineClockMode = 'digital' | 'analog' | 'flip' | 'chinese';
+export type OnlineClockMode = 'digital' | 'analog' | 'flip' | 'chinese' | 'radial' | 'lunar' | 'blocky' | 'wheel' | 'pixel' | 'braun';
 
-const ONLINE_CLOCK_MODES: OnlineClockMode[] = ['digital', 'analog', 'flip', 'chinese'];
+const ONLINE_CLOCK_MODES: OnlineClockMode[] = ['digital', 'analog', 'flip', 'chinese', 'radial', 'lunar', 'blocky', 'wheel', 'pixel', 'braun'];
 
 export function getOnlineClockModeFromUrl(url: string): OnlineClockMode | null {
   try {
@@ -250,6 +250,7 @@ import { routeLocationKey, routerKey } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useFullscreen, useLocalStorage, useNow, onKeyStroke } from '@vueuse/core';
 import FlipCard from './FlipCard.vue';
+import ClockStyles from './ClockStyles.vue';
 import { useStyleStore } from '@/stores/style.store';
 
 const { t, locale } = useI18n();
@@ -462,7 +463,7 @@ const { now: smoothNow, pause: pauseSmoothNow, resume: resumeSmoothNow } = useNo
 watch(
   mode,
   (currentMode) => {
-    if (currentMode === 'analog') {
+    if (currentMode === 'analog' || currentMode === 'braun') {
       resumeSmoothNow();
     } else {
       pauseSmoothNow();
@@ -540,7 +541,7 @@ const smoothAdjustedNow = computed(() => {
 const parts = computed(() => getZonedTimeParts(adjustedNow.value, timezone.value, use12HourFormat.value));
 
 const analogParts = computed(() => {
-  const sourceDate = mode.value === 'analog' ? smoothAdjustedNow.value : adjustedNow.value;
+  const sourceDate = (mode.value === 'analog' || mode.value === 'braun') ? smoothAdjustedNow.value : adjustedNow.value;
   return getZonedTimeParts(sourceDate, timezone.value, use12HourFormat.value);
 });
 
@@ -744,7 +745,7 @@ const timezones = computed(() => {
 
 const hourRotation = computed(() => {
   const p = analogParts.value;
-  const ms = mode.value === 'analog' ? smoothAdjustedNow.value.getMilliseconds() : 0;
+  const ms = (mode.value === 'analog' || mode.value === 'braun') ? smoothAdjustedNow.value.getMilliseconds() : 0;
   return (p.hours % 12) * 30
     + p.minutes * 0.5
     + p.seconds * (0.5 / 60)
@@ -753,7 +754,7 @@ const hourRotation = computed(() => {
 
 const minuteRotation = computed(() => {
   const p = analogParts.value;
-  const ms = mode.value === 'analog' ? smoothAdjustedNow.value.getMilliseconds() : 0;
+  const ms = (mode.value === 'analog' || mode.value === 'braun') ? smoothAdjustedNow.value.getMilliseconds() : 0;
   return p.minutes * 6
     + p.seconds * 0.1
     + ms * (0.1 / 1000);
@@ -761,7 +762,7 @@ const minuteRotation = computed(() => {
 
 const secondRotation = computed(() => {
   const p = analogParts.value;
-  const ms = mode.value === 'analog' ? smoothAdjustedNow.value.getMilliseconds() : 0;
+  const ms = (mode.value === 'analog' || mode.value === 'braun') ? smoothAdjustedNow.value.getMilliseconds() : 0;
   return p.seconds * 6
     + ms * (6 / 1000);
 });
@@ -910,7 +911,7 @@ defineExpose({
       </template>
     </div>
 
-    <div v-else class="chinese">
+    <div v-else-if="mode === 'chinese'" class="chinese">
       <div class="chinese-row main">
         <div
           v-for="(item, index) in chineseParts"
@@ -926,42 +927,19 @@ defineExpose({
       </div>
     </div>
 
+    <ClockStyles
+      v-else :mode="mode" :parts="parts" :date="adjustedNow" :timezone="timezone"
+      :locale="locale" :show-seconds="showSeconds" :show-date="showDate" :use-12-hour-format="use12HourFormat"
+      :time-text="timeText" :hour-angle="hourRotation" :minute-angle="minuteRotation" :second-angle="secondRotation"
+    />
+
     <div class="tabs" :class="{ 'controls-active': controlsVisible }">
       <button
-        type="button"
-        class="tab-btn"
-        :class="{ active: mode === 'digital' }"
-        :aria-pressed="mode === 'digital'"
-        @click="selectMode('digital')"
+        v-for="clockMode in ONLINE_CLOCK_MODES" :key="clockMode"
+        type="button" class="tab-btn" :class="{ active: mode === clockMode }"
+        :aria-pressed="mode === clockMode" @click="selectMode(clockMode)"
       >
-        {{ t('tools.online-clock.modes.digital') }}
-      </button>
-      <button
-        type="button"
-        class="tab-btn"
-        :class="{ active: mode === 'analog' }"
-        :aria-pressed="mode === 'analog'"
-        @click="selectMode('analog')"
-      >
-        {{ t('tools.online-clock.modes.analog') }}
-      </button>
-      <button
-        type="button"
-        class="tab-btn"
-        :class="{ active: mode === 'flip' }"
-        :aria-pressed="mode === 'flip'"
-        @click="selectMode('flip')"
-      >
-        {{ t('tools.online-clock.modes.flip') }}
-      </button>
-      <button
-        type="button"
-        class="tab-btn"
-        :class="{ active: mode === 'chinese' }"
-        :aria-pressed="mode === 'chinese'"
-        @click="selectMode('chinese')"
-      >
-        {{ t('tools.online-clock.modes.chinese') }}
+        {{ t(`tools.online-clock.modes.${clockMode}`) }}
       </button>
     </div>
 

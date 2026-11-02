@@ -49,6 +49,7 @@ declare module 'vue' {
     CLabel: typeof import('./src/ui/c-label/c-label.vue')['default']
     CLink: typeof import('./src/ui/c-link/c-link.vue')['default']
     'CLink.demo': typeof import('./src/ui/c-link/c-link.demo.vue')['default']
+    ClockStyles: typeof import('./src/tools/online-clock/ClockStyles.vue')['default']
     CMarkdown: typeof import('./src/ui/c-markdown/c-markdown.vue')['default']
     'CMarkdown.demo': typeof import('./src/ui/c-markdown/c-markdown.demo.vue')['default']
     CModal: typeof import('./src/ui/c-modal/c-modal.vue')['default']

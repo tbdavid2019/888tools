@@ -4,7 +4,6 @@ import { IconRefresh } from '@tabler/icons-vue';
 import { registerSW } from 'virtual:pwa-register';
 import { useStyleStore } from '@/stores/style.store';
 import { kanagawaDarkPalette, kanagawaLightPalette } from '@/theme/palette';
-import { config } from '@/config';
 
 const props = withDefaults(defineProps<{ isHomePage?: boolean }>(), { isHomePage: true });
 
@@ -15,47 +14,24 @@ const isUpdating = ref(false);
 const isChecking = ref(false);
 const hasEditedPageData = ref(false);
 const hasVisitedToolPage = ref(!props.isHomePage);
-const checkStatus = ref('');
 const updateError = ref(false);
 let checkTimer: ReturnType<typeof setInterval> | undefined;
 let registration: ServiceWorkerRegistration | undefined;
 let updateSW: ((reloadPage?: boolean) => Promise<void>) | undefined;
 
-async function checkForUpdates(manual = false, reopenWaiting = false) {
-  if ((manual || reopenWaiting) && registration?.waiting) {
+async function checkForUpdates(_manual = false, reopenWaiting = false) {
+  if (reopenWaiting && registration?.waiting) {
     isVisible.value = true;
   }
-  if (!navigator.onLine) {
-    if (manual) {
-      checkStatus.value = 'pwaUpdate.offline';
-    }
-    return;
-  }
-  if (registration?.installing) {
-    checkStatus.value = 'pwaUpdate.installing';
-    return;
-  }
-  if (!registration || isChecking.value) {
-    if (manual && !registration) {
-      checkStatus.value = 'pwaUpdate.failed';
-    }
+  if (!navigator.onLine || !registration || registration.installing || isChecking.value) {
     return;
   }
   isChecking.value = true;
-  if (manual) {
-    checkStatus.value = 'pwaUpdate.checking';
-  }
   try {
     await registration.update();
-    if (manual) {
-      checkStatus.value = 'pwaUpdate.checked';
-    }
   }
   catch {
-    // A lost connection should not interrupt the current tool.
-    if (manual) {
-      checkStatus.value = navigator.onLine ? 'pwaUpdate.failed' : 'pwaUpdate.offline';
-    }
+    // Retry on the next scheduled check or when the app returns online.
   }
   finally {
     isChecking.value = false;
@@ -156,13 +132,6 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="pwa-version-control" role="group" :aria-label="$t('pwaUpdate.version')">
-    <span>{{ $t('pwaUpdate.version') }} {{ config.app.gitSha }}</span>
-    <n-button size="tiny" quaternary :loading="isChecking" :disabled="isChecking" @click="checkForUpdates(true)">
-      {{ $t('pwaUpdate.check') }}
-    </n-button>
-    <span v-if="checkStatus" class="pwa-check-status" role="status" aria-live="polite">{{ $t(checkStatus) }}</span>
-  </div>
   <Transition name="pwa-update">
     <aside v-if="isVisible" class="pwa-update-prompt" role="status" aria-live="polite">
       <div class="pwa-update-prompt__icon" aria-hidden="true">
@@ -200,38 +169,6 @@ onBeforeUnmount(() => {
   border: 1px solid v-bind('palette.border');
   border-radius: 16px;
   box-shadow: 0 12px 36px rgb(0 0 0 / 18%);
-}
-
-.pwa-version-control {
-  position: fixed;
-  right: max(20px, env(safe-area-inset-right));
-  bottom: max(20px, env(safe-area-inset-bottom));
-  z-index: 2999;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 5px 8px 5px 12px;
-  color: v-bind('palette.text');
-  background: v-bind('palette.surface');
-  border: 1px solid v-bind('palette.border');
-  border-radius: 999px;
-  box-shadow: 0 4px 16px rgb(0 0 0 / 10%);
-  font-size: var(--type-caption);
-}
-
-.pwa-check-status {
-  position: absolute;
-  right: 0;
-  bottom: calc(100% + 8px);
-  width: max-content;
-  max-width: min(320px, calc(100vw - 32px));
-  padding: 7px 10px;
-  color: v-bind('palette.text');
-  background: v-bind('palette.surface');
-  border: 1px solid v-bind('palette.border');
-  border-radius: 8px;
-  box-shadow: 0 4px 16px rgb(0 0 0 / 10%);
-  font-size: var(--type-caption);
 }
 
 .pwa-update-prompt__icon {

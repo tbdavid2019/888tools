@@ -79,6 +79,12 @@ const i18n = createI18n({
       'tools.online-clock.modes.analog': '類比',
       'tools.online-clock.modes.flip': '翻頁',
       'tools.online-clock.modes.chinese': '中文字',
+      'tools.online-clock.modes.radial': '放射圓點',
+      'tools.online-clock.modes.lunar': '農曆桌曆',
+      'tools.online-clock.modes.blocky': '立體積木',
+      'tools.online-clock.modes.wheel': '百年時輪',
+      'tools.online-clock.modes.pixel': '像素方塊',
+      'tools.online-clock.modes.braun': 'Braun 彩針',
       'tools.online-clock.useNetworkTime': '網路校時',
       'tools.online-clock.syncing': '校時中...',
       'tools.online-clock.syncError': '校時失敗',
@@ -107,6 +113,12 @@ const i18n = createI18n({
       'tools.online-clock.modes.analog': 'Analog',
       'tools.online-clock.modes.flip': 'Flip',
       'tools.online-clock.modes.chinese': 'Chinese',
+      'tools.online-clock.modes.radial': 'Radial dots',
+      'tools.online-clock.modes.lunar': 'Lunar calendar',
+      'tools.online-clock.modes.blocky': 'Blocky 3D',
+      'tools.online-clock.modes.wheel': '100-year wheel',
+      'tools.online-clock.modes.pixel': 'Pixel blocks',
+      'tools.online-clock.modes.braun': 'Braun × Paul Smith',
       'tools.online-clock.useNetworkTime': 'Network time sync',
       'tools.online-clock.syncing': 'Syncing...',
       'tools.online-clock.syncError': 'Sync failed',
@@ -242,6 +254,7 @@ describe('Online Clock Component Rendering & Fullscreen Fallback', () => {
     }
     (i18n.global.locale as any).value = 'zh-TW';
     vi.unstubAllGlobals();
+    vi.restoreAllMocks();
     vi.useRealTimers();
   });
 
@@ -262,7 +275,7 @@ describe('Online Clock Component Rendering & Fullscreen Fallback', () => {
     expect(wrapper.find('.clock-page').exists()).toBe(true);
   });
 
-  it('renders all 4 modes (digital, analog, flip, chinese)', async () => {
+  it('renders the original modes and six additional clock styles', async () => {
     const router = await createClockRouter();
     const wrapper = mount(OnlineClock, {
       global: {
@@ -276,8 +289,8 @@ describe('Online Clock Component Rendering & Fullscreen Fallback', () => {
     wrappers.push(wrapper);
 
     const buttons = wrapper.findAll('.tab-btn');
-    expect(buttons.length).toBe(4);
-    expect(buttons.map(b => b.text().trim())).toEqual(['數位', '類比', '翻頁', '中文字']);
+    expect(buttons.length).toBe(10);
+    expect(buttons.slice(0, 4).map(b => b.text().trim())).toEqual(['數位', '類比', '翻頁', '中文字']);
 
     // Default digital
     expect(wrapper.find('.digital').exists()).toBe(true);
@@ -303,9 +316,30 @@ describe('Online Clock Component Rendering & Fullscreen Fallback', () => {
     await flushPromises();
     expect(wrapper.find('.chinese').exists()).toBe(true);
     expect(wrapper.find('.chinese-row.main').exists()).toBe(true);
-    expect(buttons[3].attributes('aria-pressed')).toBe('true');
+    for (const [index, clockMode] of ['radial', 'lunar', 'blocky', 'wheel', 'pixel', 'braun'].entries()) {
+      await buttons[index + 4].trigger('click');
+      await flushPromises();
+      expect(wrapper.find(`.style-${clockMode}`).exists()).toBe(true);
+      expect(router.currentRoute.value.query.mode).toBe(clockMode);
+      expect(buttons[index + 4].attributes('aria-pressed')).toBe('true');
+      expect(buttons[index + 4].text()).not.toContain('tools.online-clock.modes');
+    }
+
+    (wrapper.vm as any).use12HourFormat = true;
+    await buttons[6].trigger('click');
     await flushPromises();
-    expect(router.currentRoute.value.query.mode).toBe('chinese');
+    expect(wrapper.find('.clock-period').text()).toMatch(/^(AM|PM)$/);
+    expect(wrapper.find('.block-stage').attributes('data-hour')).toBe((wrapper.vm as any).parts.hh12);
+
+    await buttons[7].trigger('click');
+    await flushPromises();
+    expect(wrapper.find('.wheel-hours').attributes('data-count')).toBe('12');
+    expect(Number(wrapper.find('.wheel-hours').attributes('data-current'))).toBe((wrapper.vm as any).parts.hours % 12);
+    const hourLabels = wrapper.find('.wheel-hours').findAll('text').map(text => text.text());
+    expect(hourLabels).toContain('12');
+    expect(hourLabels).toHaveLength(12);
+
+    (wrapper.vm as any).use12HourFormat = false;
   });
 
   it('uses a shared URL mode before localStorage and restores modes on browser history navigation', async () => {
@@ -598,6 +632,9 @@ describe('Online Clock Component Rendering & Fullscreen Fallback', () => {
       shouldClearNativeTimers: true,
       toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'requestAnimationFrame', 'cancelAnimationFrame', 'Date'],
     });
+    const animationFrame = vi.spyOn(window, 'requestAnimationFrame').mockImplementation(callback =>
+      setTimeout(() => callback(performance.now()), 10) as unknown as number);
+    const cancelAnimationFrame = vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(id => clearTimeout(id));
     vi.setSystemTime(new Date('2026-10-22T10:00:05.990Z'));
     localStorage.setItem('onlineClock/mode', 'analog');
     localStorage.setItem('onlineClock/useNetworkTime', 'false');
@@ -660,8 +697,6 @@ describe('Online Clock Component Rendering & Fullscreen Fallback', () => {
     (wrapper.vm as any).showSeconds = true;
     await wrapper.vm.$nextTick();
     expect(wrapper.find('.hand.second').exists()).toBe(true);
-
-    vi.useRealTimers();
   });
 });
 
