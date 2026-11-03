@@ -23,7 +23,10 @@
       "deepmerge-ts": "8.0.0",
       "zod": "4.6.6",
       "@unhead/vue": "2.1.13",
-      "unhead": "2.1.13"
+      "unhead": "2.1.13",
+      "dompurify": "3.4.17",
+      "katex": "0.18.2",
+      "minimatch": "11.0.1"
     },
     "patchedDependencies": {
       "deepmerge@4.3.1": "patches/deepmerge@4.3.1.patch"
