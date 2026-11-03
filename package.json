@@ -26,7 +26,8 @@
       "unhead": "2.1.13",
       "dompurify": "3.4.17",
       "katex": "0.18.2",
-      "minimatch": "11.0.1"
+      "minimatch": "11.0.1",
+      "deepmerge": "npm:@stackline/deepmerge@1.1.0"
     },
     "patchedDependencies": {
       "deepmerge@4.3.1": "patches/deepmerge@4.3.1.patch"
