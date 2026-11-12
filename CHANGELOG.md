@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## Version 2026.11.12
+
+### Runtime & Security Hardening
+- **容器建置基底與 Node.js 執行期升級至 Node.js 26 (`v26.13.1`)**:
+  - `Dockerfile` 建置階段基底更新為 `node:26.13.1-alpine`。
+  - `.nvmrc` 更新為 `26.13.1`，同步升級 GitHub Pages CI/CD 建置環境。
+  - 完整防護 Node.js 官方 2026-11-11 安全版本修補（包含多項 High severity 安全性漏洞加固）。
+
+
 ## Version 2026.11.02
 
 ### Features
