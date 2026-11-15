@@ -115,7 +115,7 @@
     "monaco-editor": "^0.43.0",
     "naive-ui": "^2.45.3",
     "netmask": "^2.1.1",
-    "node-forge": "^1.4.2",
+    "node-forge": "^1.4.3",
     "onnxruntime-web": "^1.21.0",
     "opencc-js": "^1.4.2",
     "oui-data": "^1.2.0",
