@@ -1,6 +1,6 @@
-import { type MaybeRef, get } from '@vueuse/core';
+import { get } from '@vueuse/core';
 import QRCodeStyling from 'qr-code-styling';
-import { isRef, onMounted, ref, watch } from 'vue';
+import { type MaybeRef, isRef, onMounted, ref, watch } from 'vue';
 
 type StyledQrStyle = 'square' | 'dots' | 'rounded' | 'classy' | 'classy-rounded' | 'extra-rounded';
 type StyledErrorCorrection = 'low' | 'medium' | 'quartile' | 'high';

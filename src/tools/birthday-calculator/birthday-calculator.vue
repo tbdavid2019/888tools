@@ -1,15 +1,14 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useNow } from '@vueuse/core';
+import { useIntervalFn, useNow } from '@vueuse/core';
 import { addYears, differenceInCalendarDays, differenceInYears, format, intervalToDuration, isAfter, startOfDay } from 'date-fns';
-import enUS from 'date-fns/locale/en-US';
-import zhTW from 'date-fns/locale/zh-TW';
+import { enUS, zhTW } from 'date-fns/locale';
 import { formatLunarDate, getChineseZodiac, getWesternZodiac, solarToLunar } from './lunar';
 
 const { t, locale } = useI18n();
 const selectedDate = ref<number | null>(Date.now());
-const now = useNow({ interval: 60_000 });
+const now = useNow({ scheduler: cb => useIntervalFn(cb, 60_000) });
 
 const dateLocale = computed(() => {
   if (locale.value === 'zh-TW' || locale.value === 'zh') return zhTW;

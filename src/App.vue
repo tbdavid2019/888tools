@@ -30,7 +30,7 @@ const layoutBackgroundColor = computed(() => {
 
 const bodyBackgroundColor = computed(() => (styleStore.isBingWallpaperEnabled ? 'transparent' : activePalette.value.background));
 
-const storedLocale = useStorage('locale', 'zh-TW');
+const storedLocale = useStorage<typeof locale.value>('locale', 'zh-TW');
 if (storedLocale.value === 'zh') {
   storedLocale.value = 'zh-TW';
 }

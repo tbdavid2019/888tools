@@ -248,7 +248,7 @@ export function getSolarTimes(
 import { computed, inject, ref, watch, onMounted, onUnmounted } from 'vue';
 import { routeLocationKey, routerKey } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { useFullscreen, useLocalStorage, useNow, onKeyStroke } from '@vueuse/core';
+import { onKeyStroke, useFullscreen, useIntervalFn, useLocalStorage, useNow } from '@vueuse/core';
 import FlipCard from './FlipCard.vue';
 import ClockStyles from './ClockStyles.vue';
 import { useStyleStore } from '@/stores/style.store';
@@ -454,9 +454,8 @@ onUnmounted(() => {
   }
 });
 
-const now = useNow({ interval: 1000 });
+const now = useNow({ scheduler: cb => useIntervalFn(cb, 1000) });
 const { now: smoothNow, pause: pauseSmoothNow, resume: resumeSmoothNow } = useNow({
-  interval: 'requestAnimationFrame',
   controls: true,
 });
 

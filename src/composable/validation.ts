@@ -1,6 +1,6 @@
-import { type MaybeRef, get } from '@vueuse/core';
+import { get } from '@vueuse/core';
 import _ from 'lodash';
-import { type Ref, reactive, watch } from 'vue';
+import { type MaybeRef, type Ref, reactive, watch } from 'vue';
 
 type ValidatorReturnType = unknown;
 type GetErrorMessageReturnType = string;
@@ -45,7 +45,7 @@ export function useValidation<T>({
   rules,
   watch: watchRefs = [],
 }: {
-  source: Ref<T>
+  source: Ref<T, any>
   rules: MaybeRef<UseValidationRule<T>[]>
   watch?: Ref<unknown>[]
 }) {

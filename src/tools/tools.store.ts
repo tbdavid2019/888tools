@@ -1,6 +1,6 @@
-import { type MaybeRef, get, useStorage } from '@vueuse/core';
+import { get, useStorage } from '@vueuse/core';
 import { defineStore } from 'pinia';
-import { type Ref, hasInjectionContext } from 'vue';
+import { type MaybeRef, type Ref, hasInjectionContext } from 'vue';
 import _ from 'lodash';
 import type { Tool, ToolCategory, ToolWithCategory } from './tools.types';
 import { toolsWithCategory } from './index';

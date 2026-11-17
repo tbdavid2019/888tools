@@ -42,8 +42,8 @@ export const caseConverterTool: WebMcpToolDefinition = {
     const cases = {
       camelCase: changeCase.camelCase(text),
       snakeCase: changeCase.snakeCase(text),
-      kebabCase: changeCase.paramCase(text),
-      paramCase: changeCase.paramCase(text),
+      kebabCase: changeCase.kebabCase(text),
+      paramCase: changeCase.kebabCase(text),
       pascalCase: changeCase.pascalCase(text),
       constantCase: changeCase.constantCase(text),
       sentenceCase: changeCase.sentenceCase(text),

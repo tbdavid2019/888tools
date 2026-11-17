@@ -1,4 +1,4 @@
-import jwtDecode, { type JwtHeader, type JwtPayload } from 'jwt-decode';
+import { type JwtHeader, type JwtPayload, jwtDecode } from 'jwt-decode';
 import type { WebMcpToolDefinition } from '../types';
 
 export const jwtInspectTool: WebMcpToolDefinition = {

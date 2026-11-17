@@ -10,7 +10,8 @@ import {
 import { presetScrollbar } from 'unocss-preset-scrollbar';
 
 export default defineConfig({
-  presets: [presetUno(), presetAttributify({ ignoreAttributes: ['size'] }), presetTypography(), presetScrollbar()],
+  presets: [presetUno(), presetAttributify({ ignoreAttributes: ['size'] }), presetTypography(), presetScrollbar({ compatible: true })],
+  blocklist: [/^\[\d{2}:\d{2}(\.\d+)?\]$/],
   transformers: [transformerDirectives(), transformerVariantGroup()],
   theme: {
     fontSize: {

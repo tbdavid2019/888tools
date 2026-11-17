@@ -4,18 +4,19 @@ import {
   capitalCase,
   constantCase,
   dotCase,
-  headerCase,
+  kebabCase,
   noCase,
-  paramCase,
   pascalCase,
   pathCase,
   sentenceCase,
   snakeCase,
+  split as defaultSplit,
+  trainCase,
 } from 'change-case';
 import InputCopyable from '../../components/InputCopyable.vue';
 
 const baseConfig = {
-  stripRegexp: /[^A-Za-zÀ-ÖØ-öø-ÿ]+/gi,
+  split: (value: string) => defaultSplit(value.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ]+/gi, ' ')),
 };
 
 const input = ref('lorem ipsum dolor sit amet');
@@ -47,7 +48,7 @@ const formats = computed(() => [
   },
   {
     label: 'Headercase:',
-    value: headerCase(input.value, baseConfig),
+    value: trainCase(input.value, baseConfig),
   },
   {
     label: 'Nocase:',
@@ -55,7 +56,7 @@ const formats = computed(() => [
   },
   {
     label: 'Paramcase:',
-    value: paramCase(input.value, baseConfig),
+    value: kebabCase(input.value, baseConfig),
   },
   {
     label: 'Pascalcase:',

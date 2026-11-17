@@ -1,98 +1,149 @@
-import { figue } from 'figue';
+import { defineConfig } from 'figue';
 import { siteConfig } from '../site.config.js';
 
-export const config = figue({
-  app: {
-    gitSha: {
-      doc: 'Application build Git SHA',
-      format: 'string',
-      default: 'local',
-      env: 'GIT_SHA',
+interface SimpleSchema<T> {
+  readonly '~standard': {
+    readonly version: 1;
+    readonly vendor: string;
+    readonly types?: { readonly input: unknown; readonly output: T };
+    readonly validate: (value: unknown) => { readonly value: T } | { readonly issues: ReadonlyArray<{ readonly message: string }> };
+  };
+}
+
+function createSchema<T>(validateValue: (value: unknown) => { value: T } | { message: string }): SimpleSchema<T> {
+  return {
+    '~standard': {
+      version: 1,
+      vendor: '888tools',
+      validate(value: unknown) {
+        const result = validateValue(value);
+        return 'message' in result ? { issues: [{ message: result.message }] } : { value: result.value };
+      },
     },
-    baseUrl: {
-      doc: 'Application base url',
-      format: 'string',
-      default: '/',
-      env: 'BASE_URL',
+  };
+}
+
+const stringSchema = createSchema<string>(value =>
+  typeof value === 'string' ? { value } : { message: `Expected string, got ${typeof value}` },
+);
+
+const booleanSchema = createSchema<boolean>((value) => {
+  if (typeof value === 'boolean') {
+    return { value };
+  }
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === 'true' || normalized === '1') {
+      return { value: true };
+    }
+    if (normalized === 'false' || normalized === '0') {
+      return { value: false };
+    }
+  }
+  return { message: `Expected boolean, got ${String(value)}` };
+});
+
+function enumSchema<const T extends readonly string[]>(values: T) {
+  return createSchema<T[number]>(value =>
+    typeof value === 'string' && values.includes(value)
+      ? { value: value as T[number] }
+      : { message: `Expected one of [${values.join(', ')}], got ${String(value)}` },
+  );
+}
+
+export const { config } = defineConfig(
+  {
+    app: {
+      gitSha: {
+        doc: 'Application build Git SHA',
+        schema: stringSchema,
+        default: 'local',
+        env: 'GIT_SHA',
+      },
+      baseUrl: {
+        doc: 'Application base url',
+        schema: stringSchema,
+        default: '/',
+        env: 'BASE_URL',
+      },
+      siteOrigin: {
+        doc: 'Application canonical site origin',
+        schema: stringSchema,
+        default: siteConfig.origin,
+        env: 'VITE_SITE_ORIGIN',
+      },
+      env: {
+        doc: 'Application current env',
+        schema: enumSchema(['production', 'development', 'preview', 'test']),
+        default: 'development',
+        env: 'VITE_APP_ENV',
+      },
     },
-    siteOrigin: {
-      doc: 'Application canonical site origin',
-      format: 'string',
-      default: siteConfig.origin,
-      env: 'VITE_SITE_ORIGIN',
+    plausible: {
+      isTrackerEnabled: {
+        doc: 'Is the tracker enabled',
+        schema: booleanSchema,
+        default: false,
+        env: 'VITE_TRACKER_ENABLED',
+      },
+      domain: {
+        doc: 'Plausible current domain',
+        schema: stringSchema,
+        default: '',
+        env: 'VITE_PLAUSIBLE_DOMAIN',
+      },
+      apiHost: {
+        doc: 'Plausible remote api host',
+        schema: stringSchema,
+        default: '',
+        env: 'VITE_PLAUSIBLE_API_HOST',
+      },
+      trackLocalhost: {
+        doc: 'Enable or disable localhost tracking by plausible',
+        schema: booleanSchema,
+        default: false,
+      },
     },
-    env: {
-      doc: 'Application current env',
-      format: 'enum',
-      values: ['production', 'development', 'preview', 'test'],
-      default: 'development',
-      env: 'VITE_APP_ENV',
+    ga: {
+      measurementId: {
+        doc: 'Google Analytics 4 measurement ID',
+        schema: stringSchema,
+        default: 'G-73FLRKFM5F',
+        env: 'VITE_GA_MEASUREMENT_ID',
+      },
+      isEnabled: {
+        doc: 'Enable or disable Google Analytics 4 tracking',
+        schema: booleanSchema,
+        default: true,
+        env: 'VITE_GA_ENABLED',
+      },
     },
-  },
-  plausible: {
-    isTrackerEnabled: {
-      doc: 'Is the tracker enabled',
-      format: 'boolean',
+    p2pChat: {
+      signalingUrl: {
+        doc: 'P2P chat room signaling Worker URL',
+        schema: stringSchema,
+        default: 'https://david888-p2p-room-signal.oobwei.workers.dev',
+        env: 'VITE_P2P_ROOM_SIGNALING_URL',
+      },
+    },
+    showBanner: {
+      doc: 'Show the banner',
+      schema: booleanSchema,
       default: false,
-      env: 'VITE_TRACKER_ENABLED',
+      env: 'VITE_SHOW_BANNER',
     },
-    domain: {
-      doc: 'Plausible current domain',
-      format: 'string',
-      default: '',
-      env: 'VITE_PLAUSIBLE_DOMAIN',
-    },
-    apiHost: {
-      doc: 'Plausible remote api host',
-      format: 'string',
-      default: '',
-      env: 'VITE_PLAUSIBLE_API_HOST',
-    },
-    trackLocalhost: {
-      doc: 'Enable or disable localhost tracking by plausible',
-      format: 'boolean',
+    showSponsorBanner: {
+      doc: 'Show the sponsor banner',
+      schema: booleanSchema,
       default: false,
+      env: 'VITE_SHOW_SPONSOR_BANNER',
     },
   },
-  ga: {
-    measurementId: {
-      doc: 'Google Analytics 4 measurement ID',
-      format: 'string',
-      default: 'G-73FLRKFM5F',
-      env: 'VITE_GA_MEASUREMENT_ID',
-    },
-    isEnabled: {
-      doc: 'Enable or disable Google Analytics 4 tracking',
-      format: 'boolean',
-      default: true,
-      env: 'VITE_GA_ENABLED',
+  {
+    envSource: {
+      ...import.meta.env,
+      // GIT_SHA is statically replaced during build time (see 'define' in vite.config.ts).
+      GIT_SHA: import.meta.env.GIT_SHA,
     },
   },
-  p2pChat: {
-    signalingUrl: {
-      doc: 'P2P chat room signaling Worker URL',
-      format: 'string',
-      default: 'https://david888-p2p-room-signal.oobwei.workers.dev',
-      env: 'VITE_P2P_ROOM_SIGNALING_URL',
-    },
-  },
-  showBanner: {
-    doc: 'Show the banner',
-    format: 'boolean',
-    default: false,
-    env: 'VITE_SHOW_BANNER',
-  },
-  showSponsorBanner: {
-    doc: 'Show the sponsor banner',
-    format: 'boolean',
-    default: false,
-    env: 'VITE_SHOW_SPONSOR_BANNER',
-  },
-})
-  .loadEnv({
-    ...import.meta.env,
-    // GIT_SHA is statically replaced during build time (see 'define' in vite.config.ts).
-    GIT_SHA: import.meta.env.GIT_SHA,
-  })
-  .validate()
-  .getConfig();
+);
