@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## Version 2026.11.20
+
+### Bug Fixes (`epub-editor` & `txt-to-epub`)
+- **書籍資訊寫回與封面清單一致性**：修復「書籍資訊修改」分頁僅存入本地歷史紀錄而未更新 EPUB 的問題，匯出時透過 DOM 安全寫回 OPF `<dc:title>` / `<dc:creator>` 與 NCX `<docTitle>`；修正封面移除／替換時遺留 EPUB 2/3 `<manifest>` 死連結及 `../` 相對路徑偵測失敗。
+- **DOM 級別 OpenCC 轉換與非 UTF-8 安全解碼**：將原始 XML/XHTML 字串盲轉改為 DOM 文字節點（及 `alt`/`title`/OPF metadata）轉換，避免破壞 `href`/`src`/`id`/`<code>`/`<pre>`；全面於解碼階段以自動編碼偵測讀取（Big5 / GBK / UTF-16），消除 `repairKindleEpub` 先期強制 UTF-8 解碼覆寫造成不可逆亂碼。
+- **Kindle 相容性修復準確度**：將 `kindle-fixer` 的 OPF / NCX / NAV 改寫從脆弱正則遷移至 `DOMParser` / `XMLSerializer`，正確處理巢狀 `<navPoint>` / `<li>` 目錄、`%20` URI 編碼與跨子目錄 `../` 相對路徑，豁免 `.xpgt`/`.plist`/`.rdf` 非 HTML XML 資產，並修復 UTF-8 BOM 與 `<body id>` 閉合邏輯。
+- **OCF 規範、字型格式與多次匯出冪等性**：`epub-editor` 改採唯讀來源 ZIP + 每次新建輸出套件，並與 `txt-to-epub` 共同確保 `mimetype` 為 ZIP 第一個未壓縮（`STORE`）項目且使用合法 DOS 時間戳；修正 OTF(CFF) 子集與 `gen-jyuu`（WOFF2）在嵌入時的 MIME / `@font-face` 格式標記錯配，並修復 `txt-to-epub` 的 `convertToTraditional` 開關未傳遞至 `generateEpub()` 的缺陷。
+- **直排預覽分頁、記憶體洩漏與 IndexedDB 可靠性**：修正直排預覽捲動容器錯位導致無法翻頁的問題；補齊封面／下載／預覽資源 `URL.revokeObjectURL` 釋放、自訂字型非同步競態與 `unmount` 防護、以及 IndexedDB 交易 `onabort`/`onerror` 與儲存空間不足處理。
+
+### Refactoring & Architecture
+- **共用 EPUB 核心服務層 (`src/services/epub/`)**：抽出 `encoding.ts`、`font-core.ts`、`font-subset.worker.ts`、`fonts.ts`、`xml.ts` 與 `download.ts`，並將 `convertPunctuation` 整合至 `opencc.service.ts`，消除 `epub-editor` 與 `txt-to-epub` 重複邏輯並移除未使用的 `src/tools/txt-to-epub/utils/`。
+- **本機 Web Worker 字型子集化**：移除對外部 CDN `harfbuzzjs` WASM 的雙份依賴，統一採用本機 `fonteditor-core`（含靜態 `public/wasm/woff2.wasm`）於 Web Worker 離線執行 `.ttf`/`.otf`/`.woff`/`.woff2` 子集化與非 BMP 字元保留，並加入 IndexedDB 內建字型快取。
+- **隔離沙盒 `<iframe sandbox>` 即時預覽與元件拆解**：將核心載入／封裝管線抽出至 `epub-processor.ts`，主上傳區複用 `c-file-upload`，並新增 `preview-renderer.ts` 以 `DomPurify` 淨化後於 `<iframe sandbox="allow-same-origin">` 內渲染真實 `<spine>` 章節、圖片與實際輸出 CSS。
+- **OpenSpec 規格同步**：更新 `openspec/specs/epub-tools/spec.md` 以反映最新 EPUB 工具規格與架構。
+
+### Verification
+- 補齊 `epub-processor.test.ts`、`preview-renderer.test.ts`、`epubGenerator.test.ts` 與強化 `kindle-fixer.test.ts`、`style-generator.test.ts`、`preview-chapters.test.ts`（共 8 個測試檔 31 項測試通過，`vue-tsc --noEmit` 與目標範圍 `eslint` 通過）。
+
 ## Version 2026.11.12
 
 ### Runtime & Security Hardening
