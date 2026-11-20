@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { clampPreviewPage, getPreviewPageCount } from './preview-pagination';
 
-describe('EPUB preview pagination', () => {
+describe('ePUB preview pagination', () => {
   it('counts each viewport-width of horizontal overflow as a page', () => {
     expect(getPreviewPageCount(440, 440)).toBe(1);
     expect(getPreviewPageCount(441, 440)).toBe(2);

@@ -1,3 +1,6 @@
+import { EPUB_FONT_MAP } from '@/services/epub/fonts';
+import { escapeCssString, relativePathFromFile } from '@/services/epub/xml';
+
 export interface StyleGeneratorOptions {
   writingMode: 'horizontal' | 'vertical';
   fontSize: string;
@@ -41,24 +44,35 @@ export const MARGIN_PRESET_MAP: Record<string, { v: string; h: string; label: st
   relaxed: { v: '1.8em', h: '2.0em', label: '寬鬆' },
 };
 
-export const FONT_MAP: Record<string, { family: string; name: string; file: string; ext: string; mime: string; format: string }> = {
-  'noto-sans': { family: '"NotoSansCJKtc", "Noto Sans TC", "Microsoft JhengHei", sans-serif', name: '思源黑體', file: `${import.meta.env.BASE_URL}fonts/NotoSansCJKtc-Regular.otf`, ext: 'otf', mime: 'font/otf', format: 'opentype' },
-  'gen-jyuu': { family: '"Gen Jyuu Gothic", "Noto Sans TC", sans-serif', name: '源柔黑體', file: `${import.meta.env.BASE_URL}fonts/GenJyuuGothic-Medium.woff2`, ext: 'woff2', mime: 'font/woff2', format: 'woff2' },
-  'noto-serif': { family: '"NotoSerifCJKtc", "Noto Serif TC", "PMingLiU", serif', name: '思源宋體', file: `${import.meta.env.BASE_URL}fonts/NotoSerifCJKtc-Regular.otf`, ext: 'otf', mime: 'font/otf', format: 'opentype' },
-  'guankiap': { family: '"GuanKiapTsingKhai", "GuanKiapTsingKhai TW", "DFKai-SB", "BiauKai", serif', name: '原俠正楷', file: `${import.meta.env.BASE_URL}fonts/GuanKiapTsingKhai-TW.ttf`, ext: 'ttf', mime: 'font/ttf', format: 'truetype' },
-  'huninn': { family: '"jf-openhuninn", "Microsoft JhengHei", sans-serif', name: 'jf 粉圓', file: `${import.meta.env.BASE_URL}fonts/jf-openhuninn.ttf`, ext: 'ttf', mime: 'font/ttf', format: 'truetype' },
-  'custom': { family: '"EpubEditorPreviewCustom", sans-serif', name: '自訂字型', file: '', ext: '', mime: '', format: '' },
-  'default': { family: 'inherit', name: '閱讀器預設', file: '', ext: '', mime: '', format: '' },
-};
+export const FONT_MAP: Record<string, { family: string; name: string; file: string; ext: string; mime: string; format: string }> = Object.fromEntries(
+  Object.entries(EPUB_FONT_MAP).map(([key, meta]) => [
+    key,
+    {
+      family: meta.cssFamily,
+      name: meta.name,
+      file: meta.file,
+      ext: meta.ext,
+      mime: meta.mime,
+      format: meta.format,
+    },
+  ]),
+);
+
+export const OVERRIDE_MARKER_START = '/* === 888TOOLS EPUB OVERRIDES START === */';
+export const OVERRIDE_MARKER_END = '/* === 888TOOLS EPUB OVERRIDES END === */';
 
 export function resolveMargins(
   preset: 'none' | 'compact' | 'normal' | 'relaxed' | 'custom' = 'compact',
   customV?: number,
-  customH?: number
+  customH?: number,
 ): { v: string; h: string } {
   if (preset === 'custom') {
-    const vNum = typeof customV === 'number' && !Number.isNaN(customV) ? customV : 0.3;
-    const hNum = typeof customH === 'number' && !Number.isNaN(customH) ? customH : 0.5;
+    const vNum = typeof customV === 'number' && !Number.isNaN(customV)
+      ? customV
+      : 0.3;
+    const hNum = typeof customH === 'number' && !Number.isNaN(customH)
+      ? customH
+      : 0.5;
     return { v: `${vNum}em`, h: `${hNum}em` };
   }
   const found = MARGIN_PRESET_MAP[preset] || MARGIN_PRESET_MAP.compact;
@@ -66,21 +80,32 @@ export function resolveMargins(
 }
 
 export function relativePathFromCss(cssPath: string, fontPath: string): string {
-  const cssParts = cssPath.split('/').slice(0, -1);
-  const fontParts = fontPath.split('/');
-  let common = 0;
-  while (common < cssParts.length && common < fontParts.length - 1 && cssParts[common] === fontParts[common]) {
-    common++;
+  return relativePathFromFile(cssPath, fontPath);
+}
+
+export interface EmbeddedFontInfo {
+  realName?: string;
+  embeddedPath: string;
+  format: string;
+}
+
+export function stripPreviousOverrides(cssContent: string): string {
+  let cleaned = cssContent.replace(
+    /\/\*\s*===\s*888TOOLS EPUB OVERRIDES START\s*===\s*\*\/[\s\S]*?\/\*\s*===\s*888TOOLS EPUB OVERRIDES END\s*===\s*\*\//g,
+    '',
+  );
+  // Also strip legacy un-delimited marker if re-editing an older exported book
+  const legacyIdx = cleaned.indexOf('/* === HelloRuru EPUB Editor 樣式覆蓋 === */');
+  if (legacyIdx >= 0) {
+    cleaned = cleaned.slice(0, legacyIdx);
   }
-  const upLevels = cssParts.length - common;
-  const downPath = fontParts.slice(common).join('/');
-  return ('../'.repeat(upLevels)) + downPath;
+  return cleaned.trimEnd();
 }
 
 export function generateStyleOverrides(
   options: StyleGeneratorOptions,
   cssFilePath: string,
-  customFontInfo: any
+  customFontInfo: EmbeddedFontInfo | null,
 ): string {
   const isVertical = options.writingMode === 'vertical';
   const fontSize = SIZE_MAP[options.fontSize] || SIZE_MAP.medium;
@@ -88,10 +113,10 @@ export function generateStyleOverrides(
   const { v: marginV, h: marginH } = resolveMargins(
     options.pageMargin,
     options.customMarginVertical,
-    options.customMarginHorizontal
+    options.customMarginHorizontal,
   );
 
-  let css = '\n/* === HelloRuru EPUB Editor 樣式覆蓋 === */\n';
+  let css = `\n${OVERRIDE_MARKER_START}\n`;
 
   const font = FONT_MAP[options.fontFamily] || FONT_MAP.default;
   const useCustom = options.fontFamily === 'custom' && customFontInfo;
@@ -99,37 +124,38 @@ export function generateStyleOverrides(
 
   if (useCustom || useEmbeddedStandard) {
     const info = customFontInfo;
-    const realFamily = info.realName || (useCustom ? 'CustomUserFont' : font.name);
+    const rawFamily = info.realName || (useCustom ? 'CustomUserFont' : font.name);
+    const safeFamily = escapeCssString(rawFamily);
     const fontAbsPath = info.embeddedPath;
-    const fontUrl = cssFilePath ? relativePathFromCss(cssFilePath, fontAbsPath) : fontAbsPath;
+    const fontUrl = escapeCssString(cssFilePath
+      ? relativePathFromCss(cssFilePath, fontAbsPath)
+      : fontAbsPath);
+    const safeFormat = escapeCssString(info.format || 'truetype');
+
     css += `@font-face {
-  font-family: "${realFamily}";
-  src: url("${fontUrl}") format("${info.format}");
+  font-family: "${safeFamily}";
+  src: url("${fontUrl}") format("${safeFormat}");
   font-weight: normal;
   font-style: normal;
 }
 @font-face {
   font-family: "CustomUserFont";
-  src: url("${fontUrl}") format("${info.format}");
+  src: url("${fontUrl}") format("${safeFormat}");
   font-weight: normal;
   font-style: normal;
 }
-* { font-family: "${realFamily}", "CustomUserFont", sans-serif !important; }
-body { font-family: "${realFamily}", "CustomUserFont", sans-serif !important; }
-p { font-family: "${realFamily}", "CustomUserFont", sans-serif !important; }
-h1, h2, h3, h4, h5, h6 { font-family: "${realFamily}", "CustomUserFont", sans-serif !important; }
+body, p, div, span, li, blockquote, h1, h2, h3, h4, h5, h6 { font-family: "${safeFamily}", "CustomUserFont", sans-serif !important; }
+code, pre, kbd, samp, tt { font-family: monospace !important; }
 `;
-  } else if (options.fontFamily !== 'default') {
+  }
+  else if (options.fontFamily !== 'default' && options.fontFamily !== 'custom') {
     css += `body { font-family: ${font.family}; }\n`;
   }
+
   css += `body { font-size: ${fontSize}; line-height: ${lineHeight}; }\n`;
 
   const indent = INDENT_MAP[options.textIndent] || INDENT_MAP.two;
-  if (indent !== '0') {
-    css += `p { text-indent: ${indent}; }\n`;
-  } else {
-    css += `p { text-indent: 0; }\n`;
-  }
+  css += `p { text-indent: ${indent}; }\n`;
 
   // Apply author-defined spacing once, on body. Reader UI margins remain reader-controlled.
   css += `@page {
@@ -149,12 +175,13 @@ body > div, body > section, body > article, body > main {
 `;
 
   if (isVertical) {
-    css += `html, body, body * {
+    css += `html, body, body :not(pre):not(code):not(svg):not(svg *):not(math):not(math *) {
   writing-mode: vertical-rl !important;
   -webkit-writing-mode: vertical-rl !important;
   -epub-writing-mode: vertical-rl !important;
   text-orientation: mixed !important;
-}\n`;
+}
+`;
 
     if (options.optimizeVerticalLayout !== false) {
       css += `/* 直排排版優化：清除原橫排段落上下留白與容器寬度拘束 */
@@ -170,14 +197,17 @@ body, body > div, body > section, body > article, body > main {
 }
 `;
     }
-  } else {
+  }
+  else {
     css += `html, body, body * {
   writing-mode: horizontal-tb !important;
   -webkit-writing-mode: horizontal-tb !important;
   -epub-writing-mode: horizontal-tb !important;
   text-orientation: mixed !important;
-}\n`;
+}
+`;
   }
 
+  css += `${OVERRIDE_MARKER_END}\n`;
   return css;
 }

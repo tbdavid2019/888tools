@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
 import { updatePackageDirection } from './package-direction';
 
@@ -7,7 +8,7 @@ const epub2Package = `<?xml version="1.0"?>
   <spine toc="ncx" page-progression-direction="ltr"><itemref idref="chapter-1" /></spine>
 </package>`;
 
-describe('EPUB package direction', () => {
+describe('ePUB package direction', () => {
   it('sets spine page-progression-direction="rtl" for a vertical EPUB', () => {
     const result = updatePackageDirection(epub2Package, 'vertical');
     expect(result).toContain('<spine toc="ncx" page-progression-direction="rtl">');

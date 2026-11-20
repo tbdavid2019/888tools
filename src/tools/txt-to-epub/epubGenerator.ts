@@ -1,27 +1,9 @@
 import JSZip from 'jszip';
-import { subsetFont, FONT_CONFIG, DEFAULT_FONT, loadFontFile } from './fontSubset';
+import { downloadBlob } from '@/services/epub/download';
 import { convertOpenCC } from '@/services/opencc.service';
+import { INDENT_MAP, LINE_HEIGHT_MAP, SIZE_MAP } from '@/tools/epub-editor/style-generator';
 import type { Chapter } from './chapterDetector';
-
-const SIZE_MAP: Record<string, string> = {
-  'small': '0.9em',
-  'medium': '1em',
-  'large': '1.15em',
-  'xlarge': '1.3em',
-};
-
-const LINE_HEIGHT_MAP: Record<string, string> = {
-  'compact': '1.5',
-  'normal': '1.8',
-  'relaxed': '2.0',
-  'loose': '2.3',
-};
-
-const INDENT_MAP: Record<string, string> = {
-  'none': '0',
-  'one': '1em',
-  'two': '2em',
-};
+import { DEFAULT_FONT, FONT_CONFIG, loadFontFile, subsetFont } from './fontSubset';
 
 export interface EpubProgress {
   stage: string;
@@ -46,6 +28,7 @@ export interface GenerateEpubOptions {
   author: string;
   chapters: Chapter[];
   cover: File | null;
+  convertToTraditional?: boolean;
   writingMode: 'horizontal' | 'vertical';
   fontFamily?: string;
   embedFont?: boolean;
@@ -63,6 +46,7 @@ export async function generateEpub({
   author,
   chapters: rawChapters,
   cover,
+  convertToTraditional = true,
   writingMode,
   fontFamily = DEFAULT_FONT,
   embedFont = false,
@@ -75,22 +59,25 @@ export async function generateEpub({
   returnBlob = false,
 }: GenerateEpubOptions): Promise<Blob | undefined> {
   const zip = new JSZip();
+  // mimetype（必須第一個，且不壓縮）
+  zip.file('mimetype', 'application/epub+zip', { compression: 'STORE' });
   const bookId = `urn:uuid:${crypto.randomUUID()}`;
   const isVertical = writingMode === 'vertical';
 
   // 1. 簡轉繁轉換 (如果需要)
-  onProgress({ stage: 'convert', message: '正在處理簡繁轉換...' });
   let processedTitle = title;
   let processedAuthor = author;
   let chapters = rawChapters.map(ch => ({ ...ch }));
 
-  // We convert using convertOpenCC
-  processedTitle = convertOpenCC(title, 's2t');
-  processedAuthor = convertOpenCC(author, 's2t');
-  chapters = rawChapters.map(ch => ({
-    title: convertOpenCC(ch.title, 's2t'),
-    content: convertOpenCC(ch.content, 's2t'),
-  }));
+  if (convertToTraditional) {
+    onProgress({ stage: 'convert', message: '正在處理簡繁轉換...' });
+    processedTitle = convertOpenCC(title, 's2t');
+    processedAuthor = convertOpenCC(author, 's2t');
+    chapters = rawChapters.map(ch => ({
+      title: convertOpenCC(ch.title, 's2t'),
+      content: convertOpenCC(ch.content, 's2t'),
+    }));
+  }
 
   // 取得字型設定
   const fontConfig = FONT_CONFIG[fontFamily] || FONT_CONFIG[DEFAULT_FONT];
@@ -116,10 +103,9 @@ export async function generateEpub({
       onProgress({ stage: 'font', message: '正在載入完整字型檔 (滿血版)...' });
       try {
         const fullFontBuffer = await loadFontFile(fontFamily);
-        const isOtf = fontConfig.file.endsWith('.otf');
-        const ext = isOtf ? 'otf' : 'ttf';
-        const format = isOtf ? 'opentype' : 'truetype';
-        const mime = isOtf ? 'font/otf' : 'font/ttf';
+        const ext = fontConfig.ext || 'ttf';
+        const format = fontConfig.format || 'truetype';
+        const mime = fontConfig.mime || 'font/ttf';
         embeddedFontFilename = `${fontFamily}-full.${ext}`;
 
         // 加入字型檔案到 EPUB
@@ -180,9 +166,6 @@ export async function generateEpub({
   }
 
   onProgress({ stage: 'structure', message: '正在建立 EPUB 結構...' });
-
-  // mimetype（必須第一個，且不壓縮）
-  zip.file('mimetype', 'application/epub+zip', { compression: 'STORE' });
 
   // META-INF/container.xml
   zip.file('META-INF/container.xml', `<?xml version="1.0" encoding="UTF-8"?>
@@ -388,13 +371,4 @@ function escapeHtml(text: string): string {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
-}
-
-function downloadBlob(blob: Blob, filename: string) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
 }

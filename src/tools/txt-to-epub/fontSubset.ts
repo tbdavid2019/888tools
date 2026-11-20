@@ -1,156 +1,103 @@
-// @ts-ignore
-import { Font } from 'fonteditor-core';
+import {
+  BUILT_IN_FONT_IDS,
+  DEFAULT_EPUB_FONT,
+  EPUB_FONT_MAP,
+  estimateSubsetSize,
+  extractUniqueCodePoints,
+  loadBuiltInFontBuffer,
+  subsetFontBuffer,
+} from '@/services/epub/fonts';
 
 export interface FontInfo {
   id: string;
   name: string;
   file: string;
   family: string;
+  ext: string;
+  mime: string;
   format: string;
   description: string;
 }
 
-export const FONT_CONFIG: Record<string, FontInfo> = {
-  'noto-sans': {
-    id: 'noto-sans',
-    name: '思源黑體',
-    file: `${import.meta.env.BASE_URL}fonts/NotoSansCJKtc-Regular.otf`,
-    family: 'Noto Sans TC',
-    format: 'opentype',
-    description: '清晰俐落，適合螢幕閱讀',
-  },
-  'noto-serif': {
-    id: 'noto-serif',
-    name: '思源宋體',
-    file: `${import.meta.env.BASE_URL}fonts/NotoSerifCJKtc-Regular.otf`,
-    family: 'Noto Serif TC',
-    format: 'opentype',
-    description: '典雅正式，適合長篇小說',
-  },
-  'guankiap': {
-    id: 'guankiap',
-    name: '原俠正楷',
-    file: `${import.meta.env.BASE_URL}fonts/GuanKiapTsingKhai-TW.ttf`,
-    family: 'GuanKiapTsingKhai TW',
-    format: 'truetype',
-    description: '手寫楷書，溫暖文青感',
-  },
-  'huninn': {
-    id: 'huninn',
-    name: 'jf 粉圓',
-    file: `${import.meta.env.BASE_URL}fonts/jf-openhuninn.ttf`,
-    family: 'jf-openhuninn',
-    format: 'truetype',
-    description: '可愛圓體，活潑輕鬆',
-  },
-};
+export const FONT_CONFIG: Record<string, FontInfo> = Object.fromEntries(
+  BUILT_IN_FONT_IDS.map((id) => {
+    const meta = EPUB_FONT_MAP[id];
+    return [
+      id,
+      {
+        id: meta.id,
+        name: meta.name,
+        file: meta.file,
+        family: meta.family,
+        ext: meta.ext,
+        mime: meta.mime,
+        format: meta.format,
+        description: meta.description,
+      },
+    ];
+  }),
+);
 
-export const DEFAULT_FONT = 'noto-sans';
+export const DEFAULT_FONT = DEFAULT_EPUB_FONT;
+
+export { estimateSubsetSize };
 
 export function extractUniqueChars(text: string): string {
-  const chars = [...new Set(text)].join('');
-  const baseChars = '。，、；：？！「」『』（）【】…—　 \n\r\t';
-  const numbers = '0123456789';
-  const latin = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  return [...new Set(chars + baseChars + numbers + latin)].join('');
+  return extractUniqueCodePoints(text)
+    .map(cp => String.fromCodePoint(cp))
+    .join('');
 }
-
-const fontCache = new Map<string, ArrayBuffer>();
 
 export async function loadFontFile(fontId: string): Promise<ArrayBuffer> {
-  const config = FONT_CONFIG[fontId];
-  if (!config) {
-    throw new Error(`未知的字型: ${fontId}`);
-  }
-
-  if (fontCache.has(fontId)) {
-    return fontCache.get(fontId)!;
-  }
-
-  const response = await fetch(config.file);
-  if (!response.ok) {
-    throw new Error(`無法載入字型: ${config.name}`);
-  }
-
-  const buffer = await response.arrayBuffer();
-  fontCache.set(fontId, buffer);
-  return buffer;
+  return loadBuiltInFontBuffer(fontId);
 }
 
-export interface SubsetProgress {
-  stage: string;
-  message: string;
+export interface SubsetFontResult {
+  buffer: ArrayBuffer;
+  format: string;
+  family: string;
+  mimeType: string;
+  extension: string;
 }
 
 export async function subsetFont(
   fontId: string,
   text: string,
-  onProgress: (p: SubsetProgress) => void = () => {},
-): Promise<{ buffer: ArrayBuffer; format: string; family: string; mimeType: string; extension: string }> {
+  onProgress: (p: { stage: string; message: string }) => void = () => {},
+): Promise<SubsetFontResult> {
   const config = FONT_CONFIG[fontId];
   if (!config) {
     throw new Error(`未知的字型: ${fontId}`);
   }
 
   onProgress({ stage: 'loading', message: `正在載入 ${config.name}...` });
+  const fontBuffer = await loadBuiltInFontBuffer(fontId);
 
-  const fontBuffer = await loadFontFile(fontId);
-  
   onProgress({ stage: 'parsing', message: '正在解析字型...' });
+  const codePoints = extractUniqueCodePoints(text);
 
-  const chars = extractUniqueChars(text);
-  const charCodes = [...chars].map(c => c.charCodeAt(0));
-
-  onProgress({ stage: 'subsetting', message: `正在子集化（保留 ${charCodes.length} 個字元）...` });
+  onProgress({ stage: 'subsetting', message: `正在子集化（保留 ${codePoints.length} 個字元）...` });
 
   try {
-    const font = Font.create(fontBuffer, {
-      type: config.file.endsWith('.otf') ? 'otf' : 'ttf',
-      subset: charCodes,
-      hinting: false,
+    const subset = await subsetFontBuffer(fontBuffer, codePoints, {
+      fallbackName: config.file,
+      preferredFamily: config.family,
     });
-
-    const fontData = font.get();
-    if (fontData.name) {
-      fontData.name.fontFamily = config.family;
-      fontData.name.fontSubFamily = 'Regular';
-      fontData.name.fullName = `${config.family} Subset`;
-      fontData.name.postScriptName = config.family.replace(/\s/g, '');
-    }
-    font.set(fontData);
-
-    onProgress({ stage: 'generating', message: '正在產生子集化字型...' });
-
-    const subsetBuffer = normalizeFontOutput(font.write({
-      type: 'ttf',
-      hinting: false,
-    }));
 
     onProgress({ stage: 'done', message: '字型子集化完成！' });
 
     return {
-      buffer: subsetBuffer,
-      format: 'truetype',
-      family: config.family,
-      mimeType: 'font/ttf',
+      buffer: subset.buffer,
+      format: subset.format,
+      family: subset.family,
+      mimeType: subset.mime,
       extension: '.ttf',
     };
-  } catch (error: any) {
+  }
+  catch (error: any) {
     console.error('字型子集化失敗:', error);
     throw new Error(`字型子集化失敗: ${error.message}`);
   }
-}
-
-function normalizeFontOutput(output: ArrayBuffer | Buffer | string): ArrayBuffer {
-  if (output instanceof ArrayBuffer) {
-    return output;
-  }
-
-  if (typeof output === 'string') {
-    return new TextEncoder().encode(output).buffer;
-  }
-
-  return output.buffer.slice(output.byteOffset, output.byteOffset + output.byteLength);
 }
 
 export function generateFontFaceCSS(family: string, filename: string, format = 'truetype'): string {
@@ -160,15 +107,4 @@ export function generateFontFaceCSS(family: string, filename: string, format = '
   font-weight: normal;
   font-style: normal;
 }`;
-}
-
-export function estimateSubsetSize(charCount: number): string {
-  const estimatedBytes = charCount * 750;
-  if (estimatedBytes < 1024) {
-    return `${estimatedBytes} B`;
-  } else if (estimatedBytes < 1024 * 1024) {
-    return `${(estimatedBytes / 1024).toFixed(1)} KB`;
-  } else {
-    return `${(estimatedBytes / 1024 / 1024).toFixed(1)} MB`;
-  }
 }

@@ -1,16 +1,23 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
-import { useMessage } from 'naive-ui';
-import JSZip from 'jszip';
-import { detectFile } from '@/services/magika/magika.service';
-import { decodeWithEncoding, detectEncoding } from '../txt-to-epub/encodingDetector';
-import { updatePackageDirection } from './package-direction';
-import { getPreviewChapterIndex, parsePreviewChapter, type PreviewChapter } from './preview-chapters';
-import { clampPreviewPage, getPreviewPageCount } from './preview-pagination';
+import type JSZip from 'jszip';
+import type { EpubEditableEntry } from './epub-processor';
+import type { KindleRepairReport } from './kindle-fixer';
+import type { PreviewChapter } from './preview-chapters';
 import { useStorage } from '@vueuse/core';
-import { translate } from '@/plugins/i18n.plugin';
+import { useMessage } from 'naive-ui';
+import { computed, nextTick, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue';
 import { config } from '@/config';
-import { convertOpenCC } from '@/services/opencc.service';
+import { downloadBlob } from '@/services/epub/download';
+import { BUILT_IN_FONT_IDS, EPUB_FONT_MAP, subsetFontBuffer } from '@/services/epub/fonts';
+import { detectFile } from '@/services/magika/magika.service';
+import { convertOpenCC, convertPunctuation } from '@/services/opencc.service';
+import { useStyleStore } from '@/stores/style.store';
+import {
+  extractEditableEntries,
+  extractPreviewChapters,
+  loadEpubArchive,
+  processEpubPackage,
+} from './epub-processor';
 import {
   clearAllHistoryBlobs,
   clearCustomFont,
@@ -18,43 +25,39 @@ import {
   getHistoryBlob,
   loadCustomFont,
   saveCustomFont,
-  saveHistoryBlob
+  saveHistoryBlob,
 } from './epub-storage';
+import { repairKindleEpub, SAFE_ZIP_DATE } from './kindle-fixer';
+import { getPreviewChapterIndex } from './preview-chapters';
+import { clampPreviewPage, getPreviewPageCount } from './preview-pagination';
+import { buildFallbackPreviewSrcdoc, renderChapterPreviewSrcdoc } from './preview-renderer';
 import {
   FONT_MAP,
-  INDENT_MAP,
-  LINE_HEIGHT_MAP,
   MARGIN_PRESET_MAP,
-  SIZE_MAP,
-  VERTICAL_HEADING_MARGIN,
-  VERTICAL_PARAGRAPH_MARGIN,
-  generateStyleOverrides,
-  relativePathFromCss,
-  resolveMargins,
-  type StyleGeneratorOptions,
 } from './style-generator';
-import { normalizeZipTimestamps, repairKindleEpub } from './kindle-fixer';
 
 const message = useMessage();
+const styleStore = useStyleStore();
 
 // EPUB File state
 const file = ref<File | null>(null);
-const fileInput = ref<HTMLInputElement | null>(null);
 const fontInput = ref<HTMLInputElement | null>(null);
 const coverInput = ref<HTMLInputElement | null>(null);
 const isProcessing = ref(false);
 const progressStage = ref('');
 const progressPercent = ref(0);
 
-// JSZip instance & files list
-const zipInstance = ref<JSZip | null>(null);
-const fileEntries = ref<Array<{ name: string; type: string; originalContent: string; currentContent: string }>>([]);
+// Read-only source JSZip (shallowRef avoids Vue deep reactive proxy overhead)
+const sourceZip = shallowRef<JSZip | null>(null);
+const fileEntries = ref<EpubEditableEntry[]>([]);
 const selectedFileName = ref<string | null>(null);
 const activeFileContent = ref('');
 
 // Book metadata
 const bookTitle = ref('');
 const bookAuthor = ref('');
+const originalTitle = ref('');
+const originalAuthor = ref('');
 const opfPath = ref('');
 
 // Tab settings
@@ -65,11 +68,11 @@ const settings = useStorage('epub-editor:settings', {
   convertMode: 'twp' as 'twp' | 'tw' | 'off',
   convertPunctuation: true,
   writingMode: 'horizontal' as 'horizontal' | 'vertical',
-  fontFamily: 'noto-sans', // 'noto-sans' | 'noto-serif' | 'guankiap' | 'huninn' | 'default' | 'custom'
-  fontEmbedMode: 'full' as 'none' | 'subset' | 'full',
-  fontSize: 'medium', // 'small' | 'medium' | 'large' | 'xlarge'
-  lineHeight: 'normal', // 'compact' | 'normal' | 'relaxed' | 'loose'
-  textIndent: 'two', // 'none' | 'one' | 'two'
+  fontFamily: 'noto-sans',
+  fontEmbedMode: 'subset' as 'none' | 'subset' | 'full',
+  fontSize: 'medium',
+  lineHeight: 'normal',
+  textIndent: 'two',
   pageMargin: 'compact' as 'none' | 'compact' | 'normal' | 'relaxed' | 'custom',
   customMarginVertical: 0.3,
   customMarginHorizontal: 0.5,
@@ -125,21 +128,17 @@ async function downloadHistoryItem(item: ProcessedHistoryItem) {
     message.error('此歷史快取檔案已被清理或不存在，無法下載');
     return;
   }
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = item.outputFileName;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 10000);
-  message.success('已開始下載歷史紀錄檔案：' + item.outputFileName);
+  downloadBlob(blob, item.outputFileName);
+  message.success(`已開始下載歷史紀錄檔案：${item.outputFileName}`);
 }
 
 // Custom Font File
 const customFontFile = ref<File | null>(null);
+const customFontBufferCache = ref<{ file: File; buffer: ArrayBuffer } | null>(null);
 const customFontUrl = ref('');
 const isCustomFontLoading = ref(false);
+let previewFontRequestSeq = 0;
+let isUnmounted = false;
 
 // Cover Image state
 const originalCover = ref<{ path: string; mimeType: string; dataUrl: string } | null>(null);
@@ -147,96 +146,114 @@ const coverAction = ref<'keep' | 'replace' | 'remove'>('keep');
 const newCoverBlob = ref<File | null>(null);
 const newCoverPreviewUrl = ref('');
 
+function revokeOriginalCoverUrl() {
+  if (originalCover.value?.dataUrl) {
+    URL.revokeObjectURL(originalCover.value.dataUrl);
+  }
+}
+
+function revokeNewCoverUrl() {
+  if (newCoverPreviewUrl.value) {
+    URL.revokeObjectURL(newCoverPreviewUrl.value);
+    newCoverPreviewUrl.value = '';
+  }
+}
+
 function clickFileInput(input: HTMLInputElement | null) {
   input?.click();
 }
 
-// Live Preview Sample Text
-const previewTitle = ref('即時排版預覽');
-const previewText = ref('載入 EPUB 電子書後，這裡將會呈現第一個內容章節的實際渲染結果。您可以調整左側的排版、字型、直橫排等參數，效果會即時更新。');
+const DEFAULT_PREVIEW_TITLE = '即時排版預覽';
+const DEFAULT_PREVIEW_TEXT = '載入 EPUB 電子書後，這裡將會呈現第一個內容章節的實際渲染結果。您可以調整左側的排版、字型、直橫排等參數，效果會即時更新。';
+
+// Live Preview Sample Text & Sandboxed Iframe State
+const previewTitle = ref(DEFAULT_PREVIEW_TITLE);
+const previewText = ref(DEFAULT_PREVIEW_TEXT);
 const previewChapters = ref<PreviewChapter[]>([]);
 const previewChapterIndex = ref(0);
-const previewViewport = ref<HTMLElement | null>(null);
+const previewIframe = ref<HTMLIFrameElement | null>(null);
+const previewSrcdoc = ref('');
 const previewPage = ref(0);
 const previewPageCount = ref(1);
 let previewResizeObserver: ResizeObserver | null = null;
+let previewAssetUrls: string[] = [];
+let previewRenderSeq = 0;
+let detachIframeListeners: (() => void) | null = null;
 
-const computedPreviewPadding = computed(() => {
-  const { v, h } = resolveMargins(
-    settings.value.pageMargin,
-    settings.value.customMarginVertical,
-    settings.value.customMarginHorizontal
-  );
-  return `${v} ${h}`;
-});
+function revokePreviewAssetUrls() {
+  for (const url of previewAssetUrls) {
+    URL.revokeObjectURL(url);
+  }
+  previewAssetUrls = [];
+}
 
-const optimizePreviewVerticalLayout = computed(() =>
-  settings.value.writingMode === 'vertical' && settings.value.optimizeVerticalLayout !== false
-);
-
-// OpenCC Punctuation mapping
-const PUNCTUATION_MAP: Record<string, string> = {
-  '\u201C': '\u300C',  // “ -> 「
-  '\u201D': '\u300D',  // ” -> 」
-  '\u2018': '\u300E',  // ‘ -> 『
-  '\u2019': '\u300F',  // ’ -> 』
-};
-
-// Drag and drop state
-const isDragging = ref(false);
+// Drag and drop state for cover upload
 const isCoverDragging = ref(false);
+let coverDragCounter = 0;
 
 const editableFiles = computed(() => {
-  return fileEntries.value.filter(entry => 
-    entry.name.endsWith('.xhtml') || 
-    entry.name.endsWith('.html') || 
-    entry.name.endsWith('.htm') || 
-    entry.name.endsWith('.ncx') || 
-    entry.name.endsWith('.opf') ||
-    entry.name.endsWith('.css')
-  );
-});
-
-// Process preview paragraphs
-const processedPreviewTitle = computed(() => {
-  let title = previewTitle.value;
-  if (settings.value.convertMode !== 'off') {
-    const dir = settings.value.convertMode === 'twp' ? 's2twp' : 's2tw';
-    title = convertOpenCC(title, dir);
-  }
-  if (settings.value.convertPunctuation) {
-    title = convertPunctuation(title);
-  }
-  return title;
-});
-
-const processedPreviewParagraphs = computed(() => {
-  const rawText = previewText.value;
-  const paras = rawText.split(/\n+/).filter(p => p.trim());
-  return paras.map(p => {
-    let t = p.trim();
-    if (settings.value.convertMode !== 'off') {
-      const dir = settings.value.convertMode === 'twp' ? 's2twp' : 's2tw';
-      t = convertOpenCC(t, dir);
-    }
-    if (settings.value.convertPunctuation) {
-      t = convertPunctuation(t);
-    }
-    return t;
+  return fileEntries.value.filter((entry) => {
+    const lo = entry.name.toLowerCase();
+    return (
+      lo.endsWith('.xhtml')
+      || lo.endsWith('.html')
+      || lo.endsWith('.htm')
+      || lo.endsWith('.ncx')
+      || lo.endsWith('.opf')
+      || lo.endsWith('.css')
+    );
   });
 });
 
-const computedPreviewFontFamily = computed(() => {
-  const font = settings.value.fontFamily;
-  if (font === 'custom' && customFontUrl.value) {
-    return '"EpubEditorPreviewCustom", sans-serif';
-  }
-  return FONT_MAP[font]?.family || 'sans-serif';
+const contentHtmlCount = computed(() => {
+  return fileEntries.value.filter((entry) => {
+    const lo = entry.name.toLowerCase();
+    return lo.endsWith('.xhtml') || lo.endsWith('.html') || lo.endsWith('.htm');
+  }).length;
 });
 
+function convertPreviewString(raw: string): string {
+  let result = raw;
+  if (settings.value.convertMode !== 'off') {
+    const dir = settings.value.convertMode === 'twp'
+      ? 's2twp'
+      : 's2tw';
+    result = convertOpenCC(result, dir);
+  }
+  if (settings.value.convertPunctuation) {
+    result = convertPunctuation(result);
+  }
+  return result;
+}
+
+const processedPreviewTitle = computed(() => convertPreviewString(previewTitle.value));
+
+const processedPreviewParagraphs = computed(() => {
+  return previewText.value
+    .split(/\n+/)
+    .filter(p => p.trim())
+    .map(p => convertPreviewString(p.trim()));
+});
+
+const fontSelectOptions = computed(() => [
+  ...BUILT_IN_FONT_IDS.map(id => ({ label: EPUB_FONT_MAP[id].name, value: id })),
+  { label: '預設', value: 'default' },
+  { label: '自訂', value: 'custom' },
+]);
+
+function getPreviewScrollElement(): HTMLElement | null {
+  const doc = previewIframe.value?.contentDocument;
+  if (!doc) {
+    return null;
+  }
+  return (doc.scrollingElement as HTMLElement | null) || doc.documentElement;
+}
+
 function syncPreviewPagination() {
-  const viewport = previewViewport.value;
-  if (!viewport) return;
+  const viewport = getPreviewScrollElement();
+  if (!viewport) {
+    return;
+  }
 
   previewPageCount.value = getPreviewPageCount(viewport.scrollWidth, viewport.clientWidth);
   if (viewport.clientWidth <= 0) {
@@ -248,42 +265,132 @@ function syncPreviewPagination() {
   previewPage.value = clampPreviewPage(Math.round(offset / viewport.clientWidth), previewPageCount.value);
 }
 
-function getVerticalScrollDirection(viewport: HTMLElement) {
+function getVerticalScrollDirection(viewport: HTMLElement): number {
   const originalOffset = viewport.scrollLeft;
+  const originalBehavior = viewport.style.scrollBehavior;
+  viewport.style.scrollBehavior = 'auto';
   viewport.scrollLeft = -1;
   const supportsNegativeOffset = viewport.scrollLeft < 0;
   viewport.scrollLeft = originalOffset;
-  return supportsNegativeOffset ? -1 : 1;
+  viewport.style.scrollBehavior = originalBehavior;
+  return supportsNegativeOffset
+    ? -1
+    : 1;
 }
 
 function goToPreviewPage(page: number) {
-  const viewport = previewViewport.value;
-  if (!viewport) return;
+  const viewport = getPreviewScrollElement();
+  if (!viewport) {
+    return;
+  }
 
   const nextPage = clampPreviewPage(page, previewPageCount.value);
   const offset = nextPage * viewport.clientWidth;
   const isVertical = settings.value.writingMode === 'vertical';
 
   viewport.scrollTo({
-    left: isVertical ? getVerticalScrollDirection(viewport) * offset : offset,
+    left: isVertical
+      ? getVerticalScrollDirection(viewport) * offset
+      : offset,
     behavior: 'smooth',
   });
   previewPage.value = nextPage;
 }
 
 function handlePreviewKeydown(event: KeyboardEvent) {
-  if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+  if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') {
+    return;
+  }
 
   const isVertical = settings.value.writingMode === 'vertical';
   const nextKey = isVertical ? 'ArrowLeft' : 'ArrowRight';
   event.preventDefault();
-  goToPreviewPage(previewPage.value + (event.key === nextKey ? 1 : -1));
+  goToPreviewPage(previewPage.value + (event.key === nextKey
+    ? 1
+    : -1));
+}
+
+function handlePreviewIframeLoad() {
+  detachIframeListeners?.();
+  detachIframeListeners = null;
+
+  const iframe = previewIframe.value;
+  const doc = iframe?.contentDocument;
+  const win = iframe?.contentWindow;
+  if (!doc || !win) {
+    return;
+  }
+
+  const onScroll = () => syncPreviewPagination();
+  const onKeydown = (e: KeyboardEvent) => handlePreviewKeydown(e);
+  win.addEventListener('scroll', onScroll, { passive: true });
+  doc.addEventListener('scroll', onScroll, { passive: true });
+  doc.addEventListener('keydown', onKeydown);
+
+  detachIframeListeners = () => {
+    win.removeEventListener('scroll', onScroll);
+    doc.removeEventListener('scroll', onScroll);
+    doc.removeEventListener('keydown', onKeydown);
+  };
+
+  previewPage.value = 0;
+  nextTick(syncPreviewPagination);
+}
+
+async function refreshPreviewSrcdoc() {
+  const seq = ++previewRenderSeq;
+  const currentChapter = previewChapters.value[previewChapterIndex.value];
+  const renderOpts = {
+    writingMode: settings.value.writingMode,
+    fontSize: settings.value.fontSize,
+    lineHeight: settings.value.lineHeight,
+    textIndent: settings.value.textIndent,
+    fontFamily: settings.value.fontFamily,
+    pageMargin: settings.value.pageMargin,
+    customMarginVertical: settings.value.customMarginVertical,
+    customMarginHorizontal: settings.value.customMarginHorizontal,
+    optimizeVerticalLayout: settings.value.optimizeVerticalLayout,
+    convertMode: settings.value.convertMode,
+    convertPunctuation: settings.value.convertPunctuation,
+    customFontUrl: customFontUrl.value,
+    isDark: styleStore.isDarkTheme,
+    baseOrigin: typeof window !== 'undefined'
+      ? window.location.origin
+      : '',
+  };
+
+  if (sourceZip.value && currentChapter?.path) {
+    const rendered = await renderChapterPreviewSrcdoc(sourceZip.value, currentChapter.path, renderOpts);
+    if (isUnmounted || seq !== previewRenderSeq) {
+      for (const u of rendered.createdBlobUrls) {
+        URL.revokeObjectURL(u);
+      }
+      return;
+    }
+    revokePreviewAssetUrls();
+    previewAssetUrls = rendered.createdBlobUrls;
+    previewSrcdoc.value = rendered.srcdoc;
+    return;
+  }
+
+  revokePreviewAssetUrls();
+  previewSrcdoc.value = buildFallbackPreviewSrcdoc(
+    processedPreviewTitle.value,
+    processedPreviewParagraphs.value.join('\n'),
+    renderOpts,
+  );
 }
 
 function selectPreviewChapter(index: number) {
-  const chapterIndex = getPreviewChapterIndex(previewChapterIndex.value, index - previewChapterIndex.value, previewChapters.value.length);
+  const chapterIndex = getPreviewChapterIndex(
+    previewChapterIndex.value,
+    index - previewChapterIndex.value,
+    previewChapters.value.length,
+  );
   const chapter = previewChapters.value[chapterIndex];
-  if (!chapter) return;
+  if (!chapter) {
+    return;
+  }
 
   previewChapterIndex.value = chapterIndex;
   previewTitle.value = chapter.title;
@@ -291,8 +398,15 @@ function selectPreviewChapter(index: number) {
 }
 
 watch([
+  sourceZip,
+  previewChapters,
+  previewChapterIndex,
   previewTitle,
   previewText,
+  customFontUrl,
+  () => styleStore.isDarkTheme,
+  () => settings.value.convertMode,
+  () => settings.value.convertPunctuation,
   () => settings.value.writingMode,
   () => settings.value.fontFamily,
   () => settings.value.fontSize,
@@ -302,29 +416,35 @@ watch([
   () => settings.value.customMarginVertical,
   () => settings.value.customMarginHorizontal,
   () => settings.value.optimizeVerticalLayout,
-], async () => {
-  previewPage.value = 0;
-  await nextTick();
-  previewViewport.value?.scrollTo({ left: 0 });
-  syncPreviewPagination();
-});
+], () => {
+  void refreshPreviewSrcdoc();
+}, { immediate: true });
 
-watch(previewViewport, (viewport, previousViewport) => {
-  if (previousViewport) previewResizeObserver?.unobserve(previousViewport);
-  if (viewport) {
-    previewResizeObserver?.observe(viewport);
+watch(previewIframe, (iframe, previousIframe) => {
+  if (previousIframe) {
+    previewResizeObserver?.unobserve(previousIframe);
+  }
+  if (iframe) {
+    previewResizeObserver?.observe(iframe);
     nextTick(syncPreviewPagination);
   }
 });
 
-// Watch custom font file to update preview sub-setting
-watch([customFontFile, previewTitle, previewText, () => settings.value.fontFamily], () => {
-  if (settings.value.fontFamily === 'custom' && customFontFile.value) {
-    injectCustomFontForPreview();
-  }
-});
+// Watch custom font or converted preview text to update preview subsetting
+watch(
+  [
+    customFontFile,
+    processedPreviewTitle,
+    processedPreviewParagraphs,
+    () => settings.value.fontFamily,
+  ],
+  () => {
+    if (settings.value.fontFamily === 'custom' && customFontFile.value) {
+      injectCustomFontForPreview();
+    }
+  },
+);
 
-// Watch activeFileContent to auto-save to fileEntries
 watch(activeFileContent, (newVal) => {
   if (selectedFileName.value) {
     const found = fileEntries.value.find(e => e.name === selectedFileName.value);
@@ -334,103 +454,95 @@ watch(activeFileContent, (newVal) => {
   }
 });
 
-// WebAssembly HarfBuzz subset loader for preview
-let previewHbExports: any = null;
-async function loadPreviewHb() {
-  if (previewHbExports) return previewHbExports;
-  const resp = await fetch('https://cdn.jsdelivr.net/npm/harfbuzzjs@0.4.11/hb-subset.wasm');
-  if (!resp.ok) throw new Error('hb-subset.wasm 載入失敗');
-  const result = await WebAssembly.instantiate(await resp.arrayBuffer());
-  previewHbExports = result.instance.exports;
-  return previewHbExports;
+function setPreviewCustomFontStyle(url: string, format?: string) {
+  let styleEl = document.getElementById('epub-preview-custom-font-style');
+  if (!styleEl) {
+    styleEl = document.createElement('style');
+    styleEl.id = 'epub-preview-custom-font-style';
+    document.head.appendChild(styleEl);
+  }
+  const formatClause = format
+    ? ` format("${format}")`
+    : '';
+  styleEl.textContent = `@font-face { font-family: "EpubEditorPreviewCustom"; src: url("${url}")${formatClause}; font-display: swap; }`;
 }
 
-async function subsetFontForPreview(fontBuffer: ArrayBuffer, cps: Set<number>): Promise<ArrayBuffer> {
-  const ex = await loadPreviewHb();
-  const fontBytes = new Uint8Array(fontBuffer);
-  const ptr = ex.malloc(fontBytes.byteLength);
-  new Uint8Array(ex.memory.buffer).set(fontBytes, ptr);
-  
-  const blob = ex.hb_blob_create(ptr, fontBytes.byteLength, 2, 0, 0);
-  const face = ex.hb_face_create(blob, 0);
-  ex.hb_blob_destroy(blob);
-  
-  const input = ex.hb_subset_input_create_or_fail();
-  const us = ex.hb_subset_input_unicode_set(input);
-  cps.forEach(cp => ex.hb_set_add(us, cp));
-  
-  const sub = ex.hb_subset_or_fail(face, input);
-  ex.hb_subset_input_destroy(input);
-  if (!sub) {
-    ex.hb_face_destroy(face);
-    ex.free(ptr);
-    throw new Error('hb_subset_or_fail 失敗');
+async function getCustomFontBuffer(f: File): Promise<ArrayBuffer> {
+  if (customFontBufferCache.value && customFontBufferCache.value.file === f) {
+    return customFontBufferCache.value.buffer;
   }
-  
-  const rb = ex.hb_face_reference_blob(sub);
-  const offset = ex.hb_blob_get_data(rb, 0);
-  const len = ex.hb_blob_get_length(rb);
-  const view = new Uint8Array(ex.memory.buffer, offset, len);
-  const data = new Uint8Array(len);
-  data.set(view);
-  
-  ex.hb_blob_destroy(rb);
-  ex.hb_face_destroy(sub);
-  ex.hb_face_destroy(face);
-  ex.free(ptr);
-  return data.buffer;
+  const buffer = await f.arrayBuffer();
+  customFontBufferCache.value = { file: f, buffer };
+  return buffer;
 }
 
 async function injectCustomFontForPreview() {
   const f = customFontFile.value;
-  if (!f) return;
-  
+  if (!f) {
+    return;
+  }
+
+  const requestSeq = ++previewFontRequestSeq;
   isCustomFontLoading.value = true;
   try {
-    const sample = previewTitle.value + '\n' + previewText.value;
-    const cps = new Set<number>();
-    for (let i = 0; i < sample.length; i++) {
-      const cp = sample.codePointAt(i);
-      if (cp !== undefined) {
-        cps.add(cp);
-        if (cp > 0xFFFF) i++;
-      }
+    const sample = `${processedPreviewTitle.value}\n${processedPreviewParagraphs.value.join('\n')}`;
+    const rawBuffer = await getCustomFontBuffer(f);
+    if (isUnmounted || requestSeq !== previewFontRequestSeq) {
+      return;
     }
-    // Add ASCII
-    for (let a = 0x20; a < 0x7F; a++) cps.add(a);
-    
-    const buf = await f.arrayBuffer();
-    const sub = await subsetFontForPreview(buf, cps);
-    
+
+    const subset = await subsetFontBuffer(rawBuffer, sample, { fallbackName: f.name });
+    if (isUnmounted || requestSeq !== previewFontRequestSeq) {
+      return;
+    }
+
+    const nextUrl = URL.createObjectURL(new Blob([subset.buffer], { type: subset.mime }));
     if (customFontUrl.value) {
       URL.revokeObjectURL(customFontUrl.value);
     }
-    customFontUrl.value = URL.createObjectURL(new Blob([sub], { type: 'font/ttf' }));
-    
-    let styleEl = document.getElementById('hr-preview-custom-font-style');
-    if (!styleEl) {
-      styleEl = document.createElement('style');
-      styleEl.id = 'hr-preview-custom-font-style';
-      document.head.appendChild(styleEl);
-    }
-    styleEl.textContent = `@font-face { font-family: "EpubEditorPreviewCustom"; src: url("${customFontUrl.value}") format("truetype"); font-display: swap; }`;
-  } catch (err) {
-    console.warn('預覽字體子集化失敗，使用原檔預覽：', err);
-    if (customFontUrl.value) {
-      URL.revokeObjectURL(customFontUrl.value);
-    }
-    customFontUrl.value = URL.createObjectURL(f);
-    
-    let styleEl = document.getElementById('hr-preview-custom-font-style');
-    if (!styleEl) {
-      styleEl = document.createElement('style');
-      styleEl.id = 'hr-preview-custom-font-style';
-      document.head.appendChild(styleEl);
-    }
-    styleEl.textContent = `@font-face { font-family: "EpubEditorPreviewCustom"; src: url("${customFontUrl.value}"); font-display: swap; }`;
-  } finally {
-    isCustomFontLoading.value = false;
+    customFontUrl.value = nextUrl;
+    setPreviewCustomFontStyle(nextUrl, subset.format);
   }
+  catch (err) {
+    if (isUnmounted || requestSeq !== previewFontRequestSeq) {
+      return;
+    }
+    console.warn('預覽字體子集化失敗，使用原檔預覽：', err);
+    const nextUrl = URL.createObjectURL(f);
+    if (customFontUrl.value) {
+      URL.revokeObjectURL(customFontUrl.value);
+    }
+    customFontUrl.value = nextUrl;
+    setPreviewCustomFontStyle(nextUrl);
+  }
+  finally {
+    if (!isUnmounted && requestSeq === previewFontRequestSeq) {
+      isCustomFontLoading.value = false;
+    }
+  }
+}
+
+function formatRepairSummary(report: KindleRepairReport): string | null {
+  if (!report.hasRepairs) {
+    return null;
+  }
+  const parts: string[] = [];
+  if (report.fixedExtensionlessFiles.length > 0) {
+    parts.push(`補全 ${report.fixedExtensionlessFiles.length} 個章節副檔名`);
+  }
+  if (report.fixedDeadLinks.length > 0) {
+    parts.push(`移除 ${report.fixedDeadLinks.length} 個目錄死連結`);
+  }
+  if (report.fixedOpfItems.length > 0) {
+    parts.push(`校正 ${report.fixedOpfItems.length} 項 OPF 清單`);
+  }
+  if (report.normalizedTimestampsCount > 0) {
+    parts.push(`正規化 ${report.normalizedTimestampsCount} 個時間戳`);
+  }
+  if (report.fixedXmlDeclarations.length > 0) {
+    parts.push(`補充 ${report.fixedXmlDeclarations.length} 處 XML 宣告`);
+  }
+  return parts.join('、');
 }
 
 // Upload and Parse EPUB
@@ -440,208 +552,135 @@ async function handleFileUpload(uploadedFile: File) {
       const detection = await detectFile(uploadedFile);
       if (detection.label === 'epub' || detection.mimeType === 'application/epub+zip') {
         message.info(`檔案格式分析：此檔案為標準 EPUB 電子書（副檔名為 ${uploadedFile.name.split('.').pop() || '無'}），正在解析...`);
-      } else if (detection.isText || detection.label === 'txt' || detection.label === 'markdown') {
+      }
+      else if (detection.isText || detection.label === 'txt' || detection.label === 'markdown') {
         message.warning(`檢測到此檔案為純文字（${detection.name}），建議使用「TXT 轉 EPUB 電子書」工具製作成 EPUB！`, { duration: 6000 });
         return;
-      } else if (detection.label === 'pdf') {
+      }
+      else if (detection.label === 'pdf') {
         message.warning('檢測到此檔案為 PDF 文件，EPUB 編輯器僅支援標準 EPUB 電子書。', { duration: 6000 });
         return;
-      } else {
+      }
+      else {
         message.error(`檔案格式不符：檢測為 ${detection.name} (${detection.mimeType})，請選擇 .epub 格式電子書。`);
         return;
       }
-    } catch {
+    }
+    catch {
       message.error('請選擇 .epub 格式的電子書');
       return;
     }
   }
 
+  resetAll();
   file.value = uploadedFile;
   isProcessing.value = true;
-  progressStage.value = '正在讀起 EPUB 檔案...';
-  progressPercent.value = 10;
+  progressStage.value = '正在讀取 EPUB 檔案...';
+  progressPercent.value = 15;
 
   try {
-    const zip = await JSZip.loadAsync(uploadedFile);
-    zipInstance.value = zip;
+    const parsed = await loadEpubArchive(uploadedFile, settings.value.fixKindleCompatibility);
+    progressPercent.value = 60;
 
-    // Check & repair Kindle compatibility before extracting files
-    if (settings.value.fixKindleCompatibility) {
-      progressStage.value = '檢測並修復 Kindle 相容性...';
-      const report = await repairKindleEpub(zip);
-      if (report.hasRepairs) {
-        const parts: string[] = [];
-        if (report.fixedExtensionlessFiles.length > 0) {
-          parts.push(`補全 ${report.fixedExtensionlessFiles.length} 個章節副檔名`);
-        }
-        if (report.fixedDeadLinks.length > 0) {
-          parts.push(`移除 ${report.fixedDeadLinks.length} 個目錄死連結`);
-        }
-        if (report.fixedOpfItems.length > 0) {
-          parts.push(`校正 ${report.fixedOpfItems.length} 項 OPF 清單`);
-        }
-        if (report.normalizedTimestampsCount > 0) {
-          parts.push(`正規化 ${report.normalizedTimestampsCount} 個時間戳`);
-        }
-        if (report.fixedXmlDeclarations.length > 0) {
-          parts.push(`補充 ${report.fixedXmlDeclarations.length} 處 XML 宣告`);
-        }
-        kindleRepairSummary.value = parts.join('、');
-        message.info(`已為此書自動完成 Kindle 相容性修復：${kindleRepairSummary.value}`);
-      } else {
-        kindleRepairSummary.value = null;
-      }
-    } else {
-      kindleRepairSummary.value = null;
+    sourceZip.value = parsed.zip;
+    fileEntries.value = parsed.entries;
+    opfPath.value = parsed.opfPath;
+    bookTitle.value = parsed.title;
+    bookAuthor.value = parsed.author;
+    originalTitle.value = parsed.title;
+    originalAuthor.value = parsed.author;
+
+    const summary = parsed.repairReport
+      ? formatRepairSummary(parsed.repairReport)
+      : null;
+    kindleRepairSummary.value = summary;
+    if (summary) {
+      message.info(`已為此書自動完成 Kindle 相容性修復：${summary}`);
     }
 
-    fileEntries.value = [];
-    
-    let parsedCount = 0;
-    const totalFiles = Object.keys(zip.files).length;
-    
-    // Parse files
-    for (const [filename, entry] of Object.entries(zip.files)) {
-      if (entry.dir) continue;
-
-      progressStage.value = `解壓中: ${filename.split('/').pop()}`;
-      progressPercent.value = 10 + Math.floor((parsedCount / totalFiles) * 60);
-
-      const ext = filename.toLowerCase();
-      if (
-        ext.endsWith('.xhtml') || 
-        ext.endsWith('.html') || 
-        ext.endsWith('.htm') || 
-        ext.endsWith('.ncx') || 
-        ext.endsWith('.opf') ||
-        ext.endsWith('.css')
-      ) {
-        const buffer = await entry.async('arraybuffer');
-        const encoding = detectEncoding(buffer);
-        const textContent = decodeWithEncoding(buffer, encoding);
-
-        fileEntries.value.push({
-          name: filename,
-          type: ext.substring(ext.lastIndexOf('.')),
-          originalContent: textContent,
-          currentContent: textContent,
-        });
-
-        // Detect metadata and cover from OPF
-        if (ext.endsWith('.opf')) {
-          opfPath.value = filename;
-          parseMetadata(textContent);
-        }
-      }
-      parsedCount++;
-    }
-
-    // Try extracting cover
     progressStage.value = '偵測書籍封面圖片...';
-    progressPercent.value = 85;
-    const cover = await detectCover(zip);
-    if (cover) {
-      originalCover.value = cover;
-      coverAction.value = 'keep';
-    } else {
-      originalCover.value = null;
-      coverAction.value = 'keep';
+    progressPercent.value = 80;
+    if (parsed.cover) {
+      originalCover.value = {
+        path: parsed.cover.path,
+        mimeType: parsed.cover.mimeType,
+        dataUrl: URL.createObjectURL(parsed.cover.blob),
+      };
     }
 
-    // Extract every content document so the preview can move between chapters.
     progressStage.value = '生成即時排版預覽...';
     progressPercent.value = 95;
-    previewChapters.value = await extractPreviewChapters(zip);
+    previewChapters.value = parsed.previewChapters;
     previewChapterIndex.value = 0;
     selectPreviewChapter(0);
 
     progressPercent.value = 100;
     message.success('EPUB 解析成功！');
-  } catch (err: any) {
+  }
+  catch (err: any) {
     message.error(`解析 EPUB 失敗: ${err.message}`);
     resetAll();
-  } finally {
+  }
+  finally {
     isProcessing.value = false;
   }
 }
 
-function parseMetadata(opfContent: string) {
-  const parser = new DOMParser();
-  const xmlDoc = parser.parseFromString(opfContent, 'text/xml');
-  
-  const titleNode = xmlDoc.getElementsByTagName('dc:title')[0] || xmlDoc.getElementsByTagName('title')[0];
-  const creatorNode = xmlDoc.getElementsByTagName('dc:creator')[0] || xmlDoc.getElementsByTagName('creator')[0];
-
-  bookTitle.value = titleNode ? titleNode.textContent || '' : '';
-  bookAuthor.value = creatorNode ? creatorNode.textContent || '' : '';
-}
-
-async function reloadFileEntries() {
-  if (!zipInstance.value) return;
-  const zip = zipInstance.value;
-  fileEntries.value = [];
-  for (const [filename, entry] of Object.entries(zip.files)) {
-    if (entry.dir) continue;
-    const ext = filename.toLowerCase();
-    if (
-      ext.endsWith('.xhtml') || 
-      ext.endsWith('.html') || 
-      ext.endsWith('.htm') || 
-      ext.endsWith('.ncx') || 
-      ext.endsWith('.opf') ||
-      ext.endsWith('.css')
-    ) {
-      const buffer = await entry.async('arraybuffer');
-      const encoding = detectEncoding(buffer);
-      const textContent = decodeWithEncoding(buffer, encoding);
-
-      fileEntries.value.push({
-        name: filename,
-        type: ext.substring(ext.lastIndexOf('.')),
-        originalContent: textContent,
-        currentContent: textContent,
-      });
-
-      if (ext.endsWith('.opf')) {
-        opfPath.value = filename;
-        parseMetadata(textContent);
-      }
+function getEditedFilesMap(): Record<string, string> {
+  const map: Record<string, string> = {};
+  for (const entry of fileEntries.value) {
+    if (entry.currentContent !== entry.originalContent) {
+      map[entry.name] = entry.currentContent;
     }
   }
-
-  previewChapters.value = await extractPreviewChapters(zip);
-  previewChapterIndex.value = 0;
-  if (previewChapters.value.length > 0) {
-    selectPreviewChapter(0);
-  }
+  return map;
 }
 
 async function runManualKindleRepair() {
-  if (!zipInstance.value) {
+  if (!sourceZip.value) {
     message.warning('請先載入 EPUB 電子書');
     return;
   }
+
+  saveActiveFileChanges();
   isProcessing.value = true;
   progressStage.value = '正在執行 Kindle 相容性檢測與修復...';
   try {
-    const report = await repairKindleEpub(zipInstance.value);
-    await reloadFileEntries();
-    if (report.hasRepairs) {
-      const parts: string[] = [];
-      if (report.fixedExtensionlessFiles.length > 0) parts.push(`補全 ${report.fixedExtensionlessFiles.length} 個章節副檔名`);
-      if (report.fixedDeadLinks.length > 0) parts.push(`移除 ${report.fixedDeadLinks.length} 個目錄死連結`);
-      if (report.fixedOpfItems.length > 0) parts.push(`校正 ${report.fixedOpfItems.length} 項 OPF 清單`);
-      if (report.normalizedTimestampsCount > 0) parts.push(`正規化 ${report.normalizedTimestampsCount} 個時間戳`);
-      if (report.fixedXmlDeclarations.length > 0) parts.push(`補充 ${report.fixedXmlDeclarations.length} 處 XML 宣告`);
-      kindleRepairSummary.value = parts.join('、');
-      message.success(`修復完成：${kindleRepairSummary.value}`);
-    } else {
+    // Persist user's manual Tab 2 edits into sourceZip before running structural repair
+    for (const [name, content] of Object.entries(getEditedFilesMap())) {
+      sourceZip.value.file(name, content, { date: SAFE_ZIP_DATE });
+    }
+
+    const report = await repairKindleEpub(sourceZip.value);
+    const refreshed = await extractEditableEntries(sourceZip.value);
+    fileEntries.value = refreshed.entries;
+    opfPath.value = refreshed.opfPath;
+    if (selectedFileName.value) {
+      const current = refreshed.entries.find(e => e.name === selectedFileName.value);
+      activeFileContent.value = current ? current.currentContent : '';
+      if (!current) {
+        selectedFileName.value = null;
+      }
+    }
+
+    previewChapters.value = await extractPreviewChapters(sourceZip.value);
+    previewChapterIndex.value = 0;
+    selectPreviewChapter(0);
+
+    const summary = formatRepairSummary(report);
+    if (summary) {
+      kindleRepairSummary.value = summary;
+      message.success(`修復完成：${summary}`);
+    }
+    else {
       kindleRepairSummary.value = '此電子書結構健康，未發現 Kindle 相容性問題';
       message.info('檢測完成：未發現 Kindle 相容性問題');
     }
-  } catch (err: any) {
+  }
+  catch (err: any) {
     message.error(`修復失敗: ${err.message}`);
-  } finally {
+  }
+  finally {
     isProcessing.value = false;
   }
 }
@@ -664,791 +703,129 @@ function saveActiveFileChanges() {
   }
 }
 
-// OpenCC Punctuation replace helper
-function convertPunctuation(text: string): string {
-  let result = text;
-  for (const [from, to] of Object.entries(PUNCTUATION_MAP)) {
-    result = result.split(from).join(to);
-  }
-  return result;
-}
-
-// Decode helper
-function decodeContent(uint8Array: Uint8Array): string {
-  const encoding = detectEncoding(uint8Array);
-  return decodeWithEncoding(uint8Array, encoding);
-}
-
-// Cover detection
-async function detectCover(zip: JSZip): Promise<{ path: string; mimeType: string; dataUrl: string } | null> {
-  const allFiles = Object.keys(zip.files);
-  const opfFile = allFiles.find(f => f.toLowerCase().endsWith('.opf'));
-  if (!opfFile) return null;
-
-  const opfContent = await zip.files[opfFile].async('string');
-  const opfDir = opfFile.includes('/') ? opfFile.substring(0, opfFile.lastIndexOf('/') + 1) : '';
-
-  const coverMeta = opfContent.match(/<meta[^>]*name=["']cover["'][^>]*content=["']([^"']+)["'][^>]*\/?>/i)
-    || opfContent.match(/<meta[^>]*content=["']([^"']+)["'][^>]*name=["']cover["'][^>]*\/?>/i);
-  if (coverMeta) {
-    const coverId = coverMeta[1];
-    const itemRegex = new RegExp('<item[^>]*id=["\']' + coverId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '["\'][^>]*>', 'i');
-    const itemMatch = opfContent.match(itemRegex);
-    if (itemMatch) {
-      const hrefMatch = itemMatch[0].match(/href=["']([^"']+)["']/i);
-      const typeMatch = itemMatch[0].match(/media-type=["']([^"']+)["']/i);
-      if (hrefMatch) {
-        const imgPath = opfDir + decodeURIComponent(hrefMatch[1]);
-        if (zip.files[imgPath]) {
-          const blob = await zip.files[imgPath].async('blob');
-          const dataUrl = URL.createObjectURL(blob);
-          return { path: imgPath, mimeType: typeMatch ? typeMatch[1] : 'image/jpeg', dataUrl };
-        }
-      }
-    }
-  }
-
-  const coverPropMatch = opfContent.match(/<item[^>]*properties=["'][^"']*cover-image[^"']*["'][^>]*>/i);
-  if (coverPropMatch) {
-    const hrefMatch = coverPropMatch[0].match(/href=["']([^"']+)["']/i);
-    const typeMatch = coverPropMatch[0].match(/media-type=["']([^"']+)["']/i);
-    if (hrefMatch) {
-      const imgPath = opfDir + decodeURIComponent(hrefMatch[1]);
-      if (zip.files[imgPath]) {
-        const blob = await zip.files[imgPath].async('blob');
-        const dataUrl = URL.createObjectURL(blob);
-        return { path: imgPath, mimeType: typeMatch ? typeMatch[1] : 'image/jpeg', dataUrl };
-      }
-    }
-  }
-
-  return null;
-}
-
-// Extract every content document for the interactive preview.
-async function extractPreviewChapters(zip: JSZip): Promise<PreviewChapter[]> {
-  const allFiles = Object.keys(zip.files);
-  const fileNames = allFiles.filter(f => {
-    if (zip.files[f].dir) return false;
-    const ext = f.toLowerCase().slice(f.lastIndexOf('.'));
-    return ['.xhtml', '.html', '.htm'].includes(ext);
-  }).sort();
-
-  const skipPatterns = /(cover|nav|toc|colophon|copyright|titlepage|frontmatter)/i;
-  const candidates = fileNames.filter(filename => !skipPatterns.test(filename.split('/').pop() || ''));
-  const contentFiles = candidates.length > 0 ? candidates : fileNames;
-  const chapters: PreviewChapter[] = [];
-
-  for (const filename of contentFiles) {
-    const u8 = await zip.files[filename].async('uint8array');
-    const fallbackTitle = filename.split('/').pop()?.replace(/\.[^.]+$/, '') || '預覽章節';
-    const chapter = parsePreviewChapter(decodeContent(u8), fallbackTitle);
-    if (chapter.text) chapters.push(chapter);
-  }
-
-  return chapters.length > 0
-    ? chapters
-    : [{ title: '即時預覽', text: '此電子書未包含符合條件的內容網頁檔案。' }];
-}
-
-// Font helpers
-function getCustomFontMeta(file: File) {
-  const name = (file.name || '').toLowerCase();
-  if (name.endsWith('.woff2')) return { ext: 'woff2', mime: 'font/woff2', format: 'woff2' };
-  if (name.endsWith('.woff')) return { ext: 'woff', mime: 'font/woff', format: 'woff' };
-  if (name.endsWith('.otf')) return { ext: 'otf', mime: 'font/otf', format: 'opentype' };
-  return { ext: 'ttf', mime: 'font/ttf', format: 'truetype' };
-}
-
-async function decompressWoffToTtf(woffArrayBuffer: ArrayBuffer): Promise<ArrayBuffer> {
-  const view = new DataView(woffArrayBuffer);
-  const signature = view.getUint32(0);
-  if (signature !== 0x774F4646) throw new Error('不是合法的 WOFF 檔');
-  const flavor = view.getUint32(4);
-  const numTables = view.getUint16(12);
-
-  const tables: Array<{
-    tag: number;
-    offset: number;
-    compLength: number;
-    origLength: number;
-    origChecksum: number;
-    data?: Uint8Array;
-  }> = [];
-  
-  let dirOffset = 44;
-  for (let i = 0; i < numTables; i++) {
-    tables.push({
-      tag: view.getUint32(dirOffset),
-      offset: view.getUint32(dirOffset + 4),
-      compLength: view.getUint32(dirOffset + 8),
-      origLength: view.getUint32(dirOffset + 12),
-      origChecksum: view.getUint32(dirOffset + 16),
-    });
-    dirOffset += 20;
-  }
-
-  const woffBytes = new Uint8Array(woffArrayBuffer);
-  for (const t of tables) {
-    const slice = woffBytes.subarray(t.offset, t.offset + t.compLength);
-    if (t.compLength < t.origLength) {
-      const stream = new Response(new Blob([slice]).stream().pipeThrough(new DecompressionStream('deflate')));
-      const buf = await stream.arrayBuffer();
-      t.data = new Uint8Array(buf);
-    } else {
-      t.data = new Uint8Array(slice);
-    }
-  }
-
-  const headerSize = 12 + numTables * 16;
-  let bodySize = 0;
-  for (const t of tables) {
-    bodySize += t.data!.byteLength;
-    const pad = (4 - (t.data!.byteLength % 4)) % 4;
-    bodySize += pad;
-  }
-  const ttf = new ArrayBuffer(headerSize + bodySize);
-  const ttfView = new DataView(ttf);
-  const ttfBytes = new Uint8Array(ttf);
-
-  ttfView.setUint32(0, flavor);
-  ttfView.setUint16(4, numTables);
-  
-  let entrySelector = 0;
-  let searchRange = 1;
-  while (searchRange * 2 <= numTables) { searchRange *= 2; entrySelector++; }
-  searchRange *= 16;
-  ttfView.setUint16(6, searchRange);
-  ttfView.setUint16(8, entrySelector);
-  ttfView.setUint16(10, numTables * 16 - searchRange);
-
-  let dataOffset = headerSize;
-  let dirCursor = 12;
-  for (const t of tables) {
-    ttfView.setUint32(dirCursor, t.tag);
-    ttfView.setUint32(dirCursor + 4, t.origChecksum);
-    ttfView.setUint32(dirCursor + 8, dataOffset);
-    ttfView.setUint32(dirCursor + 12, t.data!.byteLength);
-    dirCursor += 16;
-    ttfBytes.set(t.data!, dataOffset);
-    dataOffset += t.data!.byteLength;
-    const pad = (4 - (t.data!.byteLength % 4)) % 4;
-    dataOffset += pad;
-  }
-  return ttf;
-}
-
-function readFontFamilyName(arrayBuffer: ArrayBuffer): string | null {
-  try {
-    const view = new DataView(arrayBuffer);
-    const sfnt = view.getUint32(0);
-    if (sfnt === 0x774F4646 || sfnt === 0x774F4632) return null;
-    if (sfnt !== 0x00010000 && sfnt !== 0x4F54544F && sfnt !== 0x74727565) return null;
-    const numTables = view.getUint16(4);
-    let nameOffset: number | null = null;
-    for (let i = 0; i < numTables; i++) {
-      const rec = 12 + i * 16;
-      const tag = String.fromCharCode(view.getUint8(rec), view.getUint8(rec+1), view.getUint8(rec+2), view.getUint8(rec+3));
-      if (tag === 'name') {
-        nameOffset = view.getUint32(rec + 8);
-        break;
-      }
-    }
-    if (nameOffset === null) return null;
-    const count = view.getUint16(nameOffset + 2);
-    const stringOffset = view.getUint16(nameOffset + 4);
-    const candidates: Array<{ priority: number; name: string }> = [];
-    for (let r = 0; r < count; r++) {
-      const rec = nameOffset + 6 + r * 12;
-      const platformID = view.getUint16(rec);
-      const encodingID = view.getUint16(rec + 2);
-      const nameID = view.getUint16(rec + 6);
-      const sLen = view.getUint16(rec + 8);
-      const sOff = view.getUint16(rec + 10);
-      if (nameID !== 1 && nameID !== 16) continue;
-      const raw = new Uint8Array(arrayBuffer, nameOffset + stringOffset + sOff, sLen);
-      let str = '';
-      if (platformID === 3 || (platformID === 0 && encodingID >= 3)) {
-        const chars: string[] = [];
-        for (let k = 0; k < raw.length; k += 2) {
-          chars.push(String.fromCharCode((raw[k] << 8) | raw[k + 1]));
-        }
-        str = chars.join('');
-      } else {
-        str = String.fromCharCode.apply(null, Array.from(raw));
-      }
-      candidates.push({ priority: (nameID === 16 ? 0 : 1) + (platformID === 3 ? 0 : 10), name: str });
-    }
-    if (!candidates.length) return null;
-    candidates.sort((a, b) => a.priority - b.priority);
-    return candidates[0].name;
-  } catch (e) {
-    console.warn('讀取字體 family name 失敗：', e);
-    return null;
-  }
-}
-
-// Clear font files inside EPUB
-async function removeOldFontsFromEpub(zip: JSZip) {
-  const FONT_EXTS = ['.ttf', '.otf', '.woff', '.woff2'];
-  const fontFiles = Object.keys(zip.files).filter(f => {
-    if (zip.files[f].dir) return false;
-    const lo = f.toLowerCase();
-    return FONT_EXTS.some(ext => lo.endsWith(ext));
-  });
-  fontFiles.forEach(f => zip.remove(f));
-  
-  const opfFiles = Object.keys(zip.files).filter(f => f.toLowerCase().endsWith('.opf'));
-  for (const opf of opfFiles) {
-    let content = await zip.files[opf].async('string');
-    content = content.replace(
-      /<item[^>]*media-type=["'](?:font\/[^"']*|application\/(?:font-[^"']*|vnd\.ms-opentype|x-font-[^"']*))["'][^>]*\/>\s*\n?/gi,
-      ''
-    );
-    content = content.replace(
-      /<item[^>]*href=["'][^"']*\.(ttf|otf|woff2?|TTF|OTF|WOFF2?)["'][^>]*\/>\s*\n?/g,
-      ''
-    );
-    zip.file(opf, content);
-  }
-  
-  const cssFiles = Object.keys(zip.files).filter(f => f.toLowerCase().endsWith('.css'));
-  for (const cf of cssFiles) {
-    let content = await zip.files[cf].async('string');
-    content = content.replace(/@font-face\s*\{[^}]*\}\s*/g, '');
-    zip.file(cf, content);
-  }
-}
-
-// Embed font
-async function embedCustomFontIntoEpub(zip: JSZip, fontDataBuffer: ArrayBuffer, meta: { embeddedFilename: string; mime: string; format: string }) {
-  const opfFiles = Object.keys(zip.files).filter(f => f.toLowerCase().endsWith('.opf'));
-  let targetPath = '';
-  if (opfFiles.length > 0) {
-    const opfDir = opfFiles[0].substring(0, opfFiles[0].lastIndexOf('/') + 1);
-    targetPath = opfDir + 'fonts/' + meta.embeddedFilename;
-  } else {
-    targetPath = 'fonts/' + meta.embeddedFilename;
-  }
-  zip.file(targetPath, fontDataBuffer);
-
-  for (const opf of opfFiles) {
-    let content = await zip.files[opf].async('string');
-    const opfDir = opf.substring(0, opf.lastIndexOf('/') + 1);
-    let href = '';
-    if (targetPath.startsWith(opfDir)) {
-      href = targetPath.substring(opfDir.length);
-    } else {
-      const depth = opfDir.split('/').length - 1;
-      href = '../'.repeat(depth) + targetPath;
-    }
-    const newItem = `    <item id="hr-custom-font" href="${href}" media-type="${meta.mime}"/>\n`;
-    content = content.replace('</manifest>', newItem + '</manifest>');
-    zip.file(opf, content);
-  }
-  return targetPath;
-}
-
-// Generate style overrides CSS content
-function getGeneratedStyleOverrides(cssFilePath: string, customFontInfo: any): string {
-  const options: StyleGeneratorOptions = {
-    writingMode: settings.value.writingMode,
-    fontSize: settings.value.fontSize,
-    lineHeight: settings.value.lineHeight,
-    textIndent: settings.value.textIndent,
-    fontFamily: settings.value.fontFamily,
-    pageMargin: settings.value.pageMargin,
-    customMarginVertical: settings.value.customMarginVertical,
-    customMarginHorizontal: settings.value.customMarginHorizontal,
-    optimizeVerticalLayout: settings.value.optimizeVerticalLayout,
-  };
-  return generateStyleOverrides(options, cssFilePath, customFontInfo);
-}
-
-async function injectStyleIntoCSS(zip: JSZip, customFontInfo: any) {
-  const cssFiles = Object.keys(zip.files).filter(f =>
-    f.toLowerCase().endsWith('.css') && !zip.files[f].dir
-  );
-
-  for (const filename of cssFiles) {
-    const overrides = getGeneratedStyleOverrides(filename, customFontInfo);
-    const content = await zip.files[filename].async('string');
-    zip.file(filename, content + overrides);
-  }
-
-  const xhtmlFiles = Object.keys(zip.files).filter(f => {
-    if (zip.files[f].dir) return false;
-    const ext = f.toLowerCase().slice(f.lastIndexOf('.'));
-    return ['.xhtml', '.html', '.htm'].includes(ext);
-  });
-
-  for (const filename of xhtmlFiles) {
-    let content = await zip.files[filename].async('string');
-    const overrides = getGeneratedStyleOverrides(filename, customFontInfo);
-    const styleTag = `<style type="text/css">${overrides}</style>`;
-    if (content.includes('</head>')) {
-      content = content.replace('</head>', styleTag + '</head>');
-    } else if (content.match(/<body[^>]*>/i)) {
-      content = content.replace(/(<body[^>]*>)/i, styleTag + '$1');
-    } else {
-      content = styleTag + content;
-    }
-    zip.file(filename, content);
-  }
-}
-
-// Update Spine direction in OPF
-async function updateSpineDirection(zip: JSZip) {
-  const opfFile = opfPath.value || Object.keys(zip.files).find(f => f.toLowerCase().endsWith('.opf'));
-  if (!opfFile || !zip.files[opfFile]) return;
-
-  let content = await zip.files[opfFile].async('string');
-  content = updatePackageDirection(content, settings.value.writingMode);
-  zip.file(opfFile, content);
-
-  const opfEntry = fileEntries.value.find(e => e.name === opfFile);
-  if (opfEntry) {
-    opfEntry.currentContent = content;
-  }
-}
-
-// Collect codepoints for subsetting
-async function collectCodepointsFromZip(zip: JSZip): Promise<Set<number>> {
-  const set = new Set<number>();
-  for (let a = 0x20; a < 0x7F; a++) set.add(a);
-  const textFiles = Object.keys(zip.files).filter(f => {
-    if (zip.files[f].dir) return false;
-    const ext = f.toLowerCase().slice(f.lastIndexOf('.'));
-    return ['.xhtml', '.html', '.htm', '.ncx', '.opf'].includes(ext);
-  });
-  for (const fn of textFiles) {
-    const u8 = await zip.files[fn].async('uint8array');
-    const text = decodeContent(u8);
-    for (let i = 0; i < text.length; i++) {
-      const cp = text.codePointAt(i);
-      if (cp !== undefined) {
-        set.add(cp);
-        if (cp > 0xFFFF) i++;
-      }
-    }
-  }
-  return set;
-}
-
-// Subsetting WASM Loader
-let hbExportsPromise: any = null;
-function loadHbSubset() {
-  if (hbExportsPromise) return hbExportsPromise;
-  hbExportsPromise = (async () => {
-    const resp = await fetch('https://cdn.jsdelivr.net/npm/harfbuzzjs@0.4.11/hb-subset.wasm');
-    if (!resp.ok) throw new Error('載入 hb-subset.wasm 失敗：' + resp.status);
-    const bytes = await resp.arrayBuffer();
-    const result = await WebAssembly.instantiate(bytes);
-    return result.instance.exports;
-  })();
-  return hbExportsPromise;
-}
-
-async function subsetFontWithHarfBuzz(fontArrayBuffer: ArrayBuffer, codepointSet: Set<number>): Promise<ArrayBuffer> {
-  const exports = await loadHbSubset();
-  const fontBytes = new Uint8Array(fontArrayBuffer);
-  const fontPtr = exports.malloc(fontBytes.byteLength);
-  new Uint8Array(exports.memory.buffer).set(fontBytes, fontPtr);
-
-  const blob = exports.hb_blob_create(fontPtr, fontBytes.byteLength, 2, 0, 0);
-  const face = exports.hb_face_create(blob, 0);
-  exports.hb_blob_destroy(blob);
-
-  const input = exports.hb_subset_input_create_or_fail();
-  if (!input) {
-    exports.hb_face_destroy(face);
-    exports.free(fontPtr);
-    throw new Error('hb_subset_input_create_or_fail 失敗');
-  }
-  const unicodeSet = exports.hb_subset_input_unicode_set(input);
-  codepointSet.forEach(cp => exports.hb_set_add(unicodeSet, cp));
-
-  const subsetFace = exports.hb_subset_or_fail(face, input);
-  exports.hb_subset_input_destroy(input);
-  if (!subsetFace) {
-    exports.hb_face_destroy(face);
-    exports.free(fontPtr);
-    throw new Error('hb_subset_or_fail 失敗');
-  }
-
-  const resultBlob = exports.hb_face_reference_blob(subsetFace);
-  const offset = exports.hb_blob_get_data(resultBlob, 0);
-  const subsetLength = exports.hb_blob_get_length(resultBlob);
-  if (subsetLength === 0) {
-    exports.hb_blob_destroy(resultBlob);
-    exports.hb_face_destroy(subsetFace);
-    exports.hb_face_destroy(face);
-    exports.free(fontPtr);
-    throw new Error('子集化後字體大小為 0');
-  }
-  const resultView = new Uint8Array(exports.memory.buffer, offset, subsetLength);
-  const subsetData = new Uint8Array(subsetLength);
-  subsetData.set(resultView);
-
-  exports.hb_blob_destroy(resultBlob);
-  exports.hb_face_destroy(subsetFace);
-  exports.hb_face_destroy(face);
-  exports.free(fontPtr);
-  return subsetData.buffer;
-}
-
-// Cover image injection
-async function injectCoverIntoEpub(zip: JSZip) {
-  if (coverAction.value === 'keep') return;
-
-  const allFiles = Object.keys(zip.files);
-  const opfFile = allFiles.find(f => f.toLowerCase().endsWith('.opf'));
-  if (!opfFile) return;
-
-  let opfContent = await zip.files[opfFile].async('string');
-  const opfDir = opfFile.includes('/') ? opfFile.substring(0, opfFile.lastIndexOf('/') + 1) : '';
-
-  if (coverAction.value === 'remove') {
-    if (originalCover.value && zip.files[originalCover.value.path]) {
-      zip.remove(originalCover.value.path);
-    }
-    opfContent = opfContent.replace(/<meta[^>]*name=["']cover["'][^>]*\/?>\s*/gi, '');
-    zip.file(opfFile, opfContent);
+// Full execution and download (read-only on sourceZip, idempotent on repeated clicks)
+async function processEpub() {
+  if (!sourceZip.value || !file.value) {
     return;
   }
 
-  // replace
-  if (!newCoverBlob.value) return;
-
-  const coverFile = newCoverBlob.value;
-  const ext = coverFile.type === 'image/png' ? '.png' : coverFile.type === 'image/webp' ? '.webp' : '.jpg';
-  const mimeType = coverFile.type || 'image/jpeg';
-
-  let imagesDir = opfDir + 'Images/';
-  const existingImgDir = allFiles.find(f => f.toLowerCase().startsWith((opfDir + 'images/').toLowerCase()) && !zip.files[f].dir);
-  if (existingImgDir) {
-    imagesDir = existingImgDir.substring(0, existingImgDir.toLowerCase().indexOf('images/') + 7);
-  }
-
-  const coverPath = imagesDir + 'cover' + ext;
-  const coverHref = coverPath.startsWith(opfDir) ? coverPath.substring(opfDir.length) : coverPath;
-
-  const arrayBuffer = await coverFile.arrayBuffer();
-  zip.file(coverPath, arrayBuffer);
-
-  if (originalCover.value && originalCover.value.path !== coverPath && zip.files[originalCover.value.path]) {
-    zip.remove(originalCover.value.path);
-  }
-
-  opfContent = opfContent.replace(/<item[^>]*properties=["'][^"']*cover-image[^"']*["'][^>]*\/?>[\s]*/gi, '');
-  opfContent = opfContent.replace(/<item[^>]*id=["']cover-image["'][^>]*\/?>[\s]*/gi, '');
-
-  const newItem = `  <item id="cover-image" href="${coverHref}" media-type="${mimeType}" properties="cover-image"/>\n`;
-  opfContent = opfContent.replace('</manifest>', newItem + '</manifest>');
-
-  if (!opfContent.match(/<meta[^>]*name=["']cover["'][^>]*>/i)) {
-    opfContent = opfContent.replace('</metadata>', '  <meta name="cover" content="cover-image"/>\n</metadata>');
-  } else {
-    opfContent = opfContent.replace(/<meta[^>]*name=["']cover["'][^>]*\/?>/i, '<meta name="cover" content="cover-image"/>');
-  }
-
-  zip.file(opfFile, opfContent);
-}
-
-// Full execution and download
-async function processEpub() {
-  if (!zipInstance.value || !file.value) return;
-
   isProcessing.value = true;
-  progressStage.value = '正在解析檔案...';
+  progressStage.value = '正在準備處理...';
   progressPercent.value = 5;
 
   try {
-    const zip = zipInstance.value;
-    
     saveActiveFileChanges();
 
-    // 1. Text conversion and opencc/punctuation mapping
-    const allFiles = Object.keys(zip.files).filter(f => !zip.files[f].dir);
-    const textFiles = allFiles.filter(f => {
-      const ext = f.toLowerCase().slice(f.lastIndexOf('.'));
-      return ['.xhtml', '.html', '.htm', '.xml', '.ncx', '.opf', '.css'].includes(ext);
+    const newCoverPayload = coverAction.value === 'replace' && newCoverBlob.value
+      ? {
+          buffer: await newCoverBlob.value.arrayBuffer(),
+          mimeType: newCoverBlob.value.type || 'image/jpeg',
+        }
+      : null;
+
+    const customFontPayload = settings.value.fontFamily === 'custom'
+      && settings.value.fontEmbedMode !== 'none'
+      && customFontFile.value
+      ? {
+          buffer: await getCustomFontBuffer(customFontFile.value),
+          name: customFontFile.value.name,
+        }
+      : null;
+
+    const result = await processEpubPackage({
+      sourceZip: sourceZip.value,
+      editedFiles: getEditedFilesMap(),
+      bookTitle: bookTitle.value,
+      bookAuthor: bookAuthor.value,
+      originalTitle: originalTitle.value,
+      originalAuthor: originalAuthor.value,
+      originalFileName: file.value.name,
+      settings: {
+        convertMode: settings.value.convertMode,
+        convertPunctuation: settings.value.convertPunctuation,
+        writingMode: settings.value.writingMode,
+        fontFamily: settings.value.fontFamily,
+        fontEmbedMode: settings.value.fontEmbedMode,
+        fontSize: settings.value.fontSize,
+        lineHeight: settings.value.lineHeight,
+        textIndent: settings.value.textIndent,
+        pageMargin: settings.value.pageMargin,
+        customMarginVertical: settings.value.customMarginVertical,
+        customMarginHorizontal: settings.value.customMarginHorizontal,
+        optimizeVerticalLayout: settings.value.optimizeVerticalLayout,
+        fixKindleCompatibility: settings.value.fixKindleCompatibility,
+      },
+      coverAction: coverAction.value,
+      originalCoverPath: originalCover.value?.path,
+      newCover: newCoverPayload,
+      customFont: customFontPayload,
+      onProgress: (stage, percent) => {
+        progressStage.value = stage;
+        progressPercent.value = percent;
+      },
     });
-
-    let totalProcessed = 0;
-    let totalCharsConverted = 0;
-
-    for (let i = 0; i < textFiles.length; i++) {
-      const filename = textFiles[i];
-      const shortName = filename.split('/').pop();
-      const progress = 10 + Math.floor((i / textFiles.length) * 50);
-      progressStage.value = `編譯轉換中: ${shortName}`;
-      progressPercent.value = progress;
-
-      const entry = fileEntries.value.find(e => e.name === filename);
-      let content = '';
-      if (entry) {
-        content = entry.currentContent;
-      } else {
-        const uint8Array = await zip.files[filename].async('uint8array');
-        content = decodeContent(uint8Array);
-      }
-
-      let modified = false;
-
-      // OpenCC
-      if (settings.value.convertMode !== 'off') {
-        const ext = filename.toLowerCase().slice(filename.lastIndexOf('.'));
-        if (['.xhtml', '.html', '.htm', '.ncx', '.opf'].includes(ext)) {
-          const direction = settings.value.convertMode === 'twp' ? 's2twp' : 's2tw';
-          const converted = convertOpenCC(content, direction);
-          if (converted !== content) {
-            totalCharsConverted += content.length;
-            content = converted;
-            modified = true;
-          }
-        }
-      }
-
-      // Punctuation
-      if (settings.value.convertPunctuation) {
-        const ext = filename.toLowerCase().slice(filename.lastIndexOf('.'));
-        if (['.xhtml', '.html', '.htm'].includes(ext)) {
-          const punctuated = convertPunctuation(content);
-          if (punctuated !== content) {
-            content = punctuated;
-            modified = true;
-          }
-        }
-      }
-
-      if (entry) {
-        entry.currentContent = content;
-      }
-      
-      if (modified || entry) {
-        zip.file(filename, content);
-        totalProcessed++;
-      }
-
-      if (i % 10 === 0) {
-        await new Promise(r => setTimeout(r, 0));
-      }
-    }
-
-    // 2. Font Embedding (standard or custom)
-    let finalFontInfo = null;
-    const isCustom = settings.value.fontFamily === 'custom';
-    const isStandard = settings.value.fontFamily !== 'default' && settings.value.fontFamily !== 'custom';
-    const shouldEmbed = settings.value.fontEmbedMode !== 'none';
-
-    if (shouldEmbed && isCustom && customFontFile.value) {
-      progressStage.value = '正在清理舊字型...';
-      progressPercent.value = 65;
-      await removeOldFontsFromEpub(zip);
-
-      progressStage.value = '正在收集使用到的字元...';
-      progressPercent.value = 68;
-      const codepoints = await collectCodepointsFromZip(zip);
-
-      progressStage.value = '正在讀取上傳的自訂字體...';
-      progressPercent.value = 70;
-      const rawBuffer = await customFontFile.value.arrayBuffer();
-      const fname = (customFontFile.value.name || '').toLowerCase();
-
-      let fontForSubset = rawBuffer;
-      if (fname.endsWith('.woff')) {
-        try {
-          progressStage.value = 'WOFF 解壓中...';
-          fontForSubset = await decompressWoffToTtf(rawBuffer);
-        } catch (woffErr) {
-          console.warn('WOFF 解壓失敗：', woffErr);
-          message.warning('WOFF 解壓失敗，將直接嵌入完整字型');
-        }
-      }
-
-      let fontBufferToEmbed = rawBuffer;
-      const canSubset = !fname.endsWith('.woff2') && settings.value.fontEmbedMode === 'subset';
-      if (canSubset) {
-        try {
-          progressStage.value = '正在為字型子集化精簡尺寸...';
-          fontBufferToEmbed = await subsetFontWithHarfBuzz(fontForSubset, codepoints);
-        } catch (subErr) {
-          console.warn('子集化精簡失敗，改用完整滿血嵌入：', subErr);
-        }
-      }
-
-      const realName = readFontFamilyName(fontBufferToEmbed) || 'CustomUserFont';
-      const originalMeta = getCustomFontMeta(customFontFile.value);
-      const isSubsetSuccess = fontBufferToEmbed !== rawBuffer;
-      const meta = {
-        embeddedFilename: 'hr-custom-font.' + (isSubsetSuccess ? 'ttf' : originalMeta.ext),
-        mime: isSubsetSuccess ? 'font/ttf' : originalMeta.mime,
-        format: isSubsetSuccess ? 'truetype' : originalMeta.format,
-      };
-
-      progressStage.value = '嵌入自訂字型中...';
-      progressPercent.value = 75;
-      const embeddedPath = await embedCustomFontIntoEpub(zip, fontBufferToEmbed, meta);
-      finalFontInfo = { ...meta, realName, embeddedPath };
-
-    } else if (shouldEmbed && isStandard) {
-      progressStage.value = '正在清理舊字型...';
-      progressPercent.value = 65;
-      await removeOldFontsFromEpub(zip);
-
-      progressStage.value = '正在載入系統字型檔...';
-      progressPercent.value = 68;
-      
-      const config = FONT_MAP[settings.value.fontFamily];
-      const fontResponse = await fetch(config.file);
-      const rawBuffer = await fontResponse.arrayBuffer();
-
-      let fontBufferToEmbed = rawBuffer;
-      if (settings.value.fontEmbedMode === 'subset') {
-        progressStage.value = '正在收集使用到的字元...';
-        const codepoints = await collectCodepointsFromZip(zip);
-        try {
-          progressStage.value = '正在精簡子集化字體...';
-          fontBufferToEmbed = await subsetFontWithHarfBuzz(rawBuffer, codepoints);
-        } catch (subErr) {
-          console.warn('子集化失敗，改用滿血完整字型嵌入：', subErr);
-        }
-      }
-
-      const isSubsetSuccess = fontBufferToEmbed !== rawBuffer;
-      const meta = {
-        embeddedFilename: `hr-${settings.value.fontFamily}.${isSubsetSuccess ? 'ttf' : config.ext}`,
-        mime: isSubsetSuccess ? 'font/ttf' : config.mime,
-        format: isSubsetSuccess ? 'truetype' : config.format,
-      };
-
-      progressStage.value = '嵌入字型檔案中...';
-      progressPercent.value = 75;
-      const embeddedPath = await embedCustomFontIntoEpub(zip, fontBufferToEmbed, meta);
-      finalFontInfo = { ...meta, realName: config.name, embeddedPath };
-    }
-
-    // 3. CSS style overrides
-    progressStage.value = '套用字體與排版覆蓋樣式...';
-    progressPercent.value = 80;
-    await injectStyleIntoCSS(zip, finalFontInfo);
-
-    // 4. Set spine page progression direction and metadata (vertical / horizontal)
-    progressStage.value = '設定翻頁方向與元數據...';
-    progressPercent.value = 83;
-    await updateSpineDirection(zip);
-
-    // 6. Cover image
-    if (coverAction.value !== 'keep') {
-      progressStage.value = '套用封面變更...';
-      progressPercent.value = 88;
-      await injectCoverIntoEpub(zip);
-    }
-
-    // 7. Zip generation
-    progressStage.value = '重新封裝成 EPUB...';
-    progressPercent.value = 92;
-
-    if (settings.value.fixKindleCompatibility) {
-      await repairKindleEpub(zip);
-    }
-    normalizeZipTimestamps(zip);
-
-    if (!zip.files['mimetype']) {
-      zip.file('mimetype', 'application/epub+zip', { compression: 'STORE', date: new Date(0) });
-    }
-
-    const blob = await zip.generateAsync({
-      type: 'blob',
-      mimeType: 'application/epub+zip',
-      compression: 'DEFLATE',
-      compressionOptions: { level: 6 }
-    }, (metadata) => {
-      const p = 92 + Math.floor(metadata.percent * 0.08);
-      progressStage.value = `壓縮封裝中: ${Math.floor(metadata.percent)}%`;
-      progressPercent.value = p;
-    });
-
-    const originalName = file.value.name.replace(/\.epub$/i, '').trim();
-    let outputName = originalName;
-    if (settings.value.convertMode !== 'off') {
-      const direction = settings.value.convertMode === 'twp' ? 's2twp' : 's2tw';
-      try {
-        outputName = convertOpenCC(originalName, direction);
-      } catch {
-        outputName = originalName;
-      }
-    }
-
-    const suffixes = [];
-    if (settings.value.convertMode === 'twp') suffixes.push('繁・詞彙');
-    else if (settings.value.convertMode === 'tw') suffixes.push('繁');
-    if (settings.value.writingMode === 'vertical') suffixes.push('直排');
-    if (suffixes.length > 0) {
-      outputName += '（' + suffixes.join('・') + '）';
-    }
-
-    const finalFilename = outputName + '.epub';
 
     progressPercent.value = 100;
-
-    // Trigger download
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = finalFilename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    downloadBlob(result.blob, result.outputFileName);
     message.success('EPUB 電子書處理完成並已開始下載！');
 
-    // Record in local history & IndexedDB
     const historyId = Date.now().toString(36) + Math.random().toString(36).substring(2, 6);
-    await saveHistoryBlob(historyId, blob);
-
-    processedHistory.value.unshift({
-      id: historyId,
-      originalFileName: file.value.name,
-      outputFileName: finalFilename,
-      title: bookTitle.value || originalName,
-      author: bookAuthor.value || '未知',
-      writingMode: settings.value.writingMode,
-      fontFamily: settings.value.fontFamily,
-      convertMode: settings.value.convertMode,
-      pageMargin: settings.value.pageMargin,
-      customMarginVertical: settings.value.customMarginVertical,
-      customMarginHorizontal: settings.value.customMarginHorizontal,
-      optimizeVerticalLayout: settings.value.optimizeVerticalLayout,
-      timestamp: Date.now(),
-    });
-    if (processedHistory.value.length > 30) {
-      const removed = processedHistory.value.slice(30);
-      processedHistory.value = processedHistory.value.slice(0, 30);
-      for (const item of removed) {
-        deleteHistoryBlob(item.id);
+    const saved = await saveHistoryBlob(historyId, result.blob);
+    if (saved) {
+      processedHistory.value.unshift({
+        id: historyId,
+        originalFileName: file.value.name,
+        outputFileName: result.outputFileName,
+        title: bookTitle.value || file.value.name.replace(/\.epub$/i, ''),
+        author: bookAuthor.value || '未知',
+        writingMode: settings.value.writingMode,
+        fontFamily: settings.value.fontFamily,
+        convertMode: settings.value.convertMode,
+        pageMargin: settings.value.pageMargin,
+        customMarginVertical: settings.value.customMarginVertical,
+        customMarginHorizontal: settings.value.customMarginHorizontal,
+        optimizeVerticalLayout: settings.value.optimizeVerticalLayout,
+        timestamp: Date.now(),
+      });
+      if (processedHistory.value.length > 30) {
+        const removed = processedHistory.value.slice(30);
+        processedHistory.value = processedHistory.value.slice(0, 30);
+        for (const item of removed) {
+          void deleteHistoryBlob(item.id);
+        }
       }
     }
-  } catch (err: any) {
+    else {
+      message.warning('瀏覽器本機儲存空間不足，本次檔案未寫入歷史快取（已正常下載）。');
+    }
+  }
+  catch (err: any) {
     console.error('電子書處理失敗:', err);
     message.error(`處理失敗: ${err.message}`);
-  } finally {
+  }
+  finally {
     isProcessing.value = false;
   }
 }
 
-// Drag & Drop
-function handleDrop(event: DragEvent) {
+function onCoverDragEnter(event: DragEvent) {
   event.preventDefault();
-  isDragging.value = false;
-  const files = event.dataTransfer?.files;
-  if (files && files[0]) {
-    handleFileUpload(files[0]);
+  coverDragCounter++;
+  isCoverDragging.value = true;
+}
+
+function onCoverDragLeave(event: DragEvent) {
+  event.preventDefault();
+  coverDragCounter--;
+  if (coverDragCounter <= 0) {
+    coverDragCounter = 0;
+    isCoverDragging.value = false;
   }
 }
 
 function handleCoverDrop(event: DragEvent) {
   event.preventDefault();
+  coverDragCounter = 0;
   isCoverDragging.value = false;
   const files = event.dataTransfer?.files;
   if (files && files[0]) {
@@ -1456,90 +833,114 @@ function handleCoverDrop(event: DragEvent) {
   }
 }
 
-// New cover uploaded
-function setNewCover(file: File) {
-  if (!file.type.startsWith('image/')) {
+function setNewCover(uploaded: File) {
+  if (!uploaded.type.startsWith('image/')) {
     message.error('請上傳圖片格式檔案 (JPG, PNG, WEBP)');
     return;
   }
-  newCoverBlob.value = file;
+  newCoverBlob.value = uploaded;
   coverAction.value = 'replace';
-  if (newCoverPreviewUrl.value) {
-    URL.revokeObjectURL(newCoverPreviewUrl.value);
-  }
-  newCoverPreviewUrl.value = URL.createObjectURL(file);
+  revokeNewCoverUrl();
+  newCoverPreviewUrl.value = URL.createObjectURL(uploaded);
   message.success('已選擇新封面圖片');
 }
 
-function handleCoverUpload(event: any) {
-  const f = event.target.files && event.target.files[0];
-  if (f) setNewCover(f);
+function handleCoverUpload(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const f = input.files?.[0];
+  if (f) {
+    setNewCover(f);
+  }
+  input.value = '';
 }
 
 function removeCover() {
   coverAction.value = 'remove';
   newCoverBlob.value = null;
-  if (newCoverPreviewUrl.value) {
-    URL.revokeObjectURL(newCoverPreviewUrl.value);
-    newCoverPreviewUrl.value = '';
-  }
+  revokeNewCoverUrl();
   message.info('已設定移除封面 (輸出時將無封面)');
 }
 
 function restoreOriginalCover() {
   coverAction.value = 'keep';
   newCoverBlob.value = null;
-  if (newCoverPreviewUrl.value) {
-    URL.revokeObjectURL(newCoverPreviewUrl.value);
-    newCoverPreviewUrl.value = '';
-  }
+  revokeNewCoverUrl();
   message.info('已復原為原電子書封面');
 }
 
-async function handleCustomFontUpload(event: any) {
-  const f = event.target.files && event.target.files[0];
-  if (!f) return;
+async function handleCustomFontUpload(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const f = input.files?.[0];
+  input.value = '';
+  if (!f) {
+    return;
+  }
+
   const lo = (f.name || '').toLowerCase();
   if (!['.ttf', '.otf', '.woff', '.woff2'].some(ext => lo.endsWith(ext))) {
     message.error('請上傳 .ttf / .otf / .woff / .woff2 格式的字體檔');
     return;
   }
   customFontFile.value = f;
+  customFontBufferCache.value = null;
   await saveCustomFont(f);
-  message.success('已讀取並自動儲存自訂字型：' + f.name);
+  message.success(`已讀取並自動儲存自訂字型：${f.name}`);
+}
+
+async function removeCustomFont() {
+  previewFontRequestSeq++;
+  isCustomFontLoading.value = false;
+  customFontFile.value = null;
+  customFontBufferCache.value = null;
+  if (customFontUrl.value) {
+    URL.revokeObjectURL(customFontUrl.value);
+    customFontUrl.value = '';
+  }
+  document.getElementById('epub-preview-custom-font-style')?.remove();
+  await clearCustomFont();
+  message.info('已清除儲存的自訂字型');
 }
 
 function resetAll() {
+  previewRenderSeq++;
+  revokePreviewAssetUrls();
+  revokeOriginalCoverUrl();
+  revokeNewCoverUrl();
   file.value = null;
-  zipInstance.value = null;
+  sourceZip.value = null;
   fileEntries.value = [];
   selectedFileName.value = null;
   activeFileContent.value = '';
   bookTitle.value = '';
   bookAuthor.value = '';
+  originalTitle.value = '';
+  originalAuthor.value = '';
   opfPath.value = '';
   originalCover.value = null;
   coverAction.value = 'keep';
   newCoverBlob.value = null;
-  
-  if (newCoverPreviewUrl.value) {
-    URL.revokeObjectURL(newCoverPreviewUrl.value);
-    newCoverPreviewUrl.value = '';
-  }
-  
   kindleRepairSummary.value = null;
-  
-  // Note: custom font and user settings remain stored in IndexedDB/localStorage
+  previewChapters.value = [];
+  previewChapterIndex.value = 0;
+  previewTitle.value = DEFAULT_PREVIEW_TITLE;
+  previewText.value = DEFAULT_PREVIEW_TEXT;
+  previewPage.value = 0;
+  previewPageCount.value = 1;
 }
 
 onMounted(async () => {
   const base = config.app.baseUrl.replace(/\/$/, '');
   const styleEl = document.createElement('style');
-  styleEl.id = 'hr-preview-standard-fonts-style';
+  styleEl.id = 'epub-preview-standard-fonts-style';
   styleEl.textContent = `
     @font-face {
       font-family: "NotoSansCJKtc";
       src: url("${base}/fonts/NotoSansCJKtc-Regular.otf") format("opentype");
+      font-display: swap;
+    }
+    @font-face {
+      font-family: "Gen Jyuu Gothic";
+      src: url("${base}/fonts/GenJyuuGothic-Medium.woff2") format("woff2");
       font-display: swap;
     }
     @font-face {
@@ -1560,550 +961,551 @@ onMounted(async () => {
   `;
   document.head.appendChild(styleEl);
 
-  // Restore saved custom font if available
   const savedCustomFont = await loadCustomFont();
+  if (isUnmounted) {
+    return;
+  }
   if (savedCustomFont) {
     customFontFile.value = savedCustomFont;
     if (settings.value.fontFamily === 'custom') {
       await injectCustomFontForPreview();
     }
   }
+  if (isUnmounted) {
+    return;
+  }
 
   previewResizeObserver = new ResizeObserver(syncPreviewPagination);
-  if (previewViewport.value) previewResizeObserver.observe(previewViewport.value);
+  if (previewIframe.value) {
+    previewResizeObserver.observe(previewIframe.value);
+  }
   nextTick(syncPreviewPagination);
 });
 
 onUnmounted(() => {
+  isUnmounted = true;
+  previewFontRequestSeq++;
+  previewRenderSeq++;
+  detachIframeListeners?.();
+  detachIframeListeners = null;
   previewResizeObserver?.disconnect();
-  if (newCoverPreviewUrl.value) URL.revokeObjectURL(newCoverPreviewUrl.value);
-  if (customFontUrl.value) URL.revokeObjectURL(customFontUrl.value);
-  let styleEl1 = document.getElementById('hr-preview-custom-font-style');
-  if (styleEl1) styleEl1.remove();
-  let styleEl2 = document.getElementById('hr-preview-standard-fonts-style');
-  if (styleEl2) styleEl2.remove();
+  revokePreviewAssetUrls();
+  revokeOriginalCoverUrl();
+  revokeNewCoverUrl();
+  if (customFontUrl.value) {
+    URL.revokeObjectURL(customFontUrl.value);
+  }
+  document.getElementById('epub-preview-custom-font-style')?.remove();
+  document.getElementById('epub-preview-standard-fonts-style')?.remove();
 });
 </script>
 
 <template>
   <div class="epub-editor-container">
     <c-card title="EPUB 編輯器 / 轉換器">
-    <!-- Step 1: Upload -->
-    <div v-if="!file" class="max-w-2xl mx-auto py-8">
-      <div
-        class="flex flex-col cursor-pointer items-center justify-center border-2px border-gray-300 dark:border-zinc-700 border-opacity-50 rounded-2xl border-dashed p-12 transition-all hover:border-primary hover:bg-gray-50/50 dark:hover:bg-zinc-800/10"
-        :class="{ 'border-primary border-opacity-100 bg-primary/10 shadow-sm scale-[1.008] ring-2 ring-primary/20': isDragging }"
-        @dragover.prevent
-        @dragenter="isDragging = true"
-        @dragleave="isDragging = false"
-        @drop.prevent="handleDrop"
-        @click="clickFileInput(fileInput)"
-      >
-        <input
-          ref="fileInput"
-          type="file"
+      <!-- Step 1: Upload -->
+      <div v-if="!file" class="mx-auto max-w-2xl py-8">
+        <c-file-upload
           accept=".epub,application/epub+zip,*"
-          class="hidden"
-          @change="(e: any) => { if (e.target.files[0]) handleFileUpload(e.target.files[0]); e.target.value = ''; }"
-        />
-        <div class="pointer-events-none flex flex-col items-center">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-gray-400 dark:text-zinc-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-          </svg>
-          <span class="text-lg font-semibold text-gray-700 dark:text-gray-200">
-            拖曳 EPUB 電子書至此，或點擊選取檔案
-          </span>
-          <span class="text-sm text-gray-400 mt-2 text-center">
-            支援本機繁簡體轉換、標點符號轉換、橫排直排轉換、字體滿血嵌入及封面替換
-          </span>
-        </div>
-      </div>
-
-      <!-- Processed History List -->
-      <div v-if="processedHistory.length > 0" class="mt-8 space-y-3">
-        <div class="flex items-center justify-between">
-          <h4 class="text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          @file-upload="handleFileUpload"
+        >
+          <div class="flex flex-col items-center py-4">
+            <svg xmlns="http://www.w3.org/2000/svg" class="mb-4 h-16 w-16 text-gray-400 dark:text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
             </svg>
-            最近處理歷史紀錄（已自動記憶偏好設定）
-          </h4>
-          <c-button size="small" tertiary @click="clearHistory">清空歷史紀錄</c-button>
-        </div>
-        <div class="space-y-2 max-h-60 overflow-y-auto pr-1">
-          <div
-            v-for="item in processedHistory"
-            :key="item.id"
-            class="p-3 bg-gray-50 dark:bg-zinc-800/40 rounded-xl border border-gray-100 dark:border-zinc-800 flex items-center justify-between text-xs"
-          >
-            <div class="space-y-1 truncate pr-2">
-              <div class="font-semibold text-gray-800 dark:text-gray-200 truncate">
-                {{ item.outputFileName }}
-              </div>
-              <div class="text-gray-400 flex items-center gap-2">
-                <span>{{ new Date(item.timestamp).toLocaleString() }}</span>
-                <span>•</span>
-                <span>{{ item.writingMode === 'vertical' ? '直排' : '橫排' }}</span>
-                <span>•</span>
-                <span>{{ FONT_MAP[item.fontFamily]?.name || item.fontFamily }}</span>
-                <template v-if="item.pageMargin">
-                  <span>•</span>
-                  <span>{{ historyMarginLabel(item) }}</span>
-                </template>
-              </div>
-            </div>
-            <div class="flex items-center gap-2 shrink-0">
-              <c-button size="small" secondary @click="downloadHistoryItem(item)">
-                再次下載
-              </c-button>
-              <c-button size="small" tertiary danger @click="removeHistoryItem(item.id)">
-                刪除
-              </c-button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Processing Loader -->
-    <div v-else-if="isProcessing" class="max-w-md mx-auto py-16 text-center space-y-5">
-      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
-      <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">{{ progressStage }}</h3>
-      <div class="w-full bg-gray-200 dark:bg-zinc-700 h-2 rounded-full overflow-hidden">
-        <div class="bg-primary h-full transition-all duration-300" :style="{ width: `${progressPercent}%` }" />
-      </div>
-      <p class="text-sm text-gray-400">處理大型電子書字體子集化可能需要 10 - 25 秒，請耐心等候...</p>
-    </div>
-
-    <!-- Step 2: Main Workspace -->
-    <div v-else class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-      <!-- Left side: settings panel -->
-      <div class="lg:col-span-5 space-y-6">
-        <!-- Card:排版與樣式設定 -->
-        <div class="p-5 bg-gray-50 dark:bg-zinc-800/30 rounded-2xl border border-gray-100 dark:border-zinc-800 space-y-5">
-          <h3 class="text-base font-bold flex items-center gap-2 border-b border-gray-100 dark:border-zinc-800 pb-3">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-            </svg>
-            排版與轉換設定
-          </h3>
-
-          <!-- Simplified to Traditional Mode -->
-          <div class="space-y-2">
-            <label class="text-sm font-semibold text-gray-700 dark:text-gray-300">簡轉繁模式</label>
-            <c-buttons-select
-              v-model:value="settings.convertMode"
-              :options="[
-                { label: '繁體・詞彙', value: 'twp', tooltip: '簡轉繁並轉換台灣常用詞彙 (如：軟件->軟體)' },
-                { label: '繁體・純字', value: 'tw', tooltip: '僅進行簡轉繁字元對照，不轉換詞彙' },
-                { label: '不轉換', value: 'off', tooltip: '保持原電子書字元' }
-              ]"
-            />
-          </div>
-
-          <!-- Punctuation conversion -->
-          <div class="flex items-center justify-between py-1">
-            <div class="flex flex-col">
-              <label class="text-sm font-semibold text-gray-700 dark:text-gray-300">標點符號轉換</label>
-              <span class="text-xs text-gray-400">將雙引號 “...” 轉換為直排/繁體書名號 「...」</span>
-            </div>
-            <n-switch v-model:value="settings.convertPunctuation" />
-          </div>
-
-          <!-- Writing Mode -->
-          <div class="space-y-2">
-            <label class="text-sm font-semibold text-gray-700 dark:text-gray-300">排版方向</label>
-            <c-buttons-select
-              v-model:value="settings.writingMode"
-              :options="[
-                { label: '橫排 (Horizontal)', value: 'horizontal' },
-                { label: '直排 (Vertical)', value: 'vertical' }
-              ]"
-            />
-          </div>
-
-          <!-- Font Style -->
-          <div class="space-y-2">
-            <label class="text-sm font-semibold text-gray-700 dark:text-gray-300">字型風格 (寫入 EPUB CSS)</label>
-            <c-buttons-select
-              v-model:value="settings.fontFamily"
-              :options="[
-                { label: '思源黑體', value: 'noto-sans' },
-                { label: '思源宋體', value: 'noto-serif' },
-                { label: '原俠正楷', value: 'guankiap' },
-                { label: 'jf 粉圓', value: 'huninn' },
-                { label: '預設', value: 'default' },
-                { label: '自訂', value: 'custom' }
-              ]"
-            />
-          </div>
-
-          <!-- Custom Font upload -->
-          <div v-if="settings.fontFamily === 'custom'" class="p-3 bg-white dark:bg-zinc-900 rounded-xl border border-dashed border-gray-200 dark:border-zinc-700 space-y-3">
-            <div class="flex items-center justify-between">
-              <span class="text-xs text-gray-500">上傳自訂字體檔案 (.ttf / .otf / .woff)</span>
-              <span v-if="customFontFile" class="text-xs text-primary font-medium truncate max-w-[150px]" :title="customFontFile.name">
-                {{ customFontFile.name }}
-              </span>
-            </div>
-            <div class="flex gap-2">
-              <c-button size="small" tertiary class="flex-1" @click="clickFileInput(fontInput)">
-                {{ customFontFile ? '重新選擇字型' : '選擇字型檔案' }}
-              </c-button>
-              <input
-                ref="fontInput"
-                type="file"
-                accept=".ttf,.otf,.woff,.woff2"
-                class="hidden"
-                @change="handleCustomFontUpload"
-              />
-            </div>
-          </div>
-
-          <!-- Font Embedding Options -->
-          <div v-if="settings.fontFamily !== 'default'" class="space-y-2">
-            <label class="text-sm font-semibold text-gray-700 dark:text-gray-300">字型嵌入模式</label>
-            <c-buttons-select
-              v-model:value="settings.fontEmbedMode"
-              :options="[
-                { label: '不嵌入 (僅 CSS 宣告)', value: 'none', tooltip: '不打包字型檔，體積最小' },
-                { label: '子集化精簡版', value: 'subset', tooltip: '只保留電子書內用到的字元，體積小 (1-3MB)' },
-                { label: '完整滿血版', value: 'full', tooltip: '打包完整字型檔，體積大 (10-25MB) 但最完整' }
-              ]"
-            />
-          </div>
-
-          <!-- Size & Spacing -->
-          <div class="grid grid-cols-2 gap-3 pt-1">
-            <div class="space-y-2">
-              <label class="text-xs font-semibold text-gray-500">字體大小</label>
-              <c-buttons-select
-                v-model:value="settings.fontSize"
-                :options="[
-                  { label: '小', value: 'small' },
-                  { label: '中', value: 'medium' },
-                  { label: '大', value: 'large' },
-                  { label: '特大', value: 'xlarge' }
-                ]"
-              />
-            </div>
-            <div class="space-y-2">
-              <label class="text-xs font-semibold text-gray-500">行距</label>
-              <c-buttons-select
-                v-model:value="settings.lineHeight"
-                :options="[
-                  { label: '緊湊', value: 'compact' },
-                  { label: '適中', value: 'normal' },
-                  { label: '寬鬆', value: 'relaxed' },
-                  { label: '特寬', value: 'loose' }
-                ]"
-              />
-            </div>
-          </div>
-
-          <!-- Indent -->
-          <div class="space-y-2">
-            <label class="text-xs font-semibold text-gray-500">首行縮排</label>
-            <c-buttons-select
-              v-model:value="settings.textIndent"
-              :options="[
-                { label: '不縮排', value: 'none' },
-                { label: '縮 1 字', value: 'one' },
-                { label: '縮 2 字', value: 'two' }
-              ]"
-            />
-          </div>
-
-          <!-- Page Margins (留白與邊距) -->
-          <div class="space-y-2 pt-1">
-            <div class="flex items-center justify-between">
-              <label class="text-xs font-semibold text-gray-500">頁面留白 (邊距)</label>
-              <span class="text-[11px] text-gray-400">
-                {{ settings.pageMargin === 'custom' ? `上下 ${settings.customMarginVertical ?? 0.3}em / 左右 ${settings.customMarginHorizontal ?? 0.5}em` : (MARGIN_PRESET_MAP[settings.pageMargin]?.label || '極窄 (推薦直排)') }}
-              </span>
-            </div>
-            <c-buttons-select
-              v-model:value="settings.pageMargin"
-              :options="[
-                { label: '無留白', value: 'none', tooltip: '邊界歸零 (0)，完全交由閱讀軟體邊框決定' },
-                { label: '極窄 (推薦直排)', value: 'compact', tooltip: '上下 0.3em / 左右 0.5em，滿版體驗' },
-                { label: '適中', value: 'normal', tooltip: '上下 1.0em / 左右 1.2em' },
-                { label: '寬鬆', value: 'relaxed', tooltip: '上下 1.8em / 左右 2.0em' },
-                { label: '自訂', value: 'custom', tooltip: '自行微調上下與左右邊距' }
-              ]"
-            />
-          </div>
-
-          <!-- Custom Margin Controls -->
-          <div v-if="settings.pageMargin === 'custom'" class="p-3 bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-700 space-y-3">
-            <div class="space-y-1">
-              <div class="flex justify-between text-xs">
-                <span class="text-gray-500">上下邊距 (垂直留白)</span>
-                <span class="font-mono text-primary font-semibold">{{ settings.customMarginVertical ?? 0.3 }} em</span>
-              </div>
-              <n-slider v-model:value="settings.customMarginVertical" :min="0" :max="4" :step="0.1" />
-            </div>
-            <div class="space-y-1">
-              <div class="flex justify-between text-xs">
-                <span class="text-gray-500">左右邊距 (水平流向)</span>
-                <span class="font-mono text-primary font-semibold">{{ settings.customMarginHorizontal ?? 0.5 }} em</span>
-              </div>
-              <n-slider v-model:value="settings.customMarginHorizontal" :min="0" :max="4" :step="0.1" />
-            </div>
-          </div>
-
-          <!-- Vertical Layout Optimization Toggle -->
-          <div v-if="settings.writingMode === 'vertical'" class="flex items-center justify-between py-1 border-t border-gray-100 dark:border-zinc-800/80 pt-3">
-            <div class="flex flex-col pr-2">
-              <label class="text-xs font-semibold text-gray-700 dark:text-gray-300">直排段落與留白優化</label>
-              <span class="text-[11px] text-gray-400">清除原橫排段落上下空隙與容器寬度拘束，讓文字完整填滿</span>
-            </div>
-            <n-switch v-model:value="settings.optimizeVerticalLayout" size="small" />
-          </div>
-        </div>
-
-        <!-- Card: Kindle 相容性修復 (Send to Kindle 相容) -->
-        <div class="p-5 bg-gray-50 dark:bg-zinc-800/30 rounded-2xl border border-gray-100 dark:border-zinc-800 space-y-4">
-          <h3 class="text-base font-bold flex items-center justify-between border-b border-gray-100 dark:border-zinc-800 pb-3">
-            <span class="flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
-              Kindle 相容性防錯修復
+            <span class="text-lg text-gray-700 font-semibold dark:text-gray-200">
+              拖曳 EPUB 電子書至此，或點擊選取檔案
             </span>
-            <n-switch v-model:value="settings.fixKindleCompatibility" size="small" />
-          </h3>
-
-          <div class="text-xs text-gray-500 dark:text-gray-400 space-y-1">
-            <p>自動補齊章節副檔名、清理 NCX/NAV 目錄死連結、修正 OPF 清單參照，並正規化 ZIP 損壞時間戳，徹底預防 Amazon Send to Kindle 發生 <span class="font-mono text-primary font-semibold">E999 內部錯誤</span>。</p>
+            <span class="mt-2 text-center text-sm text-gray-400">
+              支援本機繁簡體轉換、標點符號轉換、橫排直排轉換、字體子集化與滿血嵌入及封面替換
+            </span>
           </div>
+        </c-file-upload>
 
-          <div v-if="kindleRepairSummary" class="p-3 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800/40 rounded-xl text-xs text-green-700 dark:text-green-300 flex items-start gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-            </svg>
-            <div class="flex-1">
-              <span class="font-bold">已套用修復：</span>
-              <span>{{ kindleRepairSummary }}</span>
+        <!-- Processed History List -->
+        <div v-if="processedHistory.length > 0" class="mt-8 space-y-3">
+          <div class="flex items-center justify-between">
+            <h4 class="flex items-center gap-2 text-sm text-gray-700 font-bold dark:text-gray-300">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              最近處理歷史紀錄（已自動記憶偏好設定）
+            </h4>
+            <c-button size="small" tertiary @click="clearHistory">
+              清空歷史紀錄
+            </c-button>
+          </div>
+          <div class="max-h-60 overflow-y-auto pr-1 space-y-2">
+            <div
+              v-for="item in processedHistory"
+              :key="item.id"
+              class="flex items-center justify-between border border-gray-100 rounded-xl bg-gray-50 p-3 text-xs dark:border-zinc-800 dark:bg-zinc-800/40"
+            >
+              <div class="truncate pr-2 space-y-1">
+                <div class="truncate text-gray-800 font-semibold dark:text-gray-200">
+                  {{ item.outputFileName }}
+                </div>
+                <div class="flex items-center gap-2 text-gray-400">
+                  <span>{{ new Date(item.timestamp).toLocaleString() }}</span>
+                  <span>•</span>
+                  <span>{{ item.writingMode === 'vertical' ? '直排' : '橫排' }}</span>
+                  <span>•</span>
+                  <span>{{ FONT_MAP[item.fontFamily]?.name || item.fontFamily }}</span>
+                  <template v-if="item.pageMargin">
+                    <span>•</span>
+                    <span>{{ historyMarginLabel(item) }}</span>
+                  </template>
+                </div>
+              </div>
+              <div class="flex shrink-0 items-center gap-2">
+                <c-button size="small" secondary @click="downloadHistoryItem(item)">
+                  再次下載
+                </c-button>
+                <c-button size="small" tertiary danger @click="removeHistoryItem(item.id)">
+                  刪除
+                </c-button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Processing Loader -->
+      <div v-else-if="isProcessing" class="mx-auto max-w-md py-16 text-center space-y-5">
+        <div class="mx-auto h-12 w-12 animate-spin border-b-2 border-primary rounded-full" />
+        <h3 class="text-lg text-gray-800 font-semibold dark:text-gray-200">
+          {{ progressStage }}
+        </h3>
+        <div class="h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-zinc-700">
+          <div class="h-full bg-primary transition-all duration-300" :style="{ width: `${progressPercent}%` }" />
+        </div>
+        <p class="text-sm text-gray-400">
+          處理大型電子書與字型子集化時請耐心等候...
+        </p>
+      </div>
+
+      <!-- Step 2: Main Workspace -->
+      <div v-else class="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        <!-- Left side: settings panel -->
+        <div class="lg:col-span-5 space-y-6">
+          <!-- Card:排版與樣式設定 -->
+          <div class="border border-gray-100 rounded-2xl bg-gray-50 p-5 space-y-5 dark:border-zinc-800 dark:bg-zinc-800/30">
+            <h3 class="flex items-center gap-2 border-b border-gray-100 pb-3 text-base font-bold dark:border-zinc-800">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+              </svg>
+              排版與轉換設定
+            </h3>
+
+            <!-- Simplified to Traditional Mode -->
+            <div class="space-y-2">
+              <label class="text-sm text-gray-700 font-semibold dark:text-gray-300">簡轉繁模式</label>
+              <c-buttons-select
+                v-model:value="settings.convertMode"
+                :options="[
+                  { label: '繁體・詞彙', value: 'twp', tooltip: '簡轉繁並轉換台灣常用詞彙 (如：軟件->軟體)' },
+                  { label: '繁體・純字', value: 'tw', tooltip: '僅進行簡轉繁字元對照，不轉換詞彙' },
+                  { label: '不轉換', value: 'off', tooltip: '保持原電子書字元' },
+                ]"
+              />
+            </div>
+
+            <!-- Punctuation conversion -->
+            <div class="flex items-center justify-between py-1">
+              <div class="flex flex-col">
+                <label class="text-sm text-gray-700 font-semibold dark:text-gray-300">標點符號轉換</label>
+                <span class="text-xs text-gray-400">將雙引號 “...” 轉換為繁體引號 「...」</span>
+              </div>
+              <n-switch v-model:value="settings.convertPunctuation" />
+            </div>
+
+            <!-- Writing Mode -->
+            <div class="space-y-2">
+              <label class="text-sm text-gray-700 font-semibold dark:text-gray-300">排版方向</label>
+              <c-buttons-select
+                v-model:value="settings.writingMode"
+                :options="[
+                  { label: '橫排 (Horizontal)', value: 'horizontal' },
+                  { label: '直排 (Vertical)', value: 'vertical' },
+                ]"
+              />
+            </div>
+
+            <!-- Font Style -->
+            <div class="space-y-2">
+              <label class="text-sm text-gray-700 font-semibold dark:text-gray-300">字型風格 (寫入 EPUB CSS)</label>
+              <c-buttons-select
+                v-model:value="settings.fontFamily"
+                :options="fontSelectOptions"
+              />
+            </div>
+
+            <!-- Custom Font upload -->
+            <div v-if="settings.fontFamily === 'custom'" class="border border-gray-200 rounded-xl border-dashed bg-white p-3 space-y-3 dark:border-zinc-700 dark:bg-zinc-900">
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-gray-500">上傳自訂字體檔案 (.ttf / .otf / .woff / .woff2)</span>
+                <span v-if="customFontFile" class="max-w-[150px] truncate text-xs text-primary font-medium" :title="customFontFile.name">
+                  {{ customFontFile.name }}
+                </span>
+              </div>
+              <div class="flex gap-2">
+                <c-button size="small" tertiary class="flex-1" @click="clickFileInput(fontInput)">
+                  {{ customFontFile ? '重新選擇字型' : '選擇字型檔案' }}
+                </c-button>
+                <c-button v-if="customFontFile" size="small" tertiary danger @click="removeCustomFont">
+                  清除
+                </c-button>
+                <input
+                  ref="fontInput"
+                  type="file"
+                  accept=".ttf,.otf,.woff,.woff2"
+                  class="hidden"
+                  @change="handleCustomFontUpload"
+                >
+              </div>
+            </div>
+
+            <!-- Font Embedding Options -->
+            <div v-if="settings.fontFamily !== 'default'" class="space-y-2">
+              <label class="text-sm text-gray-700 font-semibold dark:text-gray-300">字型嵌入模式</label>
+              <c-buttons-select
+                v-model:value="settings.fontEmbedMode"
+                :options="[
+                  { label: '不嵌入 (僅 CSS 宣告)', value: 'none', tooltip: '不打包字型檔，體積最小' },
+                  { label: '子集化精簡版 (推薦)', value: 'subset', tooltip: '只保留電子書內用到的字元，體積小 (1-3MB)' },
+                  { label: '完整滿血版', value: 'full', tooltip: '打包完整字型檔，體積大 (10-25MB) 但最完整' },
+                ]"
+              />
+            </div>
+
+            <!-- Size & Spacing -->
+            <div class="grid grid-cols-2 gap-3 pt-1">
+              <div class="space-y-2">
+                <label class="text-xs text-gray-500 font-semibold">字體大小</label>
+                <c-buttons-select
+                  v-model:value="settings.fontSize"
+                  :options="[
+                    { label: '小', value: 'small' },
+                    { label: '中', value: 'medium' },
+                    { label: '大', value: 'large' },
+                    { label: '特大', value: 'xlarge' },
+                  ]"
+                />
+              </div>
+              <div class="space-y-2">
+                <label class="text-xs text-gray-500 font-semibold">行距</label>
+                <c-buttons-select
+                  v-model:value="settings.lineHeight"
+                  :options="[
+                    { label: '緊湊', value: 'compact' },
+                    { label: '適中', value: 'normal' },
+                    { label: '寬鬆', value: 'relaxed' },
+                    { label: '特寬', value: 'loose' },
+                  ]"
+                />
+              </div>
+            </div>
+
+            <!-- Indent -->
+            <div class="space-y-2">
+              <label class="text-xs text-gray-500 font-semibold">首行縮排</label>
+              <c-buttons-select
+                v-model:value="settings.textIndent"
+                :options="[
+                  { label: '不縮排', value: 'none' },
+                  { label: '縮 1 字', value: 'one' },
+                  { label: '縮 2 字', value: 'two' },
+                ]"
+              />
+            </div>
+
+            <!-- Page Margins -->
+            <div class="pt-1 space-y-2">
+              <div class="flex items-center justify-between">
+                <label class="text-xs text-gray-500 font-semibold">頁面留白 (邊距)</label>
+                <span class="text-[11px] text-gray-400">
+                  {{ settings.pageMargin === 'custom' ? `上下 ${settings.customMarginVertical ?? 0.3}em / 左右 ${settings.customMarginHorizontal ?? 0.5}em` : (MARGIN_PRESET_MAP[settings.pageMargin]?.label || '極窄 (推薦直排)') }}
+                </span>
+              </div>
+              <c-buttons-select
+                v-model:value="settings.pageMargin"
+                :options="[
+                  { label: '無留白', value: 'none', tooltip: '邊界歸零 (0)，完全交由閱讀軟體邊框決定' },
+                  { label: '極窄 (推薦直排)', value: 'compact', tooltip: '上下 0.3em / 左右 0.5em，滿版體驗' },
+                  { label: '適中', value: 'normal', tooltip: '上下 1.0em / 左右 1.2em' },
+                  { label: '寬鬆', value: 'relaxed', tooltip: '上下 1.8em / 左右 2.0em' },
+                  { label: '自訂', value: 'custom', tooltip: '自行微調上下與左右邊距' },
+                ]"
+              />
+            </div>
+
+            <!-- Custom Margin Controls -->
+            <div v-if="settings.pageMargin === 'custom'" class="border border-gray-200 rounded-xl bg-white p-3 space-y-3 dark:border-zinc-700 dark:bg-zinc-900">
+              <div class="space-y-1">
+                <div class="flex justify-between text-xs">
+                  <span class="text-gray-500">上下邊距 (垂直留白)</span>
+                  <span class="text-primary font-semibold font-mono">{{ settings.customMarginVertical ?? 0.3 }} em</span>
+                </div>
+                <n-slider v-model:value="settings.customMarginVertical" :min="0" :max="4" :step="0.1" />
+              </div>
+              <div class="space-y-1">
+                <div class="flex justify-between text-xs">
+                  <span class="text-gray-500">左右邊距 (水平流向)</span>
+                  <span class="text-primary font-semibold font-mono">{{ settings.customMarginHorizontal ?? 0.5 }} em</span>
+                </div>
+                <n-slider v-model:value="settings.customMarginHorizontal" :min="0" :max="4" :step="0.1" />
+              </div>
+            </div>
+
+            <!-- Vertical Layout Optimization Toggle -->
+            <div v-if="settings.writingMode === 'vertical'" class="flex items-center justify-between border-t border-gray-100 py-1 pt-3 dark:border-zinc-800/80">
+              <div class="flex flex-col pr-2">
+                <label class="text-xs text-gray-700 font-semibold dark:text-gray-300">直排段落與留白優化</label>
+                <span class="text-[11px] text-gray-400">清除原橫排段落上下空隙與容器寬度拘束，讓文字完整填滿</span>
+              </div>
+              <n-switch v-model:value="settings.optimizeVerticalLayout" size="small" />
             </div>
           </div>
 
-          <div v-if="zipInstance" class="pt-1">
-            <c-button size="small" secondary class="w-full" :disabled="isProcessing" @click="runManualKindleRepair">
-              立即健檢與修復此書
+          <!-- Card: Kindle 相容性修復 -->
+          <div class="border border-gray-100 rounded-2xl bg-gray-50 p-5 space-y-4 dark:border-zinc-800 dark:bg-zinc-800/30">
+            <h3 class="flex items-center justify-between border-b border-gray-100 pb-3 text-base font-bold dark:border-zinc-800">
+              <span class="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                Kindle 相容性防錯修復
+              </span>
+              <n-switch v-model:value="settings.fixKindleCompatibility" size="small" />
+            </h3>
+
+            <div class="text-xs text-gray-500 space-y-1 dark:text-gray-400">
+              <p>自動補齊章節副檔名、清理 NCX/NAV 目錄死連結、修正 OPF 清單參照，並正規化 ZIP 損壞時間戳，徹底預防 Amazon Send to Kindle 發生 <span class="text-primary font-semibold font-mono">E999 內部錯誤</span>。</p>
+            </div>
+
+            <div v-if="kindleRepairSummary" class="flex items-start gap-2 border border-green-200 rounded-xl bg-green-50 p-3 text-xs text-green-700 dark:border-green-800/40 dark:bg-green-950/30 dark:text-green-300">
+              <svg xmlns="http://www.w3.org/2000/svg" class="mt-0.5 h-4 w-4 flex-shrink-0 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <div class="flex-1">
+                <span class="font-bold">已套用修復：</span>
+                <span>{{ kindleRepairSummary }}</span>
+              </div>
+            </div>
+
+            <div v-if="sourceZip" class="pt-1">
+              <c-button size="small" secondary class="w-full" :disabled="isProcessing" @click="runManualKindleRepair">
+                立即健檢與修復此書
+              </c-button>
+            </div>
+          </div>
+
+          <!-- Card: Cover Image -->
+          <div class="border border-gray-100 rounded-2xl bg-gray-50 p-5 space-y-4 dark:border-zinc-800 dark:bg-zinc-800/30">
+            <h3 class="flex items-center gap-2 border-b border-gray-100 pb-3 text-base font-bold dark:border-zinc-800">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              電子書封面設定
+            </h3>
+
+            <!-- Case 1: Has cover -->
+            <div v-if="originalCover || newCoverBlob" class="flex items-start gap-4">
+              <img
+                :src="coverAction === 'replace' ? newCoverPreviewUrl : (originalCover ? originalCover.dataUrl : '')"
+                class="h-28 w-20 flex-shrink-0 border border-gray-200 rounded-lg object-cover shadow dark:border-zinc-700"
+                alt="EPUB Cover"
+              >
+              <div class="min-w-0 flex-1 space-y-3">
+                <div class="flex flex-col">
+                  <span class="text-sm text-gray-700 font-semibold dark:text-gray-300">
+                    {{ coverAction === 'replace' ? '已載入新封面' : coverAction === 'remove' ? '已標記移除封面' : '原書封面' }}
+                  </span>
+                  <span class="truncate text-xs text-gray-400">
+                    {{ coverAction === 'replace' ? newCoverBlob?.name : originalCover?.path.split('/').pop() }}
+                  </span>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                  <c-button size="small" tertiary @click="clickFileInput(coverInput)">
+                    替換封面
+                  </c-button>
+                  <c-button v-if="coverAction !== 'remove'" size="small" danger tertiary @click="removeCover">
+                    移除封面
+                  </c-button>
+                  <c-button v-if="coverAction !== 'keep'" size="small" tertiary @click="restoreOriginalCover">
+                    還原
+                  </c-button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Case 2: No cover or removed -->
+            <div
+              v-else
+              class="flex flex-col cursor-pointer items-center justify-center border border-gray-200 rounded-xl border-dashed p-6 transition-colors dark:border-zinc-700 hover:bg-white dark:hover:bg-zinc-800/10"
+              :class="{ 'border-primary bg-white dark:bg-zinc-800/20': isCoverDragging }"
+              @dragover.prevent
+              @dragenter="onCoverDragEnter"
+              @dragleave="onCoverDragLeave"
+              @drop.prevent="handleCoverDrop"
+              @click="clickFileInput(coverInput)"
+            >
+              <div class="pointer-events-none flex flex-col items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span class="text-center text-xs text-gray-500">
+                  此書目前無封面或已移除。拖曳圖片或點擊在此新增封面
+                </span>
+              </div>
+            </div>
+
+            <input
+              ref="coverInput"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              class="hidden"
+              @change="handleCoverUpload"
+            >
+          </div>
+
+          <div class="flex gap-3">
+            <c-button tertiary class="flex-1" @click="resetAll">
+              關閉檔案
+            </c-button>
+            <c-button class="flex-1" @click="processEpub">
+              開始處理並下載
             </c-button>
           </div>
         </div>
 
-        <!-- Card: Cover Image -->
-        <div class="p-5 bg-gray-50 dark:bg-zinc-800/30 rounded-2xl border border-gray-100 dark:border-zinc-800 space-y-4">
-          <h3 class="text-base font-bold flex items-center gap-2 border-b border-gray-100 dark:border-zinc-800 pb-3">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            電子書封面設定
-          </h3>
-
-          <!-- Case 1: Has cover -->
-          <div v-if="originalCover || newCoverBlob" class="flex gap-4 items-start">
-            <img 
-              :src="coverAction === 'replace' ? newCoverPreviewUrl : (originalCover ? originalCover.dataUrl : '')" 
-              class="w-20 h-28 object-cover rounded-lg shadow border border-gray-200 dark:border-zinc-700 flex-shrink-0"
-              alt="EPUB Cover"
-            />
-            <div class="space-y-3 flex-1 min-w-0">
-              <div class="flex flex-col">
-                <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  {{ coverAction === 'replace' ? '已載入新封面' : '原書封面' }}
-                </span>
-                <span class="text-xs text-gray-400 truncate">
-                  {{ coverAction === 'replace' ? newCoverBlob?.name : originalCover?.path.split('/').pop() }}
-                </span>
-              </div>
-              <div class="flex flex-wrap gap-2">
-                <c-button size="small" tertiary @click="clickFileInput(coverInput)">替換封面</c-button>
-                <c-button v-if="coverAction !== 'remove'" size="small" danger tertiary @click="removeCover">移除封面</c-button>
-                <c-button v-if="coverAction !== 'keep'" size="small" tertiary @click="restoreOriginalCover">還原</c-button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Case 2: No cover or removed -->
-          <div 
-            v-else
-            class="flex flex-col items-center justify-center p-6 border border-dashed border-gray-200 dark:border-zinc-700 rounded-xl cursor-pointer hover:bg-white dark:hover:bg-zinc-800/10 transition-colors"
-            :class="{ 'border-primary bg-white dark:bg-zinc-800/20': isCoverDragging }"
-            @dragover.prevent
-            @dragenter="isCoverDragging = true"
-            @dragleave="isCoverDragging = false"
-            @drop.prevent="handleCoverDrop"
-            @click="clickFileInput(coverInput)"
-          >
-            <div class="pointer-events-none flex flex-col items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              <span class="text-xs text-gray-500 text-center">
-                此書目前無封面或已移除。拖曳圖片或點擊在此新增封面
-              </span>
-            </div>
-          </div>
-
-          <input
-            ref="coverInput"
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            class="hidden"
-            @change="handleCoverUpload"
-          />
-        </div>
-
-        <div class="flex gap-3">
-          <c-button tertiary class="flex-1" @click="resetAll">關閉檔案</c-button>
-          <c-button class="flex-1" @click="processEpub">開始處理並下載</c-button>
-        </div>
-      </div>
-
-      <!-- Right side: Tabs & View panels -->
-      <div class="lg:col-span-7 space-y-4">
-        <n-tabs v-model:value="activeTab" type="line" animated>
-          <!-- Tab 1: Live Preview -->
-          <n-tab-pane name="preview" tab="即時排版預覽">
-            <div
-              ref="previewViewport"
-              class="preview-frame border border-gray-200 dark:border-zinc-800 rounded-2xl max-h-[520px] overflow-auto relative"
-              tabindex="0"
-              aria-label="EPUB 排版預覽"
-              @scroll="syncPreviewPagination"
-              @keydown="handlePreviewKeydown"
-            >
-              <div 
-                class="preview-content w-full"
-                :class="{ 'vertical': settings.writingMode === 'vertical' }"
-                :style="{
-                  fontSize: SIZE_MAP[settings.fontSize] || '1em',
-                  lineHeight: LINE_HEIGHT_MAP[settings.lineHeight] || '1.8',
-                  fontFamily: computedPreviewFontFamily,
-                  padding: computedPreviewPadding,
-                }"
+        <!-- Right side: Tabs & View panels -->
+        <div class="lg:col-span-7 space-y-4">
+          <n-tabs v-model:value="activeTab" type="line" animated>
+            <!-- Tab 1: Live Preview (Sandboxed Isolated EPUB Renderer) -->
+            <n-tab-pane name="preview" tab="即時排版預覽">
+              <div
+                class="preview-frame relative overflow-hidden border border-gray-200 rounded-2xl dark:border-zinc-800"
+                :class="{ vertical: settings.writingMode === 'vertical' }"
+                tabindex="0"
+                aria-label="EPUB 排版預覽"
+                @keydown="handlePreviewKeydown"
               >
-                <h1 :style="optimizePreviewVerticalLayout ? { textAlign: 'center', margin: VERTICAL_HEADING_MARGIN } : {}">{{ processedPreviewTitle }}</h1>
-                <p 
-                  v-for="(p, idx) in processedPreviewParagraphs" 
-                  :key="idx"
-                  :style="{
-                    textIndent: INDENT_MAP[settings.textIndent] || '2em',
-                    ...(optimizePreviewVerticalLayout ? { margin: VERTICAL_PARAGRAPH_MARGIN } : {})
-                  }"
-                >
-                  {{ p }}
-                </p>
+                <iframe
+                  ref="previewIframe"
+                  class="preview-iframe block h-full w-full border-0"
+                  sandbox="allow-same-origin"
+                  :srcdoc="previewSrcdoc"
+                  title="EPUB 排版預覽"
+                  @load="handlePreviewIframeLoad"
+                />
               </div>
-            </div>
-            <p class="mt-2 text-xs text-gray-400">預覽為文字排版示意；原書樣式、圖片與閱讀器設定會影響實際留白及頁數。</p>
-            <div v-if="previewChapters.length > 1" class="preview-chapter-pagination mt-3" aria-label="預覽章節控制">
-              <c-button size="small" tertiary :disabled="previewChapterIndex === 0" @click="selectPreviewChapter(previewChapterIndex - 1)">
-                上一章
-              </c-button>
-              <span class="text-xs text-gray-500 dark:text-gray-400 tabular-nums" aria-live="polite">
-                章節 {{ previewChapterIndex + 1 }} / {{ previewChapters.length }}
-              </span>
-              <c-button size="small" tertiary :disabled="previewChapterIndex >= previewChapters.length - 1" @click="selectPreviewChapter(previewChapterIndex + 1)">
-                下一章
-              </c-button>
-            </div>
-            <div v-if="settings.writingMode === 'vertical'" class="preview-pagination mt-3" aria-label="直排預覽翻頁控制">
-              <c-button size="small" tertiary :disabled="previewPage === 0" @click="goToPreviewPage(previewPage - 1)">
-                上一頁
-              </c-button>
-              <span class="text-xs text-gray-500 dark:text-gray-400 tabular-nums" aria-live="polite">
-                第 {{ previewPage + 1 }} / {{ previewPageCount }} 頁
-              </span>
-              <c-button size="small" tertiary :disabled="previewPage >= previewPageCount - 1" @click="goToPreviewPage(previewPage + 1)">
-                下一頁
-              </c-button>
-            </div>
-            <div class="text-xs text-gray-400 mt-2 text-center">
-              * 直排預覽可用按鈕或鍵盤 ←／→ 翻頁；實體輸出會寫入右至左翻頁指令。
-            </div>
-          </n-tab-pane>
+              <p class="mt-2 text-xs text-gray-400">
+                預覽於隔離沙盒內套用實際輸出 CSS 與原書圖片資源；不同閱讀器實作細節仍可能影響實際斷頁。
+              </p>
+              <div v-if="previewChapters.length > 1" class="preview-chapter-pagination mt-3" aria-label="預覽章節控制">
+                <c-button size="small" tertiary :disabled="previewChapterIndex === 0" @click="selectPreviewChapter(previewChapterIndex - 1)">
+                  上一章
+                </c-button>
+                <span class="text-xs text-gray-500 tabular-nums dark:text-gray-400" aria-live="polite">
+                  章節 {{ previewChapterIndex + 1 }} / {{ previewChapters.length }}
+                </span>
+                <c-button size="small" tertiary :disabled="previewChapterIndex >= previewChapters.length - 1" @click="selectPreviewChapter(previewChapterIndex + 1)">
+                  下一章
+                </c-button>
+              </div>
+              <div v-if="settings.writingMode === 'vertical'" class="preview-pagination mt-3" aria-label="直排預覽翻頁控制">
+                <c-button size="small" tertiary :disabled="previewPage === 0" @click="goToPreviewPage(previewPage - 1)">
+                  上一頁
+                </c-button>
+                <span class="text-xs text-gray-500 tabular-nums dark:text-gray-400" aria-live="polite">
+                  第 {{ previewPage + 1 }} / {{ previewPageCount }} 頁
+                </span>
+                <c-button size="small" tertiary :disabled="previewPage >= previewPageCount - 1" @click="goToPreviewPage(previewPage + 1)">
+                  下一頁
+                </c-button>
+              </div>
+              <div class="mt-2 text-center text-xs text-gray-400">
+                * 直排預覽可用按鈕或鍵盤 ←／→ 翻頁；實體輸出會寫入右至左翻頁指令。
+              </div>
+            </n-tab-pane>
 
-          <!-- Tab 2: Manual Source Editor -->
-          <n-tab-pane name="editor" tab="內部檔案修改器">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <!-- Files list -->
-              <div class="md:col-span-1 border border-gray-200 dark:border-zinc-800 rounded-xl overflow-hidden flex flex-col max-h-[460px]">
-                <div class="bg-gray-100 dark:bg-zinc-800 p-2 text-xs font-bold border-b border-gray-200 dark:border-zinc-800">
-                  EPUB 內置檔案 ({{ editableFiles.length }})
+            <!-- Tab 2: Manual Source Editor -->
+            <n-tab-pane name="editor" tab="內部檔案修改器">
+              <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <!-- Files list -->
+                <div class="max-h-[460px] flex flex-col overflow-hidden border border-gray-200 rounded-xl md:col-span-1 dark:border-zinc-800">
+                  <div class="border-b border-gray-200 bg-gray-100 p-2 text-xs font-bold dark:border-zinc-800 dark:bg-zinc-800">
+                    EPUB 內置檔案 ({{ editableFiles.length }})
+                  </div>
+                  <n-scrollbar class="flex-1">
+                    <div class="p-1 space-y-0.5">
+                      <button
+                        v-for="entry in editableFiles"
+                        :key="entry.name"
+                        class="w-full flex items-center gap-1.5 truncate border border-transparent rounded px-2 py-1.5 text-left text-xs transition-all"
+                        :class="{
+                          'bg-primary/10 text-primary border-primary/20 font-semibold': selectedFileName === entry.name,
+                          'hover:bg-gray-100 dark:hover:bg-zinc-800/50 text-gray-600 dark:text-gray-300': selectedFileName !== entry.name,
+                        }"
+                        @click="selectFile(entry.name)"
+                      >
+                        <span class="flex-shrink-0 rounded bg-gray-200 px-1 py-0.2 text-[9px] text-zinc-700 font-mono opacity-80 dark:bg-zinc-700 dark:text-zinc-300">
+                          {{ entry.type.replace('.', '') }}
+                        </span>
+                        <span class="truncate">{{ entry.name.split('/').pop() }}</span>
+                      </button>
+                    </div>
+                  </n-scrollbar>
                 </div>
-                <n-scrollbar class="flex-1">
-                  <div class="p-1 space-y-0.5">
-                    <button
-                      v-for="entry in editableFiles"
-                      :key="entry.name"
-                      class="w-full text-left px-2 py-1.5 rounded text-xs truncate transition-all flex items-center gap-1.5 border border-transparent"
-                      :class="{
-                        'bg-primary/10 text-primary border-primary/20 font-semibold': selectedFileName === entry.name,
-                        'hover:bg-gray-100 dark:hover:bg-zinc-800/50 text-gray-600 dark:text-gray-300': selectedFileName !== entry.name
-                      }"
-                      @click="selectFile(entry.name)"
-                    >
-                      <span class="opacity-80 text-[9px] px-1 py-0.2 rounded bg-gray-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300 font-mono flex-shrink-0">
-                        {{ entry.type.replace('.', '') }}
+
+                <!-- Editor input -->
+                <div class="md:col-span-2 space-y-3">
+                  <div v-if="selectedFileName" class="space-y-2">
+                    <div class="flex items-center justify-between text-xs">
+                      <span class="max-w-[200px] truncate text-gray-500 font-mono" :title="selectedFileName">
+                        編輯：{{ selectedFileName }}
                       </span>
-                      <span class="truncate">{{ entry.name.split('/').pop() }}</span>
-                    </button>
+                      <span class="text-gray-400">系統將自動即時儲存</span>
+                    </div>
+                    <n-input
+                      v-model:value="activeFileContent"
+                      type="textarea"
+                      :autosize="{ minRows: 15, maxRows: 18 }"
+                      class="text-xs font-mono dark:bg-zinc-900"
+                      placeholder="載入程式碼編輯中..."
+                    />
                   </div>
-                </n-scrollbar>
-              </div>
-
-              <!-- Editor input -->
-              <div class="md:col-span-2 space-y-3">
-                <div v-if="selectedFileName" class="space-y-2">
-                  <div class="flex justify-between items-center text-xs">
-                    <span class="font-mono text-gray-500 truncate max-w-[200px]" :title="selectedFileName">
-                      編輯：{{ selectedFileName }}
-                    </span>
-                    <span class="text-gray-400">系統將自動即時儲存</span>
+                  <div v-else class="h-[360px] flex flex-col items-center justify-center border border-gray-200 rounded-xl border-dashed bg-gray-50/50 p-6 text-center text-gray-400 dark:border-zinc-800 dark:bg-zinc-900/10">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 h-10 w-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span class="text-xs">請點選左側內置檔案，可手動微調 XHTML / XML / CSS 原始碼</span>
                   </div>
-                  <n-input
-                    v-model:value="activeFileContent"
-                    type="textarea"
-                    :autosize="{ minRows: 15, maxRows: 18 }"
-                    class="font-mono text-xs dark:bg-zinc-900"
-                    placeholder="載入程式碼編輯中..."
-                  />
-                </div>
-                <div v-else class="h-[360px] flex flex-col items-center justify-center bg-gray-50/50 dark:bg-zinc-900/10 border border-dashed border-gray-200 dark:border-zinc-800 rounded-xl text-gray-400 p-6 text-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-300 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  <span class="text-xs">請點選左側內置檔案，可手動微調 XHTML / XML / CSS 原始碼</span>
                 </div>
               </div>
-            </div>
-          </n-tab-pane>
+            </n-tab-pane>
 
-          <!-- Tab 3: Metadata Details -->
-          <n-tab-pane name="metadata" tab="書籍資訊修改">
-            <div class="p-5 bg-gray-50 dark:bg-zinc-800/10 rounded-2xl border border-gray-100 dark:border-zinc-800 space-y-4 max-w-lg">
-              <div class="space-y-1">
-                <label class="text-xs font-semibold text-gray-500">書名 (Title)</label>
-                <n-input v-model:value="bookTitle" placeholder="書籍名稱" />
+            <!-- Tab 3: Metadata Details -->
+            <n-tab-pane name="metadata" tab="書籍資訊修改">
+              <div class="max-w-lg border border-gray-100 rounded-2xl bg-gray-50 p-5 space-y-4 dark:border-zinc-800 dark:bg-zinc-800/10">
+                <div class="space-y-1">
+                  <label class="text-xs text-gray-500 font-semibold">書名 (Title)</label>
+                  <n-input v-model:value="bookTitle" placeholder="書籍名稱" />
+                </div>
+                <div class="space-y-1">
+                  <label class="text-xs text-gray-500 font-semibold">作者 (Author / Creator)</label>
+                  <n-input v-model:value="bookAuthor" placeholder="作者名稱" />
+                </div>
+                <div class="pt-2 text-xs text-gray-400 space-y-1">
+                  <div>OPF 路徑：<span class="text-gray-500 font-mono">{{ opfPath || '無' }}</span></div>
+                  <div>原始內容檔數：<span class="text-gray-600 font-semibold dark:text-gray-300">{{ contentHtmlCount }}</span> 個</div>
+                </div>
               </div>
-              <div class="space-y-1">
-                <label class="text-xs font-semibold text-gray-500">作者 (Author / Creator)</label>
-                <n-input v-model:value="bookAuthor" placeholder="作者名稱" />
-              </div>
-              <div class="pt-2 text-xs text-gray-400 space-y-1">
-                <div>OPF 路徑：<span class="font-mono text-gray-500">{{ opfPath || '無' }}</span></div>
-                <div>原始內容檔數：<span class="font-semibold text-gray-600 dark:text-gray-300">{{ fileEntries.filter(f => f.name.endsWith('.xhtml') || f.name.endsWith('.html')).length }}</span> 個</div>
-              </div>
-            </div>
-          </n-tab-pane>
-        </n-tabs>
+            </n-tab-pane>
+          </n-tabs>
+        </div>
       </div>
-    </div>
     </c-card>
   </div>
 </template>
@@ -2111,62 +1513,20 @@ onUnmounted(() => {
 <style scoped>
 .preview-frame {
   background: #fafafa;
-  scroll-behavior: smooth;
+  height: 520px;
+}
+.preview-frame.vertical {
+  height: 440px;
 }
 .dark .preview-frame {
   background: #18181c;
 }
-.preview-content {
-  padding: 28px 24px;
-  color: #2b2b2b;
-  font-size: 1.05em;
-  line-height: 1.8;
-  text-align: justify;
-  box-sizing: border-box;
-}
-.dark .preview-content {
-  color: #e3e3e3;
-}
-.preview-content h1 {
-  font-size: 1.6em;
-  font-weight: 800;
-  margin: 0 0 1.2em 0;
-  line-height: 1.3;
-  color: #1a1a1a;
-}
-.dark .preview-content h1 {
-  color: #ffffff;
-}
-.preview-content p {
-  margin: 0.8em 0;
-}
-.preview-content.vertical {
-  writing-mode: vertical-rl;
-  -webkit-writing-mode: vertical-rl;
-  text-orientation: mixed;
-  height: 440px;
-  max-height: 440px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  display: block;
-}
-.preview-pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-}
+.preview-pagination,
 .preview-chapter-pagination {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.75rem;
-}
-.preview-content.vertical h1 {
-  height: 100%;
-}
-.preview-content.vertical p {
-  height: 100%;
 }
 </style>
 

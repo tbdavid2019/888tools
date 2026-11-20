@@ -263,6 +263,7 @@ async function startExport() {
       author: bookAuthor.value,
       chapters: chapters.value,
       cover: coverFile.value,
+      convertToTraditional: convertToTraditional.value,
       writingMode: writingMode.value,
       fontFamily: fontFamily.value,
       embedFont: embedFontMode.value !== 'none',

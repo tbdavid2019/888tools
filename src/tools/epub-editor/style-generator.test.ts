@@ -1,9 +1,11 @@
+import type { StyleGeneratorOptions } from './style-generator';
 import { describe, expect, it } from 'vitest';
 import {
-  resolveMargins,
   generateStyleOverrides,
-  MARGIN_PRESET_MAP,
-  type StyleGeneratorOptions,
+  relativePathFromCss,
+  resolveMargins,
+  stripPreviousOverrides,
+
 } from './style-generator';
 
 describe('style-generator', () => {
@@ -56,7 +58,7 @@ describe('style-generator', () => {
       const css = generateStyleOverrides(
         { ...baseOptions, writingMode: 'horizontal', pageMargin: 'normal' },
         'OEBPS/styles.css',
-        null
+        null,
       );
       expect(css).toContain('writing-mode: horizontal-tb !important;');
       expect(css).toContain('body {\n  padding: 1.0em 1.2em !important;\n}');
@@ -67,10 +69,33 @@ describe('style-generator', () => {
       const css = generateStyleOverrides(
         { ...baseOptions, optimizeVerticalLayout: false },
         'OEBPS/styles.css',
-        null
+        null,
       );
       expect(css).toContain('writing-mode: vertical-rl !important;');
       expect(css).not.toContain('直排排版優化');
+    });
+
+    it('escapes malicious font family names and avoids leaking preview-only family when custom font is not embedded', () => {
+      const cssWithEmbedded = generateStyleOverrides(
+        { ...baseOptions, fontFamily: 'custom' },
+        'OEBPS/Styles/main.css',
+        { embeddedPath: 'OEBPS/fonts/custom.ttf', format: 'truetype', realName: 'Bad"Font\nName' },
+      );
+      expect(cssWithEmbedded).toContain('font-family: "Bad\\"Font Name";');
+      expect(cssWithEmbedded).toContain('url("../fonts/custom.ttf")');
+
+      const cssWithoutEmbedded = generateStyleOverrides(
+        { ...baseOptions, fontFamily: 'custom' },
+        'OEBPS/Styles/main.css',
+        null,
+      );
+      expect(cssWithoutEmbedded).not.toContain('EpubEditorPreviewCustom');
+    });
+
+    it('computes relative font paths from nested CSS and strips previous overrides idempotently', () => {
+      expect(relativePathFromCss('OEBPS/Styles/main.css', 'OEBPS/fonts/a.ttf')).toBe('../fonts/a.ttf');
+      const once = `body { color: #000; }\n${generateStyleOverrides(baseOptions, 'OEBPS/main.css', null)}`;
+      expect(stripPreviousOverrides(once)).toBe('body { color: #000; }');
     });
   });
 });

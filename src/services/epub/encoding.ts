@@ -1,11 +1,11 @@
 function detectBOM(bytes: Uint8Array): string | null {
-  if (bytes[0] === 0xEF && bytes[1] === 0xBB && bytes[2] === 0xBF) {
+  if (bytes.length >= 3 && bytes[0] === 0xEF && bytes[1] === 0xBB && bytes[2] === 0xBF) {
     return 'utf-8';
   }
-  if (bytes[0] === 0xFF && bytes[1] === 0xFE) {
+  if (bytes.length >= 2 && bytes[0] === 0xFF && bytes[1] === 0xFE) {
     return 'utf-16le';
   }
-  if (bytes[0] === 0xFE && bytes[1] === 0xFF) {
+  if (bytes.length >= 2 && bytes[0] === 0xFE && bytes[1] === 0xFF) {
     return 'utf-16be';
   }
   return null;
@@ -14,57 +14,65 @@ function detectBOM(bytes: Uint8Array): string | null {
 function isValidUTF8(bytes: Uint8Array): boolean {
   let i = 0;
   let invalidCount = 0;
-  const maxCheck = Math.min(bytes.length, 10000); // Check first 10KB
-  
+  const maxCheck = Math.min(bytes.length, 10000);
+
   while (i < maxCheck) {
     const byte = bytes[i];
-    
+
     if (byte <= 0x7F) {
       i++;
-    } else if ((byte & 0xE0) === 0xC0) {
+    }
+    else if ((byte & 0xE0) === 0xC0) {
       if (i + 1 >= maxCheck || (bytes[i + 1] & 0xC0) !== 0x80) {
         invalidCount++;
         i++;
         continue;
       }
       i += 2;
-    } else if ((byte & 0xF0) === 0xE0) {
-      if (i + 2 >= maxCheck || 
-          (bytes[i + 1] & 0xC0) !== 0x80 || 
-          (bytes[i + 2] & 0xC0) !== 0x80) {
+    }
+    else if ((byte & 0xF0) === 0xE0) {
+      if (
+        i + 2 >= maxCheck
+        || (bytes[i + 1] & 0xC0) !== 0x80
+        || (bytes[i + 2] & 0xC0) !== 0x80
+      ) {
         invalidCount++;
         i++;
         continue;
       }
       i += 3;
-    } else if ((byte & 0xF8) === 0xF0) {
-      if (i + 3 >= maxCheck || 
-          (bytes[i + 1] & 0xC0) !== 0x80 || 
-          (bytes[i + 2] & 0xC0) !== 0x80 ||
-          (bytes[i + 3] & 0xC0) !== 0x80) {
+    }
+    else if ((byte & 0xF8) === 0xF0) {
+      if (
+        i + 3 >= maxCheck
+        || (bytes[i + 1] & 0xC0) !== 0x80
+        || (bytes[i + 2] & 0xC0) !== 0x80
+        || (bytes[i + 3] & 0xC0) !== 0x80
+      ) {
         invalidCount++;
         i++;
         continue;
       }
       i += 4;
-    } else {
+    }
+    else {
       invalidCount++;
       i++;
     }
   }
-  
-  return invalidCount < maxCheck * 0.01; // Allow 1% error rate
+
+  return maxCheck === 0 || invalidCount < maxCheck * 0.01;
 }
 
 function detectGBK(bytes: Uint8Array): number {
   let gbkPairs = 0;
   let totalPairs = 0;
   const maxCheck = Math.min(bytes.length, 10000);
-  
+
   for (let i = 0; i < maxCheck - 1; i++) {
     const b1 = bytes[i];
     const b2 = bytes[i + 1];
-    
+
     if (b1 >= 0x81 && b1 <= 0xFE) {
       totalPairs++;
       if (b2 >= 0x40 && b2 <= 0xFE && b2 !== 0x7F) {
@@ -73,8 +81,10 @@ function detectGBK(bytes: Uint8Array): number {
       }
     }
   }
-  
-  if (totalPairs === 0) return 0;
+
+  if (totalPairs === 0) {
+    return 0;
+  }
   return Math.round((gbkPairs / totalPairs) * 100);
 }
 
@@ -82,11 +92,11 @@ function detectBig5(bytes: Uint8Array): number {
   let big5Pairs = 0;
   let totalPairs = 0;
   const maxCheck = Math.min(bytes.length, 10000);
-  
+
   for (let i = 0; i < maxCheck - 1; i++) {
     const b1 = bytes[i];
     const b2 = bytes[i + 1];
-    
+
     if (b1 >= 0x81 && b1 <= 0xFE) {
       totalPairs++;
       if ((b2 >= 0x40 && b2 <= 0x7E) || (b2 >= 0xA1 && b2 <= 0xFE)) {
@@ -95,40 +105,78 @@ function detectBig5(bytes: Uint8Array): number {
       }
     }
   }
-  
-  if (totalPairs === 0) return 0;
+
+  if (totalPairs === 0) {
+    return 0;
+  }
   return Math.round((big5Pairs / totalPairs) * 100);
 }
 
-export function detectEncoding(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer);
-  
+export function detectEncoding(buffer: ArrayBuffer | Uint8Array): string {
+  const bytes = buffer instanceof Uint8Array
+    ? buffer
+    : new Uint8Array(buffer);
+
   const bomEncoding = detectBOM(bytes);
   if (bomEncoding) {
     return bomEncoding;
   }
-  
+
   if (isValidUTF8(bytes)) {
     return 'utf-8';
   }
-  
+
   const gbkScore = detectGBK(bytes);
   const big5Score = detectBig5(bytes);
-  
+
   if (gbkScore >= 70 && gbkScore >= big5Score) {
     return 'gbk';
   }
-  
+
   if (big5Score >= 70) {
     return 'big5';
   }
-  
+
   return 'utf-8';
 }
 
-export function decodeWithEncoding(buffer: ArrayBuffer, encoding: string): string {
+export function decodeWithEncoding(buffer: ArrayBuffer | Uint8Array, encoding: string): string {
   const decoder = new TextDecoder(encoding, { fatal: false });
   return decoder.decode(buffer);
+}
+
+/**
+ * Decodes raw bytes with auto-detected encoding and strips any leading UTF-8 BOM.
+ */
+export function decodeBytesAuto(buffer: ArrayBuffer | Uint8Array): string {
+  const encoding = detectEncoding(buffer);
+  return stripUtf8Bom(decodeWithEncoding(buffer, encoding));
+}
+
+export function stripUtf8Bom(text: string): string {
+  return text.startsWith('\uFEFF')
+    ? text.slice(1)
+    : text;
+}
+
+/**
+ * Updates declared XML/HTML charset metadata to UTF-8 after transcoding non-UTF-8 bytes to UTF-8.
+ */
+export function normalizeUtf8Declarations(content: string): string {
+  let result = stripUtf8Bom(content);
+  result = result.replace(
+    /(<\?xml\s[^>]*?\bencoding=["'])([^"']+)(["'][^>]*\?>)/i,
+    '$1utf-8$3',
+  );
+  result = result.replace(
+    /(<meta\s[^>]*?\bcharset=["']?)([^"'\s/>]+)/i,
+    '$1utf-8',
+  );
+  result = result.replace(
+    /(<meta\s[^>]*?http-equiv=["']content-type["'][^>]*content=["'][^"']*charset=)([^"';\s]+)/i,
+    '$1utf-8',
+  );
+  return result;
 }
 
 export interface ReadFileResult {
@@ -139,13 +187,14 @@ export interface ReadFileResult {
 
 export async function readFileWithAutoEncoding(
   file: File,
-  onProgress?: (bytesRead: number) => void
+  onProgress?: (bytesRead: number) => void,
 ): Promise<ReadFileResult> {
   let buffer: ArrayBuffer;
 
   if (onProgress && file.size > 1024 * 1024) {
     buffer = await readFileWithProgress(file, onProgress);
-  } else {
+  }
+  else {
     buffer = await file.arrayBuffer();
   }
 
@@ -161,7 +210,7 @@ export async function readFileWithAutoEncoding(
 
 async function readFileWithProgress(
   file: File,
-  onProgress: (bytesRead: number) => void
+  onProgress: (bytesRead: number) => void,
 ): Promise<ArrayBuffer> {
   const reader = file.stream().getReader();
   const chunks: Uint8Array[] = [];
@@ -169,10 +218,14 @@ async function readFileWithProgress(
 
   while (true) {
     const { done, value } = await reader.read();
-    if (done) break;
-    chunks.push(value);
-    bytesRead += value.byteLength;
-    onProgress(bytesRead);
+    if (done) {
+      break;
+    }
+    if (value) {
+      chunks.push(value);
+      bytesRead += value.byteLength;
+      onProgress(bytesRead);
+    }
   }
 
   const result = new Uint8Array(bytesRead);
