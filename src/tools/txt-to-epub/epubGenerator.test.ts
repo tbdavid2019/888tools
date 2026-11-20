@@ -52,6 +52,33 @@ describe('txt-to-epub epubGenerator', () => {
     expect(ch1).toContain('這是軟體測試內容。');
   });
 
+  it('writes explicit page-progression-direction="ltr" and primary-writing-mode="vertical-rl" when overridden in vertical mode', async () => {
+    const blob = await generateEpub({
+      title: 'Kindle 直排測試',
+      author: '作者',
+      chapters: [
+        { title: '第一章', content: '測試內文。' },
+      ],
+      cover: null,
+      convertToTraditional: true,
+      writingMode: 'vertical',
+      pageProgressionDirection: 'ltr',
+      returnBlob: true,
+    });
+
+    expect(blob).toBeDefined();
+    const zip = await JSZip.loadAsync(await blob!.arrayBuffer());
+    const opf = await zip.files['OEBPS/content.opf'].async('string');
+    const ch1 = await zip.files['OEBPS/chapter1.xhtml'].async('string');
+    const nav = await zip.files['OEBPS/nav.xhtml'].async('string');
+
+    expect(opf).toContain('xmlns:dcterms="http://purl.org/dc/terms/"');
+    expect(opf).toContain('<meta name="primary-writing-mode" content="vertical-rl"/>');
+    expect(opf).toContain('<spine toc="ncx" page-progression-direction="ltr">');
+    expect(ch1).toContain('xml:lang="zh-TW" lang="zh-TW"');
+    expect(nav).toContain('xml:lang="zh-TW" lang="zh-TW"');
+  });
+
   it('places mimetype first with STORE compression and preserves woff2 metadata when embedding gen-jyuu in full mode', async () => {
     const woff2Path = path.resolve(process.cwd(), 'public/fonts/GenJyuuGothic-Medium.woff2');
     if (!fs.existsSync(woff2Path)) {

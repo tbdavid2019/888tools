@@ -10,6 +10,7 @@ All notable changes to this project will be documented in this file. See [standa
 - **Kindle 相容性修復準確度**：將 `kindle-fixer` 的 OPF / NCX / NAV 改寫從脆弱正則遷移至 `DOMParser` / `XMLSerializer`，正確處理巢狀 `<navPoint>` / `<li>` 目錄、`%20` URI 編碼與跨子目錄 `../` 相對路徑，豁免 `.xpgt`/`.plist`/`.rdf` 非 HTML XML 資產，並修復 UTF-8 BOM 與 `<body id>` 閉合邏輯。
 - **OCF 規範、字型格式與多次匯出冪等性**：`epub-editor` 改採唯讀來源 ZIP + 每次新建輸出套件，並與 `txt-to-epub` 共同確保 `mimetype` 為 ZIP 第一個未壓縮（`STORE`）項目且使用合法 DOS 時間戳；修正 OTF(CFF) 子集與 `gen-jyuu`（WOFF2）在嵌入時的 MIME / `@font-face` 格式標記錯配，並修復 `txt-to-epub` 的 `convertToTraditional` 開關未傳遞至 `generateEpub()` 的缺陷。
 - **直排預覽分頁、記憶體洩漏與 IndexedDB 可靠性**：修正直排預覽捲動容器錯位導致無法翻頁的問題；補齊封面／下載／預覽資源 `URL.revokeObjectURL` 釋放、自訂字型非同步競態與 `unmount` 防護、以及 IndexedDB 交易 `onabort`/`onerror` 與儲存空間不足處理。
+- **Kindle 與一般 EPUB 閱讀器直排翻頁方向與 `primary-writing-mode` 同步**：於 `epub-editor` 與 `txt-to-epub` 新增可獨立設定的翻頁方向選項（`auto` 跟隨排版 / `rtl` 右至左 / `ltr` 左至右），輸出時同步寫入 OPF `<meta name="primary-writing-mode">`（`vertical-rl` / `horizontal-lr`）、`<spine page-progression-direction="...">` 與語系屬性（`<dc:language>`、`xml:lang` / `lang` 鏡像與簡繁轉碼語系標準化），並讓直排預覽分頁按鈕與鍵盤 ←／→ 方向隨設定同步切換。
 
 ### Refactoring & Architecture
 - **共用 EPUB 核心服務層 (`src/services/epub/`)**：抽出 `encoding.ts`、`font-core.ts`、`font-subset.worker.ts`、`fonts.ts`、`xml.ts` 與 `download.ts`，並將 `convertPunctuation` 整合至 `opencc.service.ts`，消除 `epub-editor` 與 `txt-to-epub` 重複邏輯並移除未使用的 `src/tools/txt-to-epub/utils/`。

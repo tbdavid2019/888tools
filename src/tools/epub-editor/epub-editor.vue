@@ -2,6 +2,7 @@
 import type JSZip from 'jszip';
 import type { EpubEditableEntry } from './epub-processor';
 import type { KindleRepairReport } from './kindle-fixer';
+import type { PageProgressionDirection } from './package-direction';
 import type { PreviewChapter } from './preview-chapters';
 import { useStorage } from '@vueuse/core';
 import { useMessage } from 'naive-ui';
@@ -28,6 +29,7 @@ import {
   saveHistoryBlob,
 } from './epub-storage';
 import { repairKindleEpub, SAFE_ZIP_DATE } from './kindle-fixer';
+import { resolveEffectiveDirection } from './package-direction';
 import { getPreviewChapterIndex } from './preview-chapters';
 import { clampPreviewPage, getPreviewPageCount } from './preview-pagination';
 import { buildFallbackPreviewSrcdoc, renderChapterPreviewSrcdoc } from './preview-renderer';
@@ -68,6 +70,7 @@ const settings = useStorage('epub-editor:settings', {
   convertMode: 'twp' as 'twp' | 'tw' | 'off',
   convertPunctuation: true,
   writingMode: 'horizontal' as 'horizontal' | 'vertical',
+  pageProgressionDirection: 'auto' as PageProgressionDirection,
   fontFamily: 'noto-sans',
   fontEmbedMode: 'subset' as 'none' | 'subset' | 'full',
   fontSize: 'medium',
@@ -297,13 +300,18 @@ function goToPreviewPage(page: number) {
   previewPage.value = nextPage;
 }
 
+const effectivePreviewDirection = computed(() =>
+  resolveEffectiveDirection(settings.value.writingMode, settings.value.pageProgressionDirection),
+);
+
 function handlePreviewKeydown(event: KeyboardEvent) {
   if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') {
     return;
   }
 
-  const isVertical = settings.value.writingMode === 'vertical';
-  const nextKey = isVertical ? 'ArrowLeft' : 'ArrowRight';
+  const nextKey = effectivePreviewDirection.value === 'rtl'
+    ? 'ArrowLeft'
+    : 'ArrowRight';
   event.preventDefault();
   goToPreviewPage(previewPage.value + (event.key === nextKey
     ? 1
@@ -744,6 +752,7 @@ async function processEpub() {
         convertMode: settings.value.convertMode,
         convertPunctuation: settings.value.convertPunctuation,
         writingMode: settings.value.writingMode,
+        pageProgressionDirection: settings.value.pageProgressionDirection,
         fontFamily: settings.value.fontFamily,
         fontEmbedMode: settings.value.fontEmbedMode,
         fontSize: settings.value.fontSize,
@@ -1131,6 +1140,19 @@ onUnmounted(() => {
               />
             </div>
 
+            <!-- Page Progression Direction -->
+            <div class="space-y-2">
+              <label class="text-sm text-gray-700 font-semibold dark:text-gray-300">翻頁方向 (Kindle / 閱讀器)</label>
+              <c-buttons-select
+                v-model:value="settings.pageProgressionDirection"
+                :options="[
+                  { label: '跟隨排版', value: 'auto', tooltip: '直排採右至左 (rtl，點左側下一頁)；橫排採左至右 (ltr)' },
+                  { label: '右至左 (點左下一頁)', value: 'rtl', tooltip: '寫入 page-progression-direction=&quot;rtl&quot;（標準直排翻頁；部分舊版 Kindle 轉檔依韌體而異）' },
+                  { label: '左至右 (點右下一頁)', value: 'ltr', tooltip: '強制寫入 page-progression-direction=&quot;ltr&quot;（通用閱讀器點右側下一頁；若直排翻頁方向不符習慣可切換測試）' },
+                ]"
+              />
+            </div>
+
             <!-- Font Style -->
             <div class="space-y-2">
               <label class="text-sm text-gray-700 font-semibold dark:text-gray-300">字型風格 (寫入 EPUB CSS)</label>
@@ -1415,18 +1437,31 @@ onUnmounted(() => {
                 </c-button>
               </div>
               <div v-if="settings.writingMode === 'vertical'" class="preview-pagination mt-3" aria-label="直排預覽翻頁控制">
-                <c-button size="small" tertiary :disabled="previewPage === 0" @click="goToPreviewPage(previewPage - 1)">
-                  上一頁
-                </c-button>
-                <span class="text-xs text-gray-500 tabular-nums dark:text-gray-400" aria-live="polite">
-                  第 {{ previewPage + 1 }} / {{ previewPageCount }} 頁
-                </span>
-                <c-button size="small" tertiary :disabled="previewPage >= previewPageCount - 1" @click="goToPreviewPage(previewPage + 1)">
-                  下一頁
-                </c-button>
+                <template v-if="effectivePreviewDirection === 'rtl'">
+                  <c-button size="small" tertiary :disabled="previewPage >= previewPageCount - 1" @click="goToPreviewPage(previewPage + 1)">
+                    ← 下一頁
+                  </c-button>
+                  <span class="text-xs text-gray-500 tabular-nums dark:text-gray-400" aria-live="polite">
+                    第 {{ previewPage + 1 }} / {{ previewPageCount }} 頁
+                  </span>
+                  <c-button size="small" tertiary :disabled="previewPage === 0" @click="goToPreviewPage(previewPage - 1)">
+                    上一頁 →
+                  </c-button>
+                </template>
+                <template v-else>
+                  <c-button size="small" tertiary :disabled="previewPage === 0" @click="goToPreviewPage(previewPage - 1)">
+                    ← 上一頁
+                  </c-button>
+                  <span class="text-xs text-gray-500 tabular-nums dark:text-gray-400" aria-live="polite">
+                    第 {{ previewPage + 1 }} / {{ previewPageCount }} 頁
+                  </span>
+                  <c-button size="small" tertiary :disabled="previewPage >= previewPageCount - 1" @click="goToPreviewPage(previewPage + 1)">
+                    下一頁 →
+                  </c-button>
+                </template>
               </div>
               <div class="mt-2 text-center text-xs text-gray-400">
-                * 直排預覽可用按鈕或鍵盤 ←／→ 翻頁；實體輸出會寫入右至左翻頁指令。
+                * 直排預覽按鈕與鍵盤 ←／→ 會依「翻頁方向」同步切換；輸出會寫入 spine progression{{ settings.fixKindleCompatibility ? ' 與 Kindle primary-writing-mode' : '' }}。
               </div>
             </n-tab-pane>
 

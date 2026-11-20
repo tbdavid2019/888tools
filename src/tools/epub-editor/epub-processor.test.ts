@@ -142,6 +142,47 @@ describe('epub-processor', () => {
     expect(ch1).toContain('const software = "软件";');
   });
 
+  it('supports vertical + pageProgressionDirection="ltr" while keeping primary-writing-mode="vertical-rl" and adding html lang', async () => {
+    const raw = await createSampleEpubBuffer();
+    const parsed = await loadEpubArchive(raw, true);
+
+    const result = await processEpubPackage({
+      sourceZip: parsed.zip,
+      bookTitle: parsed.title,
+      bookAuthor: parsed.author,
+      originalTitle: parsed.title,
+      originalAuthor: parsed.author,
+      originalFileName: 'kindle-ltr.epub',
+      settings: {
+        convertMode: 'twp',
+        convertPunctuation: true,
+        writingMode: 'vertical',
+        pageProgressionDirection: 'ltr',
+        fontFamily: 'default',
+        fontEmbedMode: 'none',
+        fontSize: 'medium',
+        lineHeight: 'normal',
+        textIndent: 'two',
+        pageMargin: 'compact',
+        optimizeVerticalLayout: true,
+        fixKindleCompatibility: true,
+      },
+      coverAction: 'keep',
+    });
+
+    const outZip = await JSZip.loadAsync(await result.blob.arrayBuffer());
+    const opf = await outZip.files['OEBPS/content.opf'].async('string');
+    const ch1 = await outZip.files['OEBPS/Text/ch1.xhtml'].async('string');
+
+    expect(opf).toContain('page-progression-direction="ltr"');
+    expect(opf).toContain('<meta name="primary-writing-mode" content="vertical-rl"/>');
+    expect(opf).toContain('>zh-TW</dc:language>');
+
+    const ch1Doc = new DOMParser().parseFromString(ch1, 'application/xhtml+xml');
+    expect(ch1Doc.documentElement.getAttribute('lang')).toBe('zh-TW');
+    expect(ch1Doc.documentElement.getAttribute('xml:lang')).toBe('zh-TW');
+  });
+
   it('keeps sourceZip clean across repeated exports without stacking styles or locking OpenCC', async () => {
     const raw = await createSampleEpubBuffer();
     const parsed = await loadEpubArchive(raw, false);

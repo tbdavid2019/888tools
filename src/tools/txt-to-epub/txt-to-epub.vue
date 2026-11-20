@@ -59,6 +59,7 @@ const bookAuthor = ref('');
 const coverFile = ref<File | null>(null);
 const coverPreview = ref<string | null>(null);
 const writingMode = ref<'horizontal' | 'vertical'>('vertical');
+const pageProgressionDirection = ref<'auto' | 'rtl' | 'ltr'>('auto');
 const fontFamily = ref(DEFAULT_FONT);
 const embedFontMode = ref<'none' | 'subset' | 'full'>('full');
 const fontSize = ref('medium');
@@ -265,6 +266,7 @@ async function startExport() {
       cover: coverFile.value,
       convertToTraditional: convertToTraditional.value,
       writingMode: writingMode.value,
+      pageProgressionDirection: pageProgressionDirection.value,
       fontFamily: fontFamily.value,
       embedFont: embedFontMode.value !== 'none',
       embedFontMode: embedFontMode.value,
@@ -300,6 +302,7 @@ function resetAll() {
   coverPreview.value = null;
   bookTitle.value = '';
   bookAuthor.value = '';
+  pageProgressionDirection.value = 'auto';
   embedFontMode.value = 'full';
   currentStep.value = 1;
 }
@@ -547,6 +550,18 @@ function resetAll() {
                   :options="fontOptions"
                 />
               </div>
+            </div>
+
+            <div class="space-y-2">
+              <label class="text-xs font-semibold text-gray-500 block mb-1">翻頁方向 (Kindle / 閱讀器)</label>
+              <c-buttons-select
+                v-model:value="pageProgressionDirection"
+                :options="[
+                  { label: '跟隨排版', value: 'auto', tooltip: '直排採右至左 (rtl，點左側下一頁)；橫排採左至右 (ltr)' },
+                  { label: '右至左 (點左下一頁)', value: 'rtl', tooltip: '寫入 page-progression-direction=&quot;rtl&quot;（標準直排翻頁；部分舊版 Kindle 轉檔依韌體而異）' },
+                  { label: '左至右 (點右下一頁)', value: 'ltr', tooltip: '強制寫入 page-progression-direction=&quot;ltr&quot;（通用閱讀器點右側下一頁；若直排翻頁方向不符習慣可切換測試）' },
+                ]"
+              />
             </div>
 
             <div v-if="fontFamily !== 'default'" class="space-y-2">

@@ -1,4 +1,5 @@
 import type { KindleRepairReport } from './kindle-fixer';
+import type { PageProgressionDirection } from './package-direction';
 import type { PreviewChapter } from './preview-chapters';
 import type { EmbeddedFontInfo, StyleGeneratorOptions } from './style-generator';
 import JSZip from 'jszip';
@@ -29,7 +30,7 @@ import {
 } from '@/services/epub/xml';
 import { convertOpenCC, convertPunctuation } from '@/services/opencc.service';
 import { normalizeZipTimestamps, repairKindleEpub, SAFE_ZIP_DATE } from './kindle-fixer';
-import { updatePackageDirection } from './package-direction';
+import { REPLACEABLE_SIMPLIFIED_LANGS, updatePackageDirection } from './package-direction';
 import { getOrderedContentPaths, parsePreviewChapter } from './preview-chapters';
 import {
 
@@ -69,6 +70,7 @@ export interface ParsedEpubResult {
 export interface ProcessEpubSettings extends StyleGeneratorOptions {
   convertMode: 'twp' | 'tw' | 'off';
   convertPunctuation: boolean;
+  pageProgressionDirection?: PageProgressionDirection;
   fontEmbedMode: 'none' | 'subset' | 'full';
   fixKindleCompatibility: boolean;
 }
@@ -451,6 +453,7 @@ async function injectStyleOverridesIntoEpub(
   zip: JSZip,
   options: StyleGeneratorOptions,
   fontInfo: EmbeddedFontInfo | null,
+  languageOptions: { ensureVerticalHtmlLang?: boolean; targetLanguage?: string } = {},
 ): Promise<void> {
   const cssFiles = Object.keys(zip.files).filter(f => !zip.files[f].dir && f.toLowerCase().endsWith('.css'));
 
@@ -483,6 +486,22 @@ async function injectStyleOverridesIntoEpub(
     }
 
     const htmlEl = getElementsByLocalName(doc, 'html')[0] || doc.documentElement;
+    if ((languageOptions.ensureVerticalHtmlLang || languageOptions.targetLanguage) && htmlEl) {
+      const currentLang = (htmlEl.getAttribute('lang') || '').trim();
+      const currentXmlLang = (htmlEl.getAttribute('xml:lang') || '').trim();
+      let resolvedLang = currentXmlLang || currentLang;
+      if (languageOptions.targetLanguage && (!resolvedLang || REPLACEABLE_SIMPLIFIED_LANGS.has(resolvedLang.toLowerCase()))) {
+        resolvedLang = languageOptions.targetLanguage;
+      }
+      else if (!resolvedLang && languageOptions.ensureVerticalHtmlLang) {
+        resolvedLang = 'zh-TW';
+      }
+      if (resolvedLang) {
+        htmlEl.setAttribute('xml:lang', resolvedLang);
+        htmlEl.setAttribute('lang', resolvedLang);
+      }
+    }
+
     let headEl = getElementsByLocalName(doc, 'head')[0];
     if (!headEl && htmlEl) {
       headEl = doc.createElementNS(htmlEl.namespaceURI, 'head');
@@ -837,14 +856,29 @@ export async function processEpubPackage(input: ProcessEpubInput): Promise<Proce
 
   // 3. CSS & Style Overrides
   onProgress('套用字體與排版覆蓋樣式...', 80);
-  await injectStyleOverridesIntoEpub(outputZip, settings, finalFontInfo);
+  const ensureVerticalHtmlLang = settings.fixKindleCompatibility && settings.writingMode === 'vertical';
+  const targetLanguage = settings.convertMode !== 'off'
+    ? 'zh-TW'
+    : undefined;
+  await injectStyleOverridesIntoEpub(outputZip, settings, finalFontInfo, {
+    ensureVerticalHtmlLang,
+    targetLanguage,
+  });
 
-  // 4. Spine page-progression-direction
+  // 4. Spine page-progression-direction & Kindle metadata sync
   onProgress('設定翻頁方向與套件描述...', 84);
   if (opfPath) {
     const rawOpf = await readZipTextAuto(outputZip, opfPath);
     if (rawOpf) {
-      outputZip.file(opfPath, updatePackageDirection(rawOpf, settings.writingMode), { date: SAFE_ZIP_DATE });
+      outputZip.file(
+        opfPath,
+        updatePackageDirection(rawOpf, settings.writingMode, {
+          pageProgressionDirection: settings.pageProgressionDirection ?? 'auto',
+          ensureKindleMetadata: settings.fixKindleCompatibility,
+          targetLanguage,
+        }),
+        { date: SAFE_ZIP_DATE },
+      );
     }
   }
 

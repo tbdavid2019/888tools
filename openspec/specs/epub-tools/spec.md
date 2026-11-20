@@ -27,11 +27,15 @@ The system SHALL automatically parse chapters in the TXT content using regex or 
 - **THEN** the updated title MUST be used in the exported EPUB table of contents (TOC)
 
 ### Requirement: Layout and Styling Configuration
-The system SHALL support custom configuration for writing orientation (horizontal/vertical), font family, font size, line height, paragraph indentation, page margins, and cover image.
+The system SHALL support custom configuration for writing orientation (horizontal/vertical), page progression direction (`auto`/`rtl`/`ltr`), font family, font size, line height, paragraph indentation, page margins, and cover image.
 
 #### Scenario: Apply vertical writing mode
-- **WHEN** the user selects vertical orientation ("直排")
-- **THEN** the generated EPUB XHTML files MUST include CSS styles for `writing-mode: vertical-rl` and update OPF `<spine page-progression-direction="rtl">`
+- **WHEN** the user selects vertical orientation ("直排") with default `auto` page progression
+- **THEN** the generated EPUB XHTML files MUST include CSS styles for `writing-mode: vertical-rl` and update OPF `<spine page-progression-direction="rtl">` alongside Kindle `<meta name="primary-writing-mode" content="vertical-rl"/>`
+
+#### Scenario: Override page progression direction for Kindle or reader preference
+- **WHEN** the user selects vertical orientation ("直排") with `ltr` page progression ("左至右")
+- **THEN** the OPF MUST set `<spine page-progression-direction="ltr">` while preserving `<meta name="primary-writing-mode" content="vertical-rl"/>` and `writing-mode: vertical-rl` CSS, and `epub-editor` vertical preview controls MUST reflect the selected direction
 
 ### Requirement: Local Font Subsetting and Embedding
 The system SHALL support dynamic browser-side font subsetting via `fonteditor-core` (including Web Worker off-main-thread execution and local WOFF2 WASM support) to extract only the characters present in the book (supporting full Unicode code points) and embed the resulting lightweight `.ttf` font file, with IndexedDB caching for built-in fonts.

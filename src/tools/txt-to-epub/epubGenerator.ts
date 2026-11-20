@@ -1,8 +1,9 @@
+import type { Chapter } from './chapterDetector';
 import JSZip from 'jszip';
 import { downloadBlob } from '@/services/epub/download';
 import { convertOpenCC } from '@/services/opencc.service';
+import { resolveEffectiveDirection } from '@/tools/epub-editor/package-direction';
 import { INDENT_MAP, LINE_HEIGHT_MAP, SIZE_MAP } from '@/tools/epub-editor/style-generator';
-import type { Chapter } from './chapterDetector';
 import { DEFAULT_FONT, FONT_CONFIG, loadFontFile, subsetFont } from './fontSubset';
 
 export interface EpubProgress {
@@ -30,6 +31,7 @@ export interface GenerateEpubOptions {
   cover: File | null;
   convertToTraditional?: boolean;
   writingMode: 'horizontal' | 'vertical';
+  pageProgressionDirection?: 'auto' | 'rtl' | 'ltr';
   fontFamily?: string;
   embedFont?: boolean;
   embedFontMode?: 'none' | 'subset' | 'full';
@@ -48,6 +50,7 @@ export async function generateEpub({
   cover,
   convertToTraditional = true,
   writingMode,
+  pageProgressionDirection = 'auto',
   fontFamily = DEFAULT_FONT,
   embedFont = false,
   embedFontMode = 'none',
@@ -63,6 +66,8 @@ export async function generateEpub({
   zip.file('mimetype', 'application/epub+zip', { compression: 'STORE' });
   const bookId = `urn:uuid:${crypto.randomUUID()}`;
   const isVertical = writingMode === 'vertical';
+  const effectiveDirection = resolveEffectiveDirection(writingMode, pageProgressionDirection);
+  const docLang = convertToTraditional ? 'zh-TW' : 'zh-CN';
 
   // 1. 簡轉繁轉換 (如果需要)
   let processedTitle = title;
@@ -84,16 +89,18 @@ export async function generateEpub({
   const fontFamilyCSS = `"${fontConfig.family}", "Noto Sans TC", sans-serif`;
 
   // 取得樣式值
-  const fontSizeValue = SIZE_MAP[fontSize] || SIZE_MAP['medium'];
-  const lineHeightValue = LINE_HEIGHT_MAP[lineHeight] || LINE_HEIGHT_MAP['normal'];
-  const textIndentValue = INDENT_MAP[textIndent] || INDENT_MAP['two'];
+  const fontSizeValue = SIZE_MAP[fontSize] || SIZE_MAP.medium;
+  const lineHeightValue = LINE_HEIGHT_MAP[lineHeight] || LINE_HEIGHT_MAP.normal;
+  const textIndentValue = INDENT_MAP[textIndent] || INDENT_MAP.two;
 
   // 字型相關變數
   let fontManifest = '';
   let fontFaceCSS = '';
   let embeddedFontFilename = '';
 
-  const actualEmbedMode = embedFontMode !== 'none' ? embedFontMode : (embedFont ? 'subset' : 'none');
+  const actualEmbedMode = embedFontMode !== 'none'
+    ? embedFontMode
+    : (embedFont ? 'subset' : 'none');
 
   // 如果要嵌入字型
   if (actualEmbedMode !== 'none') {
@@ -124,14 +131,16 @@ export async function generateEpub({
         // manifest 項目
         fontManifest = `<item id="font-main" href="fonts/${embeddedFontFilename}" media-type="${mime}"/>`;
         onProgress({ stage: 'font', message: '完整字型嵌入完成！' });
-      } catch (error) {
+      }
+      catch (error) {
         console.error('完整字型嵌入失敗:', error);
         onProgress({ stage: 'font', message: '完整字型嵌入失敗，改用預設模式' });
       }
-    } else {
+    }
+    else {
       // 合併所有章節內容
-      const allText = chapters.map(ch => ch.title + '\n' + ch.content).join('\n');
-      
+      const allText = chapters.map(ch => `${ch.title}\n${ch.content}`).join('\n');
+
       try {
         // 子集化字型
         const subsetResult = await subsetFont(fontFamily, allText, (p) => {
@@ -158,7 +167,8 @@ export async function generateEpub({
         fontManifest = `<item id="font-main" href="fonts/${embeddedFontFilename}" media-type="font/ttf"/>`;
 
         onProgress({ stage: 'font', message: '字型嵌入完成！' });
-      } catch (error) {
+      }
+      catch (error) {
         console.error('字型嵌入失敗:', error);
         onProgress({ stage: 'font', message: '字型嵌入失敗，改用預設模式' });
       }
@@ -183,11 +193,11 @@ export async function generateEpub({
     zip.file('OEBPS/images/cover.jpg', coverData);
     coverManifest = '<item id="cover-image" href="images/cover.jpg" media-type="image/jpeg" properties="cover-image"/>';
     coverSpine = '<itemref idref="cover"/>';
-    
+
     // 封面頁
     zip.file('OEBPS/cover.xhtml', `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="${docLang}" lang="${docLang}">
 <head><title>封面</title></head>
 <body style="margin:0;padding:0;text-align:center;">
 <img src="images/cover.jpg" alt="封面" style="max-width:100%;max-height:100vh;"/>
@@ -212,12 +222,14 @@ body {
   padding: 1em;
   margin: 0;
   text-align: justify;
-  ${isVertical ? `
+  ${isVertical
+    ? `
   writing-mode: vertical-rl;
   -webkit-writing-mode: vertical-rl;
   -epub-writing-mode: vertical-rl;
   text-orientation: mixed;
-  ` : ''}
+  `
+    : ''}
 }
 
 h1 {
@@ -262,7 +274,7 @@ p {
 
     const xhtml = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="${docLang}" lang="${docLang}">
 <head>
   <meta charset="UTF-8"/>
   <title>${escapeHtml(chapter.title)}</title>
@@ -301,7 +313,7 @@ p {
   // 目錄 (nav.xhtml - EPUB3)
   const navXhtml = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="${docLang}" lang="${docLang}">
 <head>
   <meta charset="UTF-8"/>
   <title>目錄</title>
@@ -323,11 +335,12 @@ p {
   // content.opf
   const opf = `<?xml version="1.0" encoding="UTF-8"?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="bookid">
-  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/">
     <dc:identifier id="bookid">${bookId}</dc:identifier>
     <dc:title>${escapeHtml(processedTitle)}</dc:title>
     <dc:creator>${escapeHtml(processedAuthor || '未知')}</dc:creator>
-    <dc:language>zh-TW</dc:language>
+    <dc:language>${docLang}</dc:language>
+    <meta name="primary-writing-mode" content="${isVertical ? 'vertical-rl' : 'horizontal-lr'}"/>
     <meta property="dcterms:modified">${new Date().toISOString().split('.')[0]}Z</meta>
   </metadata>
   <manifest>
@@ -338,7 +351,7 @@ p {
     ${coverManifest}
     ${chapterManifest.join('\n    ')}
   </manifest>
-  <spine toc="ncx"${isVertical ? ' page-progression-direction="rtl"' : ''}>
+  <spine toc="ncx" page-progression-direction="${effectiveDirection}">
     ${coverSpine}
     ${chapterSpine.join('\n    ')}
   </spine>
@@ -348,15 +361,15 @@ p {
   onProgress({ stage: 'compress', message: '正在壓縮檔案...' });
 
   // 生成並下載
-  const blob = await zip.generateAsync({ 
+  const blob = await zip.generateAsync({
     type: 'blob',
     mimeType: 'application/epub+zip',
     compression: 'DEFLATE',
-    compressionOptions: { level: 9 }
+    compressionOptions: { level: 9 },
   });
 
   onProgress({ stage: 'done', message: '完成！' });
-  
+
   if (!returnBlob) {
     const outputFilename = filename || processedTitle || '未命名';
     downloadBlob(blob, `${outputFilename}.epub`);
